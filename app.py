@@ -10,5 +10,5 @@ with gr.Blocks(title="OmniVault API Node") as demo:
 # This serves both the Gradio UI and all FastAPI endpoints (/api/scan, /ws, etc.)
 demo.app.mount("/", fastapi_backend)
 
-# Export app for the Hugging Face ASGI server wrapper
-app = demo.app
+# 3. Launch using native launch (with no parameters to let Gradio auto-detect the port)
+demo.launch()
