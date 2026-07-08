@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from pathlib import Path
-from app.agents.gap_detector import SmartGapDetector  # <-- Import the new Smart class
+from app.agents.gap_detector import SmartGapDetector
 from app.services.vector_store import VectorStoreService
+from app.services.notes_service import NotesService
+from app.routers.websocket import manager
 
 router = APIRouter(prefix="/api/scan", tags=["scan"])
 smart_detector = SmartGapDetector()
@@ -20,6 +22,9 @@ async def execute_workspace_scan(payload: ScanRequest):
     if not proj_path.exists() or not notes_path.exists():
         raise HTTPException(status_code=400, detail="Invalid directory paths supplied.")
 
+    # Reset tracking for new scan
+    smart_detector.term_sources = {}
+
     # 1. Rebuild the semantic store from your Markdown folder [cite: 74, 153]
     existing_notes_meta = vector_store.index_notes_vault(str(notes_path)) 
 
@@ -31,6 +36,25 @@ async def execute_workspace_scan(payload: ScanRequest):
 
     # 3. Process gaps with semantic safety checks 
     detected_gaps = smart_detector.compute_smart_gaps(all_terms, existing_notes_meta)
+
+    # 4. Automatically create/update gap notes on disk
+    for gap in detected_gaps:
+        NotesService.create_or_update_gap_note(
+            notes_dir=notes_path,
+            term=gap["term"],
+            classification=gap["classification"],
+            project_sources=gap.get("detected_from", [])
+        )
+
+    # 5. Re-index since we created/mutated files
+    vector_store.index_notes_vault(str(notes_path))
+
+    # 6. Broadcast graph updates via WebSockets
+    await manager.broadcast({
+        "type": "graph_update",
+        "total_terms_scanned": len(all_terms),
+        "gaps_found": len(detected_gaps)
+    })
 
     return {
         "status": "success",

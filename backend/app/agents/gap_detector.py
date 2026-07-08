@@ -14,6 +14,8 @@ class SmartGapDetector:
         ]
         # Core vector store service for semantic similarity checks
         self.vector_store = VectorStoreService()
+        # Track where terms were detected
+        self.term_sources = {}
 
     def _extract_ast_imports_js_ts(self, file_content: str, language: str) -> Set[str]:
         """
@@ -70,7 +72,7 @@ class SmartGapDetector:
 
     def extract_dependencies(self, project_path: Path) -> Set[str]:
         """
-        Extracts declared requirements from configuration files[cite: 69].
+        Extracts declared requirements from configuration files.
         """
         detected_terms = set()
         package_json = project_path / "package.json"
@@ -79,7 +81,10 @@ class SmartGapDetector:
                 with open(package_json, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     deps = {**data.get("dependencies", {}), **data.get("devDependencies", {})}
-                    detected_terms.update([d.lower() for d in deps.keys()])
+                    for d in deps.keys():
+                        term = d.lower()
+                        detected_terms.add(term)
+                        self.term_sources.setdefault(term, set()).add("package.json")
             except Exception: pass
             
         requirements = project_path / "requirements.txt"
@@ -90,13 +95,16 @@ class SmartGapDetector:
                         line = line.strip()
                         if line and not line.startswith('#'):
                             pkg = re.split(r'==|>=|<=|>|<|~=', line)[0].strip()
-                            if pkg: detected_terms.add(pkg.lower())
+                            if pkg:
+                                term = pkg.lower()
+                                detected_terms.add(term)
+                                self.term_sources.setdefault(term, set()).add("requirements.txt")
             except Exception: pass
         return detected_terms
 
     def scan_workspace_codebase(self, project_path: Path) -> Set[str]:
         """
-        Intelligently routes files to specific AST parsers or regex fallbacks[cite: 73, 310].
+        Intelligently routes files to specific AST parsers or regex fallbacks.
         """
         imported_terms = set()
         
@@ -110,24 +118,29 @@ class SmartGapDetector:
             try:
                 content = file_path.read_text(encoding="utf-8", errors="ignore")
                 ext = file_path.suffix
+                rel_path = str(file_path.relative_to(project_path))
                 
+                terms = set()
                 if ext == ".py":
-                    imported_terms.update(self._extract_ast_imports_python(content))
+                    terms = self._extract_ast_imports_python(content)
                 elif ext in [".js", ".jsx"]:
-                    imported_terms.update(self._extract_ast_imports_js_ts(content, "javascript"))
+                    terms = self._extract_ast_imports_js_ts(content, "javascript")
                 elif ext in [".ts", ".tsx"]:
-                    imported_terms.update(self._extract_ast_imports_js_ts(content, "typescript"))
+                    terms = self._extract_ast_imports_js_ts(content, "typescript")
                 elif ext in [".html", ".css", ".md"]:
-                    continue # Skip structural static configuration files
+                    continue
                 else:
-                    # Fallback to high-speed regex tracking for unmapped extensions [cite: 310]
                     for line in content.splitlines():
                         for pattern in self.fallback_patterns:
                             match = pattern.search(line)
                             if match:
                                 term = match.group(1).split('/')[0] if '/' in match.group(1) else match.group(1)
                                 if term and not term.startswith('.'):
-                                    imported_terms.add(term.strip().lower())
+                                    terms.add(term.strip().lower())
+                
+                for t in terms:
+                    imported_terms.add(t)
+                    self.term_sources.setdefault(t, set()).add(rel_path)
             except Exception:
                 pass
         return imported_terms
@@ -141,25 +154,26 @@ class SmartGapDetector:
         gap_report = []
         
         for term in technical_terms:
-            # Step A: Check metadata matching direct tags/slug names [cite: 74]
+            sources = list(self.term_sources.get(term, []))
+            
+            # Step A: Check metadata matching direct tags/slug names
             if term in existing_notes_meta:
                 meta = existing_notes_meta[term]
                 if meta.get("is_empty", True) or meta.get("status") == "gap":
                     gap_report.append({
                         "term": term,
                         "classification": "knowledge_debt",
-                        "reason": f"Note file '{term}.md' exists but lacks clear conceptual content body definitions." 
+                        "reason": f"Note file '{term}.md' exists but lacks clear conceptual content body definitions.",
+                        "detected_from": sources
                     })
                 continue
 
             # Step B: Semantic Search Guardrail 
-            # If 'useEffect' isn't a file name, check if it's deeply covered inside 'react-hooks.md' [cite: 191]
             semantic_matches = self.vector_store.semantic_search(query=term, limit=1)
             
             is_covered_semantically = False
             if semantic_matches:
                 best_match = semantic_matches[0]
-                # Distance threshold for cosine metric (closer to 0 means highly similar)
                 if best_match["score"] <= 0.35:  
                     is_covered_semantically = True
                     
@@ -167,7 +181,8 @@ class SmartGapDetector:
                 gap_report.append({
                     "term": term,
                     "classification": "critical_gap", 
-                    "reason": "This module is executed dynamically within your repository code, but has no semantic documentation trace." 
+                    "reason": "This module is executed dynamically within your repository code, but has no semantic documentation trace.",
+                    "detected_from": sources
                 })
                 
         return gap_report

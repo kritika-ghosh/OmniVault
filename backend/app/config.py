@@ -14,13 +14,12 @@ class Settings(BaseSettings):
 
     # Enforce Pydantic to read from your environment configuration file automatically
     model_config = SettingsConfigDict(
-        env_file=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"),
+        env_file=os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),
         env_file_encoding="utf-8",
-        extra="ignore"  # Softens constraints to bypass strict cross-variable validations
+        extra="ignore"
     )
 
-<<<<<<< HEAD
+    SCHEDULER_INTERVAL_SECS: int = 60
+
 settings = Settings()
-=======
-settings = Settings()
->>>>>>> f41e9cc6 (3rd api done)
+
