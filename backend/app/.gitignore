@@ -1,0 +1,11 @@
+# Local Environment Configuration Files
+.env
+.env.*
+
+# Python Environment Assets
+venv/
+__pycache__/
+*.pyc
+
+# Local ChromaDB Persistence Directory
+chroma_db/
