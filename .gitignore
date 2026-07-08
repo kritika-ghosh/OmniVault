@@ -1,22 +1,11 @@
-# Python virtual environments
-venv/
-backend/venv/
-.venv/
-env/
-
-# Vector database cache
-chroma_db/
-
-# Python cache files
-__pycache__/
-**/__pycache__/
-*.py[cod]
-*$py.class
-
-# Environment configuration keys (never expose API keys)
+# Local Environment Configuration Files
 .env
 .env.*
 
-# Local IDE folders
-.vscode/
-.idea/
+# Python Environment Assets
+venv/
+__pycache__/
+*.pyc
+
+# Local ChromaDB Persistence Directory
+chroma_db/
