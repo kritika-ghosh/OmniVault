@@ -1,0 +1,22 @@
+# Python virtual environments
+venv/
+backend/venv/
+.venv/
+env/
+
+# Vector database cache
+chroma_db/
+
+# Python cache files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment configuration keys (never expose API keys)
+.env
+.env.*
+
+# Local IDE folders
+.vscode/
+.idea/
