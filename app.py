@@ -1,4 +1,3 @@
-import os
 import gradio as gr
 from app.main import app as fastapi_backend
 
@@ -11,10 +10,5 @@ with gr.Blocks(title="OmniVault API Node") as demo:
 # This serves both the Gradio UI and all FastAPI endpoints (/api/scan, /ws, etc.)
 demo.app.mount("/", fastapi_backend)
 
-# Export app for WSGI/ASGI servers (Hugging Face looks for app or demo)
+# Export app for the Hugging Face ASGI server wrapper
 app = demo.app
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 7860))
-    # Native launch handles Hugging Face Space routing, hostnames, and ports automatically
-    demo.launch(server_name="0.0.0.0", server_port=port)
