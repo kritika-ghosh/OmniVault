@@ -14,5 +14,3 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 settings = Settings()
-
-#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
