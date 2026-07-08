@@ -3,7 +3,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "OmniVault"
-    CHROMADB_DIR: str = os.path.join(os.getcwd(), "chroma_db")
+    CHROMADB_DIR: str = os.path.join(os.path.dirname(os.path.dirname(__file__)), "chroma_db")
+    DEFAULT_NOTES_DIR: str = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "notes")
+
     
     # 1. Add this explicit field declaration so Pydantic permits and loads your key
     GROQ_API_KEY: str = ""
