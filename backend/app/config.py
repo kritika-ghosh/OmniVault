@@ -1,16 +1,26 @@
 import os
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "OmniVault"
     CHROMADB_DIR: str = os.path.join(os.getcwd(), "chroma_db")
     
-    # Updated to an active model ID supported by the Groq cloud pipeline
-    DEFAULT_LLM_MODEL: str = "groq/llama-3.3-70b-versatile" 
+    # 1. Add this explicit field declaration so Pydantic permits and loads your key
+    GROQ_API_KEY: str = ""
     
+    # Target active model infrastructure configurations
+    DEFAULT_LLM_MODEL: str = "groq/llama-3.3-70b-versatile" 
     SIMILARITY_THRESHOLD: float = 0.45
 
-    class Config:
-        env_file = ".env"
+    # Enforce Pydantic to read from your environment configuration file automatically
+    model_config = SettingsConfigDict(
+        env_file=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore"  # Softens constraints to bypass strict cross-variable validations
+    )
 
+<<<<<<< HEAD
 settings = Settings()
+=======
+settings = Settings()
+>>>>>>> f41e9cc6 (3rd api done)
