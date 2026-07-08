@@ -3,8 +3,8 @@ title: OmniVault
 emoji: 🗃️
 colorFrom: indigo
 colorTo: purple
-sdk: docker
-app_port: 8000
+sdk: gradio
+app_file: app.py
 pinned: false
 ---
 
@@ -12,7 +12,7 @@ pinned: false
 
 OmniVault is a local-first, self-healing technical workspace backend that bridges the gap between developers' codebases and personal Markdown documentation vaults. It automatically parses codebase dependencies/imports, identifies conceptual gaps, synthesizes documentation guides, and schedules context-aware active recall quizzes validated in a local sandbox.
 
-This repository is configured to deploy directly to **Hugging Face Spaces** as a custom Docker-based FastAPI backend.
+This repository is configured to deploy directly to **Hugging Face Spaces** as a Gradio-mounted FastAPI backend.
 
 ---
 
@@ -88,31 +88,23 @@ Real-time connection endpoint pushing `quiz_due` notifications and `graph_update
 
 To deploy this backend as a Space on Hugging Face:
 1. Create a new Space on [Hugging Face](https://huggingface.co/new-space).
-2. Set the SDK to **Docker** (it will auto-detect the `Dockerfile` at the root).
+2. Set the SDK to **Gradio** (it will use `app.py` as entrypoint).
 3. Upload/push this repository to your Space repository.
 4. Set your **Space Secrets** (in Space settings):
    *   `GROQ_API_KEY`: Your Groq platform API key.
-5. The container will build and run automatically on port `8000`.
+5. The container will build automatically, run `app.py`, and expose the API and Gradio health check on port `7860`.
 
 ---
 
 ## Running Locally
 
-To run the API server on your local machine:
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Or venv\Scripts\activate on Windows
-   ```
-3. Install dependencies:
+To run the API server locally with the Gradio entrypoint:
+1. Activate your virtual environment and install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-4. Start the development server:
+2. Start the Gradio-mounted server:
    ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+   python app.py
    ```
+3. Your FastAPI endpoints are accessible at `http://localhost:7860/` and the Gradio check is at `http://localhost:7860/internal-dashboard`.
