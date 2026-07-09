@@ -3,7 +3,8 @@ import sys
 
 # 1. Conditionally mock the 'spaces' library locally to prevent import crashes,
 # while keeping 'import spaces' at the top level for Hugging Face's static scanner.
-if os.environ.get("PORT") != "7860":
+is_huggingface = "SPACE_ID" in os.environ or "SPACE_HOST" in os.environ
+if not is_huggingface:
     from types import ModuleType
     mock_spaces = ModuleType("spaces")
     def mock_gpu_decorator(func):
@@ -64,9 +65,9 @@ with gr.Blocks(title="OmniVault API Node") as demo:
 app = gr.mount_gradio_app(fastapi_app, demo, path="/")
 
 if __name__ == "__main__":
-    # On Hugging Face, PORT is set to 7860, which is bound by the SvelteKit NodeJS proxy.
-    # The NodeJS proxy routes backend traffic to port 7861, so the Python server must bind there.
+    # On Hugging Face, the NodeJS proxy binds to 7860, and expects the Python backend on 7861.
+    # Locally, we run on the port specified in environment or default to 7860.
     port = int(os.environ.get("PORT", 7860))
-    if port == 7860:
+    if is_huggingface and port == 7860:
         port = 7861
     uvicorn.run(app, host="0.0.0.0", port=port)
