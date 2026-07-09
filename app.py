@@ -1,39 +1,15 @@
 import os
 import sys
-from types import ModuleType
 
-# 1. Register a custom meta path finder to mock the 'spaces' library locally if missing.
-# This keeps the 'import spaces' and '@spaces.GPU' statements at the top level
-# (zero indentation) for Hugging Face's static AST scanner, while preventing local import crashes.
-class MockSpacesFinder:
-    def find_spec(self, fullname, path, target=None):
-        if fullname == "spaces":
-            try:
-                # Temporarily remove ourselves to check if real spaces is installed
-                sys.meta_path.remove(self)
-                import importlib.util
-                spec = importlib.util.find_spec("spaces")
-                sys.meta_path.insert(0, self)
-                if spec is not None:
-                    return spec
-            except Exception:
-                pass
-            
-            # Fall back to returning our mock spec if real spaces is missing
-            from importlib.machinery import ModuleSpec
-            return ModuleSpec("spaces", self)
-            
-    def create_module(self, spec):
-        mock_spaces = ModuleType("spaces")
-        def mock_gpu_decorator(func):
-            return func
-        mock_spaces.GPU = mock_gpu_decorator
-        return mock_spaces
-        
-    def exec_module(self, module):
-        pass
-
-sys.meta_path.insert(0, MockSpacesFinder())
+# 1. Conditionally mock the 'spaces' library locally to prevent import crashes,
+# while keeping 'import spaces' at the top level for Hugging Face's static scanner.
+if os.environ.get("PORT") != "7860":
+    from types import ModuleType
+    mock_spaces = ModuleType("spaces")
+    def mock_gpu_decorator(func):
+        return func
+    mock_spaces.GPU = mock_gpu_decorator
+    sys.modules["spaces"] = mock_spaces
 
 # 2. Expose the import and decorator at the top level with zero indentation
 import spaces
