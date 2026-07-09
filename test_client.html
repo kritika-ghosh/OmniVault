@@ -5,11 +5,11 @@
 </head>
 <body>
     <h1>OmniVault API Bareback Tester</h1>
-    <p>Hardcoded Base Host: <strong>https://kritika53245-nexuside.hf.space</strong></p>
+    <p>Hardcoded Base Host: <strong>https://omnivault.onrender.com</strong></p>
     <hr>
 
     <!-- 1. SCAN WORKSPACE -->
-    <h3>1. Scan Workspace (/gradio_api/v1/scan)</h3>
+    <h3>1. Scan Workspace (/v1/scan)</h3>
     <form id="scanForm" onsubmit="event.preventDefault(); runScan();">
         <p>
             <label>Project Path:</label><br>
@@ -25,7 +25,7 @@
     <hr>
 
     <!-- 2. SYNTHESIZE STREAM -->
-    <h3>2. Synthesize Stream (/gradio_api/v1/synthesize/stream)</h3>
+    <h3>2. Synthesize Stream (/v1/synthesize/stream)</h3>
     <form id="synForm" onsubmit="event.preventDefault(); runSynthesize();">
         <p>
             <label>Concept Term:</label><br>
@@ -41,7 +41,7 @@
     <hr>
 
     <!-- 3. SAVE NOTE -->
-    <h3>3. Save Note (/gradio_api/v1/synthesize/save)</h3>
+    <h3>3. Save Note (/v1/synthesize/save)</h3>
     <form id="saveForm" onsubmit="event.preventDefault(); runSave();">
         <p>
             <label>Notes Path:</label><br>
@@ -67,7 +67,7 @@ Placeholder content.</textarea>
     <hr>
 
     <!-- 4. GENERATE QUIZ -->
-    <h3>4. Generate Quiz (/gradio_api/v1/quiz/generate)</h3>
+    <h3>4. Generate Quiz (/v1/quiz/generate)</h3>
     <form id="quizGenForm" onsubmit="event.preventDefault(); runQuizGen();">
         <p>
             <label>Note Path:</label><br>
@@ -79,7 +79,7 @@ Placeholder content.</textarea>
     <hr>
 
     <!-- 5. EVALUATE RESPONSE -->
-    <h3>5. Evaluate Quiz (/gradio_api/v1/quiz/evaluate)</h3>
+    <h3>5. Evaluate Quiz (/v1/quiz/evaluate)</h3>
     <form id="quizEvalForm" onsubmit="event.preventDefault(); runQuizEval();">
         <p>
             <label>Note Path:</label><br>
@@ -103,19 +103,19 @@ Placeholder content.</textarea>
     <hr>
 
     <!-- 6. WEBSOCKET LOGS -->
-    <h3>6. Real-time Notifications (/gradio_api/ws)</h3>
+    <h3>6. Real-time Notifications (/ws)</h3>
     <button onclick="toggleWS()" id="wsBtn">Connect to WebSocket</button>
     <pre id="wsOutput" style="background:#eee; padding:10px; margin-top:10px; max-height: 200px; overflow-y: auto;">WebSocket notifications will log here...</pre>
 
     <script>
-        const HOST = "https://kritika53245-nexuside.hf.space";
+        const HOST = "https://omnivault.onrender.com";
         let ws = null;
 
         async function runScan() {
             const out = document.getElementById("scanOutput");
             out.innerText = "Sending scan request...";
             try {
-                const res = await fetch(`${HOST}/gradio_api/v1/scan`, {
+                const res = await fetch(`${HOST}/v1/scan`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -134,7 +134,7 @@ Placeholder content.</textarea>
             const out = document.getElementById("synOutput");
             out.innerText = "Streaming response...";
             try {
-                const res = await fetch(`${HOST}/gradio_api/v1/synthesize/stream`, {
+                const res = await fetch(`${HOST}/v1/synthesize/stream`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -170,7 +170,7 @@ Placeholder content.</textarea>
             const out = document.getElementById("saveOutput");
             out.innerText = "Saving note...";
             try {
-                const res = await fetch(`${HOST}/gradio_api/v1/synthesize/save`, {
+                const res = await fetch(`${HOST}/v1/synthesize/save`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -190,7 +190,7 @@ Placeholder content.</textarea>
             const out = document.getElementById("quizGenOutput");
             out.innerText = "Generating quiz...";
             try {
-                const res = await fetch(`${HOST}/gradio_api/v1/quiz/generate`, {
+                const res = await fetch(`${HOST}/v1/quiz/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -209,7 +209,7 @@ Placeholder content.</textarea>
             out.innerText = "Evaluating solution...";
             try {
                 const concepts = document.getElementById("evalExpected").value.split(",").map(c => c.trim());
-                const res = await fetch(`${HOST}/gradio_api/v1/quiz/evaluate`, {
+                const res = await fetch(`${HOST}/v1/quiz/evaluate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -236,7 +236,7 @@ Placeholder content.</textarea>
                 out.innerText += "\n[WebSocket Disconnected]";
             } else {
                 out.innerText = "[Connecting WebSocket...]";
-                ws = new WebSocket("wss://kritika53245-nexuside.hf.space/gradio_api/ws");
+                ws = new WebSocket("wss://omnivault.onrender.com/ws");
                 ws.onopen = () => {
                     btn.innerText = "Disconnect WebSocket";
                     out.innerText += "\n[Connected Successfully]";
