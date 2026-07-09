@@ -1,580 +1,257 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OmniVault API Node Interactive Client</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-dark: #0f111a;
-            --card-bg: #161925;
-            --accent: #6366f1;
-            --accent-hover: #4f46e5;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --border: #272a3d;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            line-height: 1.6;
-            padding: 2rem;
-        }
-
-        header {
-            margin-bottom: 2rem;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            margin-top: 0.25rem;
-        }
-
-        .config-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group:last-child {
-            margin-bottom: 0;
-        }
-
-        label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        input[type="text"], textarea {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background-color: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-main);
-            font-family: inherit;
-            font-size: 0.95rem;
-            transition: border-color 0.2s;
-        }
-
-        input[type="text"]:focus, textarea:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
-        button {
-            padding: 0.75rem 1.5rem;
-            background-color: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        button:hover {
-            background-color: var(--accent-hover);
-        }
-
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(48%, 1fr));
-            gap: 1.5rem;
-        }
-
-        .panel {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .panel-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .badge {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .badge-scan { background-color: rgba(99, 102, 241, 0.15); color: #818cf8; }
-        .badge-syn { background-color: rgba(16, 185, 129, 0.15); color: #34d399; }
-        .badge-quiz { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-        .badge-ws { background-color: rgba(239, 68, 68, 0.15); color: #f87171; }
-
-        .output-box {
-            flex-grow: 1;
-            margin-top: 1rem;
-            background-color: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.85rem;
-            overflow-y: auto;
-            max-height: 350px;
-            min-height: 120px;
-            white-space: pre-wrap;
-        }
-
-        .horizontal-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .ws-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: var(--danger);
-            display: inline-block;
-        }
-
-        .ws-connected {
-            background-color: var(--success);
-            box-shadow: 0 0 8px var(--success);
-        }
-
-        .websocket-actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .log-entry {
-            margin-bottom: 0.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 0.25rem;
-        }
-
-        .log-time {
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .note-preview-wrapper {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .btn-secondary {
-            background-color: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-main);
-        }
-        
-        .btn-secondary:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-    </style>
+    <title>OmniVault API Bareback Tester</title>
 </head>
 <body>
+    <h1>OmniVault API Bareback Tester</h1>
+    <p>Hardcoded Base Host: <strong>https://kritika53245-nexuside.hf.space</strong></p>
+    <hr>
 
-    <header>
-        <div>
-            <h1>🗃️ OmniVault Interactive Test Node</h1>
-            <div class="subtitle">Mock dashboard to fire requests and monitor local/remote Space endpoints</div>
-        </div>
-    </header>
-
-    <div class="config-card">
-        <label>API Base Host Domain</label>
-        <div class="horizontal-group" style="grid-template-columns: 3fr 1fr;">
-            <input type="text" id="baseUrlInput" value="https://kritika53245-nexuside.hf.space" placeholder="e.g. https://username-space.hf.space or http://localhost:8000">
-            <button onclick="saveBaseUrl()" class="btn-secondary">Set Base URL</button>
-        </div>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
-            ⚠️ <strong>Hugging Face Space users:</strong> Use the direct API domain endpoint (e.g. <code>https://kritika53245-nexuside.hf.space</code>), not the standard browser space view url.
+    <!-- 1. SCAN WORKSPACE -->
+    <h3>1. Scan Workspace (/api/scan)</h3>
+    <form id="scanForm" onsubmit="event.preventDefault(); runScan();">
+        <p>
+            <label>Project Path:</label><br>
+            <input type="text" id="scanProjectPath" value="/workspace" size="50">
         </p>
-    </div>
+        <p>
+            <label>Notes Path:</label><br>
+            <input type="text" id="scanNotesPath" value="/workspace/notes" size="50">
+        </p>
+        <button type="submit">Execute Scan</button>
+    </form>
+    <pre id="scanOutput" style="background:#eee; padding:10px; margin-top:10px;">Scan output will show here...</pre>
+    <hr>
 
-    <div class="dashboard-grid">
+    <!-- 2. SYNTHESIZE STREAM -->
+    <h3>2. Synthesize Stream (/api/synthesize/stream)</h3>
+    <form id="synForm" onsubmit="event.preventDefault(); runSynthesize();">
+        <p>
+            <label>Concept Term:</label><br>
+            <input type="text" id="synTerm" value="useEffect">
+        </p>
+        <p>
+            <label>Project Context:</label><br>
+            <input type="text" id="synContext" value="React, Hooks, JavaScript">
+        </p>
+        <button type="submit">Synthesize Note Stream</button>
+    </form>
+    <pre id="synOutput" style="background:#eee; padding:10px; margin-top:10px; white-space: pre-wrap;">Streaming output will show here...</pre>
+    <hr>
 
-        <!-- 1. SCANNER PANEL -->
-        <div class="panel">
-            <div class="panel-title">
-                <span>1. Codebase Gap Scanner</span>
-                <span class="badge badge-scan">Scan API</span>
-            </div>
-            <div class="form-group">
-                <label>Project Workspace Path (Inside Host/Container)</label>
-                <input type="text" id="scanProjectPath" value="/workspace" placeholder="e.g. D:/Desktop/projects/OmniVault or /workspace">
-            </div>
-            <div class="form-group">
-                <label>Markdown Notes Vault Path (Inside Host/Container)</label>
-                <input type="text" id="scanNotesPath" value="/workspace/notes" placeholder="e.g. D:/Desktop/projects/OmniVault/notes or /workspace/notes">
-            </div>
-            <button onclick="runScanner()">Scan Workspace Gaps</button>
-            <div class="output-box" id="scannerOutput">Output logs will display here...</div>
-        </div>
+    <!-- 3. SAVE NOTE -->
+    <h3>3. Save Note (/api/synthesize/save)</h3>
+    <form id="saveForm" onsubmit="event.preventDefault(); runSave();">
+        <p>
+            <label>Notes Path:</label><br>
+            <input type="text" id="saveNotesPath" value="/workspace/notes" size="50">
+        </p>
+        <p>
+            <label>Filename (slug):</label><br>
+            <input type="text" id="saveFilename" value="useeffect.md">
+        </p>
+        <p>
+            <label>Markdown Content (with frontmatter):</label><br>
+            <textarea id="saveContent" rows="10" cols="80">---
+title: useEffect
+slug: useeffect
+status: draft
+---
+# useEffect
+Placeholder content.</textarea>
+        </p>
+        <button type="submit">Save Note to Disk</button>
+    </form>
+    <pre id="saveOutput" style="background:#eee; padding:10px; margin-top:10px;">Save output will show here...</pre>
+    <hr>
 
-        <!-- 2. SYNTHESIZER PANEL -->
-        <div class="panel">
-            <div class="panel-title">
-                <span>2. SSE Content Synthesizer</span>
-                <span class="badge badge-syn">Stream API</span>
-            </div>
-            <div class="form-group">
-                <label>Concept Term Name</label>
-                <input type="text" id="synTerm" value="useEffect" placeholder="e.g. FastAPI, useEffect">
-            </div>
-            <div class="form-group">
-                <label>Workspace Context / Tech Stack</label>
-                <input type="text" id="synContext" value="React, Hooks, JavaScript" placeholder="e.g. Python, FastAPI, Web">
-            </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <button onclick="runSynthesizer()">Synthesize & Stream</button>
-                <button onclick="saveSynthesizedNote()" class="btn-secondary">Save To Disk</button>
-            </div>
-            <div class="output-box" id="synthesizerOutput" style="font-family: inherit; font-size: 0.9rem; line-height: 1.5;">Markdown streaming content will render here...</div>
-        </div>
+    <!-- 4. GENERATE QUIZ -->
+    <h3>4. Generate Quiz (/api/quiz/generate)</h3>
+    <form id="quizGenForm" onsubmit="event.preventDefault(); runQuizGen();">
+        <p>
+            <label>Note Path:</label><br>
+            <input type="text" id="quizNotePath" value="/workspace/notes/useeffect.md" size="50">
+        </p>
+        <button type="submit">Generate Quiz Challenge</button>
+    </form>
+    <pre id="quizGenOutput" style="background:#eee; padding:10px; margin-top:10px;">Generated quiz will show here...</pre>
+    <hr>
 
-        <!-- 3. QUIZ GENERATOR & EVALUATOR -->
-        <div class="panel" style="grid-column: span 2;">
-            <div class="panel-title">
-                <span>3. Active Recall Sandbox & Socratic Judge</span>
-                <span class="badge badge-quiz">Quiz API</span>
-            </div>
-            <div class="horizontal-group">
-                <div>
-                    <div class="form-group">
-                        <label>Target Markdown Note Path (For Quiz Generation)</label>
-                        <input type="text" id="quizNotePath" value="/workspace/notes/useeffect.md" placeholder="e.g. /workspace/notes/useeffect.md">
-                    </div>
-                    <button onclick="generateQuiz()" style="width: 100%;">Generate Quiz Challenge</button>
-                    <div class="output-box" id="quizDetails" style="margin-top: 1rem; max-height: 200px;">Generated quiz parameters will show here...</div>
-                </div>
-                <div>
-                    <div class="form-group">
-                        <label>Submit Answer (Conceptual Text or Code Solution)</label>
-                        <textarea id="quizUserAnswer" rows="5" placeholder="Type your response here..."></textarea>
-                    </div>
-                    <button onclick="evaluateQuiz()" style="width: 100%;">Submit Solution</button>
-                    <div class="output-box" id="evaluationDetails" style="margin-top: 1rem; max-height: 200px;">Socratic Judge feedback logs...</div>
-                </div>
-            </div>
-        </div>
+    <!-- 5. EVALUATE RESPONSE -->
+    <h3>5. Evaluate Quiz (/api/quiz/evaluate)</h3>
+    <form id="quizEvalForm" onsubmit="event.preventDefault(); runQuizEval();">
+        <p>
+            <label>Note Path:</label><br>
+            <input type="text" id="evalNotePath" value="/workspace/notes/useeffect.md" size="50">
+        </p>
+        <p>
+            <label>Question Asked:</label><br>
+            <input type="text" id="evalQuestion" value="Write a useEffect hook." size="50">
+        </p>
+        <p>
+            <label>Expected Concepts (Comma Separated):</label><br>
+            <input type="text" id="evalExpected" value="cleanup function, dependency array" size="50">
+        </p>
+        <p>
+            <label>User Solution / Answer:</label><br>
+            <textarea id="evalAnswer" rows="5" cols="80">useEffect(() => { return () => {}; }, []);</textarea>
+        </p>
+        <button type="submit">Submit Solution</button>
+    </form>
+    <pre id="quizEvalOutput" style="background:#eee; padding:10px; margin-top:10px;">Evaluation feedback will show here...</pre>
+    <hr>
 
-        <!-- 4. WEBSOCKET LOGS -->
-        <div class="panel" style="grid-column: span 2;">
-            <div class="panel-title">
-                <span>4. Real-time WebSocket Logger</span>
-                <div class="websocket-actions">
-                    <span class="ws-indicator" id="wsIndicator"></span>
-                    <button onclick="toggleWebSocket()" id="wsConnectBtn" class="btn-secondary" style="padding: 0.4rem 1rem; font-size: 0.85rem;">Connect WS</button>
-                    <span class="badge badge-ws">WebSocket</span>
-                </div>
-            </div>
-            <div class="output-box" id="wsLogs" style="min-height: 150px; max-height: 250px;">Logs showing due notifications and file mutation updates...</div>
-        </div>
-
-    </div>
+    <!-- 6. WEBSOCKET LOGS -->
+    <h3>6. Real-time Notifications (/ws)</h3>
+    <button onclick="toggleWS()" id="wsBtn">Connect to WebSocket</button>
+    <pre id="wsOutput" style="background:#eee; padding:10px; margin-top:10px; max-height: 200px; overflow-y: auto;">WebSocket notifications will log here...</pre>
 
     <script>
-        let BASE_URL = localStorage.getItem("omnivault_base_url") || "https://kritika53245-nexuside.hf.space";
-        document.getElementById("baseUrlInput").value = BASE_URL;
-
+        const HOST = "https://kritika53245-nexuside.hf.space";
         let ws = null;
-        let activeQuizData = null; // Store active quiz for evaluation reference
 
-        function saveBaseUrl() {
-            BASE_URL = document.getElementById("baseUrlInput").value.trim().replace(/\/$/, "");
-            localStorage.setItem("omnivault_base_url", BASE_URL);
-            alert(`Base URL set to: ${BASE_URL}`);
-            if (ws) {
-                disconnectWS();
+        async function runScan() {
+            const out = document.getElementById("scanOutput");
+            out.innerText = "Sending scan request...";
+            try {
+                const res = await fetch(`${HOST}/api/scan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        project_path: document.getElementById("scanProjectPath").value,
+                        notes_path: document.getElementById("scanNotesPath").value
+                    })
+                });
+                const data = await res.json();
+                out.innerText = JSON.stringify(data, null, 2);
+            } catch(e) {
+                out.innerText = "Error: " + e.message;
             }
         }
 
-        async function runScanner() {
-            const output = document.getElementById("scannerOutput");
-            output.innerText = "Scanning workspace codebase and notes directory...";
-            
-            const payload = {
-                project_path: document.getElementById("scanProjectPath").value.trim(),
-                notes_path: document.getElementById("scanNotesPath").value.trim()
-            };
-
+        async function runSynthesize() {
+            const out = document.getElementById("synOutput");
+            out.innerText = "Streaming response...";
             try {
-                const response = await fetch(`${BASE_URL}/api/scan`, {
+                const res = await fetch(`${HOST}/api/synthesize/stream`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        term: document.getElementById("synTerm").value,
+                        project_context: document.getElementById("synContext").value
+                    })
                 });
-                
-                const data = await response.json();
-                output.innerText = JSON.stringify(data, null, 2);
-            } catch (err) {
-                output.innerText = `[Error calling scan endpoint]: ${err.message}`;
-            }
-        }
-
-        async function runSynthesizer() {
-            const output = document.getElementById("synthesizerOutput");
-            output.innerText = "";
-            
-            const payload = {
-                term: document.getElementById("synTerm").value.trim(),
-                project_context: document.getElementById("synContext").value.trim()
-            };
-
-            try {
-                // Fetch streaming chunks using ReadableStream reader (for POST SSE)
-                const response = await fetch(`${BASE_URL}/api/synthesize/stream`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.body) {
-                    output.innerText = "Failed to open read stream response body.";
-                    return;
-                }
-
-                const reader = response.body.getReader();
+                const reader = res.body.getReader();
                 const decoder = new TextDecoder();
+                out.innerText = "";
                 let buffer = "";
-
                 while (true) {
                     const { value, done } = await reader.read();
                     if (done) break;
-                    
                     buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop(); // Hold incomplete line
-                    
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop();
                     for (const line of lines) {
-                        if (line.startsWith('data: ')) {
+                        if (line.startsWith("data: ")) {
                             try {
                                 const parsed = JSON.parse(line.substring(6));
-                                output.innerText += parsed.chunk;
-                                // Scroll output box to bottom
-                                output.scrollTop = output.scrollHeight;
-                            } catch (e) {
-                                // Parse issues from incomplete JSON chunks
-                            }
+                                out.innerText += parsed.chunk;
+                            } catch(e) {}
                         }
                     }
                 }
-            } catch (err) {
-                output.innerText = `[Streaming interrupted]: ${err.message}`;
+            } catch(e) {
+                out.innerText = "Error: " + e.message;
             }
         }
 
-        async function saveSynthesizedNote() {
-            const notesPath = document.getElementById("scanNotesPath").value.trim();
-            const term = document.getElementById("synTerm").value.trim();
-            const slug = term.toLowerCase().replace(/ /g, "-") + ".md";
-            const content = document.getElementById("synthesizerOutput").innerText;
-
-            if (!content || content.startsWith("Markdown streaming")) {
-                alert("Please synthesize a note first.");
-                return;
-            }
-
-            const payload = {
-                notes_path: notesPath,
-                filename: slug,
-                content: content
-            };
-
+        async function runSave() {
+            const out = document.getElementById("saveOutput");
+            out.innerText = "Saving note...";
             try {
-                const response = await fetch(`${BASE_URL}/api/synthesize/save`, {
+                const res = await fetch(`${HOST}/api/synthesize/save`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        notes_path: document.getElementById("saveNotesPath").value,
+                        filename: document.getElementById("saveFilename").value,
+                        content: document.getElementById("saveContent").value
+                    })
                 });
-                
-                const data = await response.json();
-                alert(`Note saved successfully to: ${data.path}`);
-            } catch (err) {
-                alert(`Failed to save note: ${err.message}`);
+                const data = await res.json();
+                out.innerText = JSON.stringify(data, null, 2);
+            } catch(e) {
+                out.innerText = "Error: " + e.message;
             }
         }
 
-        async function generateQuiz() {
-            const details = document.getElementById("quizNotePath").value.trim();
-            const quizBox = document.getElementById("quizDetails");
-            quizBox.innerText = "Contacting LLM Instructor agent...";
-
+        async function runQuizGen() {
+            const out = document.getElementById("quizGenOutput");
+            out.innerText = "Generating quiz...";
             try {
-                const response = await fetch(`${BASE_URL}/api/quiz/generate`, {
+                const res = await fetch(`${HOST}/api/quiz/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ note_path: details })
+                    body: JSON.stringify({
+                        note_path: document.getElementById("quizNotePath").value
+                    })
                 });
-
-                const data = await response.json();
-                activeQuizData = data;
-                
-                let textRepresentation = `Question:\n${data.question_text}\n\nExpected Checklist:\n`;
-                if (data.expected_concepts) {
-                    data.expected_concepts.forEach(c => textRepresentation += `- ${c}\n`);
-                }
-                if (data.code_snippet) {
-                    textRepresentation += `\nBoilerplate Code:\n${data.code_snippet}\n`;
-                    document.getElementById("quizUserAnswer").value = data.code_snippet;
-                } else {
-                    document.getElementById("quizUserAnswer").value = "";
-                }
-                
-                quizBox.innerText = textRepresentation;
-            } catch (err) {
-                quizBox.innerText = `[Error generating quiz]: ${err.message}`;
+                const data = await res.json();
+                out.innerText = JSON.stringify(data, null, 2);
+            } catch(e) {
+                out.innerText = "Error: " + e.message;
             }
         }
 
-        async function evaluateQuiz() {
-            const evalBox = document.getElementById("evaluationDetails");
-            evalBox.innerText = "Socratic Judge analyzing your answer...";
-
-            if (!activeQuizData) {
-                evalBox.innerText = "Please generate a quiz first before submitting solutions.";
-                return;
-            }
-
-            const payload = {
-                note_path: document.getElementById("quizNotePath").value.trim(),
-                question: activeQuizData.question_text,
-                expected_concepts: activeQuizData.expected_concepts || [],
-                user_answer: document.getElementById("quizUserAnswer").value,
-                test_cases: activeQuizData.test_cases || null
-            };
-
+        async function runQuizEval() {
+            const out = document.getElementById("quizEvalOutput");
+            out.innerText = "Evaluating solution...";
             try {
-                const response = await fetch(`${BASE_URL}/api/quiz/evaluate`, {
+                const concepts = document.getElementById("evalExpected").value.split(",").map(c => c.trim());
+                const res = await fetch(`${HOST}/api/quiz/evaluate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        note_path: document.getElementById("evalNotePath").value,
+                        question: document.getElementById("evalQuestion").value,
+                        expected_concepts: concepts,
+                        user_answer: document.getElementById("evalAnswer").value
+                    })
                 });
-
-                const data = await response.json();
-                evalBox.innerText = JSON.stringify(data, null, 2);
-            } catch (err) {
-                evalBox.innerText = `[Evaluation failed]: ${err.message}`;
+                const data = await res.json();
+                out.innerText = JSON.stringify(data, null, 2);
+            } catch(e) {
+                out.innerText = "Error: " + e.message;
             }
         }
 
-        function appendLog(message) {
-            const wsBox = document.getElementById("wsLogs");
-            const time = new Date().toLocaleTimeString();
-            const div = document.createElement("div");
-            div.className = "log-entry";
-            div.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
-            wsBox.appendChild(div);
-            wsBox.scrollTop = wsBox.scrollHeight;
-        }
-
-        function toggleWebSocket() {
-            if (ws) {
-                disconnectWS();
-            } else {
-                connectWS();
-            }
-        }
-
-        function connectWS() {
-            const indicator = document.getElementById("wsIndicator");
-            const btn = document.getElementById("wsConnectBtn");
-            
-            // Build WebSocket URL
-            let wsUrl = BASE_URL.replace(/^http/, "ws");
-            if (!wsUrl.startsWith("ws")) {
-                wsUrl = "wss://" + BASE_URL;
-            }
-            wsUrl = `${wsUrl}/ws`;
-            
-            appendLog(`Connecting to WebSocket: ${wsUrl}`);
-            
-            try {
-                ws = new WebSocket(wsUrl);
-                
-                ws.onopen = () => {
-                    indicator.classList.add("ws-connected");
-                    btn.innerText = "Disconnect WS";
-                    appendLog("Successfully connected to WebSocket feed.");
-                };
-                
-                ws.onmessage = (event) => {
-                    appendLog(`Event received: ${event.data}`);
-                };
-                
-                ws.onerror = (err) => {
-                    appendLog(`WebSocket error detected.`);
-                };
-                
-                ws.onclose = () => {
-                    indicator.classList.remove("ws-connected");
-                    btn.innerText = "Connect WS";
-                    appendLog("WebSocket connection closed.");
-                    ws = null;
-                };
-            } catch (e) {
-                appendLog(`Connection setup crashed: ${e.message}`);
-            }
-        }
-
-        function disconnectWS() {
+        function toggleWS() {
+            const out = document.getElementById("wsOutput");
+            const btn = document.getElementById("wsBtn");
             if (ws) {
                 ws.close();
+                ws = null;
+                btn.innerText = "Connect to WebSocket";
+                out.innerText += "\n[WebSocket Disconnected]";
+            } else {
+                out.innerText = "[Connecting WebSocket...]";
+                ws = new WebSocket("wss://kritika53245-nexuside.hf.space/ws");
+                ws.onopen = () => {
+                    btn.innerText = "Disconnect WebSocket";
+                    out.innerText += "\n[Connected Successfully]";
+                };
+                ws.onmessage = (event) => {
+                    out.innerText += `\nEvent: ${event.data}`;
+                };
+                ws.onclose = () => {
+                    btn.innerText = "Connect to WebSocket";
+                    out.innerText += "\n[Connection Closed]";
+                    ws = null;
+                };
+                ws.onerror = (err) => {
+                    out.innerText += "\n[WebSocket Error]";
+                };
             }
         }
     </script>
