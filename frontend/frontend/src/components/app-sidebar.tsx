@@ -5,10 +5,11 @@ import {
   SidebarGroup,
   SidebarHeader,
 } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 
-export function AppSidebar() {
+export function AppSidebar({ className, ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar>
+    <Sidebar className={cn("bg-sidebar", className)} {...props}>
       <SidebarHeader />
       <SidebarContent>
         <SidebarGroup />
