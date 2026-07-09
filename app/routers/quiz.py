@@ -9,7 +9,7 @@ from app.services.vector_store import VectorStoreService
 from app.routers.websocket import manager
 from app.services.scheduler import due_quiz_queue
 
-router = APIRouter(prefix="/api/quiz", tags=["quiz"])
+router = APIRouter(prefix="/v1/quiz", tags=["quiz"])
 judge_agent = ActiveRecallJudge()
 vector_store = VectorStoreService()
 
