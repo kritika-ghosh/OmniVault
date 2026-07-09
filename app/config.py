@@ -8,7 +8,7 @@ def get_default_notes_dir() -> str:
         workspace_dir = os.path.dirname(parent_dir)
     else:
         workspace_dir = parent_dir
-    return os.path.join(workspace_dir, "notes")
+    return os.path.join(workspace_dir, "testing", "markdown_notes")
 
 def get_default_chroma_dir() -> str:
     config_dir = os.path.dirname(os.path.abspath(__file__))

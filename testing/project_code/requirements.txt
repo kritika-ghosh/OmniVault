@@ -1,0 +1,6 @@
+fastapi
+pydantic
+requests
+pandas
+numpy
+matplotlib

@@ -13,11 +13,11 @@
     <form id="scanForm" onsubmit="event.preventDefault(); runScan();">
         <p>
             <label>Project Path:</label><br>
-            <input type="text" id="scanProjectPath" value="/workspace" size="50">
+            <input type="text" id="scanProjectPath" value="/workspace/testing/project_code" size="50">
         </p>
         <p>
             <label>Notes Path:</label><br>
-            <input type="text" id="scanNotesPath" value="/workspace/notes" size="50">
+            <input type="text" id="scanNotesPath" value="/workspace/testing/markdown_notes" size="50">
         </p>
         <button type="submit">Execute Scan</button>
     </form>
@@ -29,11 +29,11 @@
     <form id="synForm" onsubmit="event.preventDefault(); runSynthesize();">
         <p>
             <label>Concept Term:</label><br>
-            <input type="text" id="synTerm" value="useEffect">
+            <input type="text" id="synTerm" value="numpy">
         </p>
         <p>
             <label>Project Context:</label><br>
-            <input type="text" id="synContext" value="React, Hooks, JavaScript">
+            <input type="text" id="synContext" value="Python, Data Analysis, Math">
         </p>
         <button type="submit">Synthesize Note Stream</button>
     </form>
@@ -45,11 +45,11 @@
     <form id="saveForm" onsubmit="event.preventDefault(); runSave();">
         <p>
             <label>Notes Path:</label><br>
-            <input type="text" id="saveNotesPath" value="/workspace/notes" size="50">
+            <input type="text" id="saveNotesPath" value="/workspace/testing/markdown_notes" size="50">
         </p>
         <p>
             <label>Filename (slug):</label><br>
-            <input type="text" id="saveFilename" value="useeffect.md">
+            <input type="text" id="saveFilename" value="numpy.md">
         </p>
         <p>
             <label>Markdown Content (with frontmatter):</label><br>
@@ -71,7 +71,7 @@ Placeholder content.</textarea>
     <form id="quizGenForm" onsubmit="event.preventDefault(); runQuizGen();">
         <p>
             <label>Note Path:</label><br>
-            <input type="text" id="quizNotePath" value="/workspace/notes/useeffect.md" size="50">
+            <input type="text" id="quizNotePath" value="/workspace/testing/markdown_notes/fastapi.md" size="50">
         </p>
         <button type="submit">Generate Quiz Challenge</button>
     </form>
@@ -83,11 +83,11 @@ Placeholder content.</textarea>
     <form id="quizEvalForm" onsubmit="event.preventDefault(); runQuizEval();">
         <p>
             <label>Note Path:</label><br>
-            <input type="text" id="evalNotePath" value="/workspace/notes/useeffect.md" size="50">
+            <input type="text" id="evalNotePath" value="/workspace/testing/markdown_notes/fastapi.md" size="50">
         </p>
         <p>
             <label>Question Asked:</label><br>
-            <input type="text" id="evalQuestion" value="Write a useEffect hook." size="50">
+            <input type="text" id="evalQuestion" value="Explain the key features of FastAPI." size="50">
         </p>
         <p>
             <label>Expected Concepts (Comma Separated):</label><br>
