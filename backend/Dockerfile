@@ -20,8 +20,8 @@ COPY requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r ./requirements.txt
 
 # Copy the rest of the application files
-# Under 'backend/' root directory context, app/ and main.py are at the context root
 COPY app/ ./app/
+COPY testing/ ./testing/
 COPY main.py ./main.py
 
 # Expose default port (Render defaults to 10000)

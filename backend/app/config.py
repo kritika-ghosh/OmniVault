@@ -4,11 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 def get_default_notes_dir() -> str:
     config_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(config_dir)
-    if os.path.basename(parent_dir) == "backend":
-        workspace_dir = os.path.dirname(parent_dir)
-    else:
-        workspace_dir = parent_dir
-    return os.path.join(workspace_dir, "testing", "markdown_notes")
+    return os.path.join(parent_dir, "testing", "markdown_notes")
 
 def get_default_chroma_dir() -> str:
     config_dir = os.path.dirname(os.path.abspath(__file__))

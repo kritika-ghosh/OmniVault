@@ -16,12 +16,12 @@ OmniVault/
 │   ├── app/                  # FastAPI app routers, services, and agents
 │   ├── main.py               # Uvicorn entrypoint (FastAPI + Gradio UI)
 │   ├── Dockerfile            # Container deployment specification
-│   └── requirements.txt      # Python dependencies list
+│   ├── requirements.txt      # Python dependencies list
+│   └── testing/              # Testing sandbox directories (packaged inside container)
+│       ├── project_code/     # Mock codebase importing Pandas, requests, numpy, etc.
+│       └── markdown_notes/   # Mock notes vault covering FastAPI, pandas, requests, etc.
 ├── frontend/                 # Frontend client workspace
 │   └── index.html            # Unstyled HTML testing client (replaces test_client.html)
-├── testing/                  # Testing sandbox directories (user-specifiable inputs)
-│   ├── project_code/         # Mock codebase importing Pandas, requests, numpy, etc.
-│   └── markdown_notes/       # Mock notes vault covering FastAPI, pandas, requests, etc.
 ├── README.md                 # Project documentation
 └── .gitignore                # Git ignore files
 ```
@@ -58,5 +58,5 @@ Your local FastAPI instance will be available at `http://localhost:8000`.
 Open [frontend/index.html](file:///d:/Desktop/projects/OmniVault/frontend/index.html) in any web browser:
 1. Paste your backend URL (e.g. `https://omnivault.onrender.com` or `http://localhost:8000`) into the **API Base Host** input field.
 2. Click **Set Base URL**.
-3. Under **Scan Workspace**, input the project path and notes path (these can be the mock `/workspace/testing/project_code` inside Docker, or your local folder paths like `D:/Desktop/projects/OmniVault/testing/project_code`).
+3. Under **Scan Workspace**, input the project path and notes path (these can be the mock `/workspace/testing/project_code` inside Docker, or your local folder paths like `D:/Desktop/projects/OmniVault/backend/testing/project_code`).
 4. Click **Execute Scan** to inspect the detected conceptual gaps.
