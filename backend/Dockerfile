@@ -15,13 +15,13 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /workspace
 
 # Copy requirements and install python dependencies
-COPY requirements.txt ./requirements.txt
+COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r ./requirements.txt
 
 # Copy the rest of the application files
-COPY app/ ./app/
+COPY backend/app/ ./app/
 COPY testing/ ./testing/
-COPY main.py ./main.py
+COPY backend/main.py ./main.py
 
 # Expose default port (Render defaults to 10000, Hugging Face to 7860)
 EXPOSE 10000

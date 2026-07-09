@@ -1,9 +1,30 @@
 import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+def get_default_notes_dir() -> str:
+    config_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(config_dir)
+    if os.path.basename(parent_dir) == "backend":
+        workspace_dir = os.path.dirname(parent_dir)
+    else:
+        workspace_dir = parent_dir
+    return os.path.join(workspace_dir, "testing", "markdown_notes")
+
+def get_default_chroma_dir() -> str:
+    config_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(config_dir)
+    if os.path.basename(parent_dir) == "backend":
+        workspace_dir = os.path.dirname(parent_dir)
+    else:
+        workspace_dir = parent_dir
+    return os.path.join(workspace_dir, "chroma_db")
+
 class Settings(BaseSettings):
     PROJECT_NAME: str = "OmniVault"
-    CHROMADB_DIR: str = os.path.join(os.getcwd(), "chroma_db")
+    CHROMADB_DIR: str = get_default_chroma_dir()
+    DEFAULT_NOTES_DIR: str = get_default_notes_dir()
+
+
     
     # 1. Add this explicit field declaration so Pydantic permits and loads your key
     GROQ_API_KEY: str = ""
@@ -14,9 +35,12 @@ class Settings(BaseSettings):
 
     # Enforce Pydantic to read from your environment configuration file automatically
     model_config = SettingsConfigDict(
-        env_file=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"),
+        env_file=os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),
         env_file_encoding="utf-8",
-        extra="ignore"  # Softens constraints to bypass strict cross-variable validations
+        extra="ignore"
     )
 
+    SCHEDULER_INTERVAL_SECS: int = 60
+
 settings = Settings()
+
