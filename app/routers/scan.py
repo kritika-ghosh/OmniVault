@@ -6,7 +6,7 @@ from app.services.vector_store import VectorStoreService
 from app.services.notes_service import NotesService
 from app.routers.websocket import manager
 
-router = APIRouter(prefix="/gradio_api/v1/scan", tags=["scan"])
+router = APIRouter(prefix="/v1/scan", tags=["scan"])
 smart_detector = SmartGapDetector()
 vector_store = VectorStoreService()
 

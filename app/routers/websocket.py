@@ -2,7 +2,7 @@ import json
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from typing import List
 
-router = APIRouter(prefix="/gradio_api/ws", tags=["websocket"])
+router = APIRouter(prefix="/ws", tags=["websocket"])
 
 class ConnectionManager:
     def __init__(self):
