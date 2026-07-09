@@ -25,6 +25,7 @@ with gr.Blocks(title="OmniVault API Node") as demo:
     gr.Markdown("Backend engine endpoints are live and responding to web queries.")
 
 # 2. Register routers directly on Gradio's FastAPI application
+# Using the /gradio_api/v1/... prefixes lets requests bypass Gradio's SvelteKit proxy
 demo.app.include_router(scan.router)
 demo.app.include_router(synthesizer.router)
 demo.app.include_router(quiz.router)
@@ -39,7 +40,9 @@ def startup_event():
 def shutdown_event():
     shutdown_scheduler()
 
-# 4. Launch using debug=True to output tracebacks if there is a runtime crash
+# Export app for the Hugging Face ASGI server wrapper
+app = demo.app
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7860))
     demo.launch(server_name="0.0.0.0", server_port=port, debug=True)

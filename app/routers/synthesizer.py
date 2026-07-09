@@ -8,7 +8,7 @@ from app.services.notes_service import NotesService
 from app.services.vector_store import VectorStoreService
 from app.routers.websocket import manager
 
-router = APIRouter(prefix="/v1/synthesize", tags=["synthesis"])
+router = APIRouter(prefix="/gradio_api/v1/synthesize", tags=["synthesis"])
 synthesizer = ContentSynthesizer()
 vector_store = VectorStoreService()
 
