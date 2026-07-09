@@ -35,11 +35,11 @@ To deploy the backend to **Render.com** under the decoupled layout:
 1. Create a new **Web Service** on Render and connect your GitHub repository.
 2. Configure the following settings in your dashboard:
    - **Runtime:** `Docker`
-   - **Root Directory:** `.` (keep the default root folder, do not set to `backend`)
-   - **Dockerfile Path:** `backend/Dockerfile`
+   - **Root Directory:** `backend` (Setting this ensures frontend updates do not trigger backend rebuilds!)
+   - **Dockerfile Path:** `Dockerfile` (Relative to the `backend` folder)
 3. Add the following **Environment Variable** (under the Environment tab):
    - `GROQ_API_KEY`: *Your Groq Platform API key*
-4. Render will compile your container using the root build context (allowing it to copy the `testing/` sandbox folder if desired) and expose your public API URL (e.g., `https://omnivault.onrender.com`).
+4. Render will compile your container using the `backend/` build context, isolating it from frontend changes, and expose your public API URL (e.g., `https://omnivault.onrender.com`).
 
 ---
 
