@@ -49,6 +49,103 @@ class VectorStoreService:
 
         return metadata, content, is_empty
 
+    def _parse_markdown_content(self, text: str) -> Tuple[dict, str, bool]:
+        """
+        Extracts YAML frontmatter metadata and raw content from a raw markdown string.
+        """
+        content = ""
+        metadata = {}
+        is_empty = True
+
+        try:
+            # Regex to match frontmatter delimited by ---
+            match = re.match(r"^---\s*\n(.*?)\n---\s*\n(.*)", text, re.DOTALL)
+            if match:
+                frontmatter_raw = match.group(1)
+                content = match.group(2).strip()
+                metadata = yaml.safe_load(frontmatter_raw) or {}
+            else:
+                content = text.strip()
+
+            is_empty = len(content) == 0
+        except Exception:
+            pass
+
+        return metadata, content, is_empty
+
+    def index_notes_vault_in_memory(self, notes_files: List[dict]) -> Tuple[chromadb.Collection, Dict[str, Dict]]:
+        """
+        Indexes a list of in-memory note files into an ephemeral, stateless ChromaDB collection.
+        """
+        client = chromadb.EphemeralClient()
+        collection = client.get_or_create_collection(
+            name="temp_omnivault_notes",
+            embedding_function=self.embedding_fn,
+            metadata={"hnsw:space": "cosine"}
+        )
+        
+        existing_notes_meta = {}
+        ids = []
+        documents = []
+        metadatas = []
+
+        for f in notes_files:
+            rel_path = f.get("path", "")
+            content_raw = f.get("content", "")
+            filename = os.path.basename(rel_path)
+            stem = os.path.splitext(filename)[0]
+
+            frontmatter, content, is_empty = self._parse_markdown_content(content_raw)
+            
+            slug = frontmatter.get("slug", stem).lower().strip()
+            title = frontmatter.get("title", stem)
+            status = frontmatter.get("status", "draft")
+
+            meta_record = {
+                "title": title,
+                "status": status,
+                "is_empty": is_empty,
+                "file_path": rel_path
+            }
+            
+            existing_notes_meta[slug] = meta_record
+
+            if not is_empty:
+                ids.append(slug)
+                documents.append(content)
+                metadatas.append({
+                    "title": title,
+                    "status": status
+                })
+
+        if ids:
+            collection.upsert(
+                ids=ids,
+                documents=documents,
+                metadatas=metadatas
+            )
+
+        return collection, existing_notes_meta
+
+    def semantic_search_on_collection(self, collection: chromadb.Collection, query: str, limit: int = 1) -> List[Dict]:
+        """
+        Queries an ephemeral ChromaDB collection for text similarity.
+        """
+        results = collection.query(
+            query_texts=[query],
+            n_results=limit
+        )
+        
+        parsed_results = []
+        if results and results['ids'] and results['ids'][0]:
+            for i in range(len(results['ids'][0])):
+                parsed_results.append({
+                    "id": results['ids'][0][i],
+                    "score": results['distances'][0][i] if 'distances' in results else 1.0,
+                    "metadata": results['metadatas'][0][i] if 'metadatas' in results else {}
+                })
+        return parsed_results
+
     def index_notes_vault(self, notes_dir_path: str) -> Dict[str, Dict]:
         """
         Scans the notes directory, builds metadata records, and indexes notes into ChromaDB.

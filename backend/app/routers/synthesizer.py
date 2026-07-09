@@ -2,6 +2,7 @@ import json
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from typing import Optional
 from pathlib import Path
 from app.agents.synthesizer import ContentSynthesizer
 from app.services.notes_service import NotesService
@@ -17,7 +18,7 @@ class SynthesizeRequest(BaseModel):
     project_context: str = "General Tech Stack Workspace"
 
 class SaveNoteRequest(BaseModel):
-    notes_path: str
+    notes_path: Optional[str] = None
     filename: str
     content: str
 
@@ -36,20 +37,30 @@ async def stream_note_generation(payload: SynthesizeRequest):
 @router.post("/save")
 async def save_synthesized_note(payload: SaveNoteRequest):
     """
-    A local proxy endpoint that writes the synthesized note text directly to the file system.
-    Re-indexes ChromaDB and broadcasts graph updates via WebSockets.
+    Writes the synthesized note text directly to the file system (Local Mode),
+    or returns it directly for browser-side saving (Cloud Mode).
     """
+    # 1. Stateless Cloud/In-Memory Mode
+    if not payload.notes_path or payload.notes_path == "in-memory":
+        try:
+            return {
+                "status": "success",
+                "path": "in-memory",
+                "filename": payload.filename,
+                "content": payload.content,
+                "warnings": synthesizer.validate_code_blocks(payload.content)
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to process in-memory note: {str(e)}")
+
+    # 2. Local Disk Mode (Fallback)
     notes_dir = Path(payload.notes_path)
     if not notes_dir.exists():
         raise HTTPException(status_code=400, detail="Target notes folder directory not found on system disk.")
         
     file_path = notes_dir / payload.filename
     try:
-        # Parse frontmatter and content body
-        frontmatter, content, is_empty = NotesService.parse_markdown_file(file_path)
-        
-        # If it doesn't match normal parsing, or is new, we write the raw text directly
-        # Since content from editor contains frontmatter, let's parse frontmatter from input
+        # Create temp file to parse correctly
         input_file = notes_dir / f"temp_{payload.filename}"
         with open(input_file, "w", encoding="utf-8") as f:
             f.write(payload.content)
@@ -62,10 +73,10 @@ async def save_synthesized_note(payload: SaveNoteRequest):
         # Write clean note to disk
         NotesService.write_note_to_disk(file_path, parsed_fm, parsed_content)
         
-        # Re-index this notes directory
+        # Re-index local notes directory
         vector_store.index_notes_vault(str(notes_dir))
         
-        # Broadcast graph updates
+        # Broadcast updates
         await manager.broadcast({
             "type": "graph_update",
             "message": f"Note '{payload.filename}' was saved successfully."

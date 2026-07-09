@@ -145,7 +145,80 @@ class SmartGapDetector:
                 pass
         return imported_terms
 
-    def compute_smart_gaps(self, technical_terms: Set[str], existing_notes_meta: Dict[str, Dict]) -> List[Dict]:
+    def extract_dependencies_in_memory(self, project_files: List[Dict[str, str]]) -> Set[str]:
+        """
+        Extracts declared requirements from configuration files in memory.
+        """
+        detected_terms = set()
+        for f in project_files:
+            filename = f.get("path", "").lower()
+            content = f.get("content", "")
+            
+            if filename.endswith("package.json"):
+                try:
+                    data = json.loads(content)
+                    deps = {**data.get("dependencies", {}), **data.get("devDependencies", {})}
+                    for d in deps.keys():
+                        term = d.lower()
+                        detected_terms.add(term)
+                        self.term_sources.setdefault(term, set()).add("package.json")
+                except Exception: pass
+                
+            elif filename.endswith("requirements.txt"):
+                try:
+                    for line in content.splitlines():
+                        line = line.strip()
+                        if line and not line.startswith('#'):
+                            pkg = re.split(r'==|>=|<=|>|<|~=', line)[0].strip()
+                            if pkg:
+                                term = pkg.lower()
+                                detected_terms.add(term)
+                                self.term_sources.setdefault(term, set()).add("requirements.txt")
+                except Exception: pass
+        return detected_terms
+
+    def scan_workspace_codebase_in_memory(self, project_files: List[Dict[str, str]]) -> Set[str]:
+        """
+        Extracts import statements from project files in memory.
+        """
+        imported_terms = set()
+        for f in project_files:
+            rel_path = f.get("path", "")
+            content = f.get("content", "")
+            
+            parts = rel_path.replace("\\", "/").split("/")
+            if any(p in parts for p in ["node_modules", "venv", ".git", "__pycache__"]):
+                continue
+                
+            ext = "." + rel_path.split(".")[-1] if "." in rel_path else ""
+            
+            try:
+                terms = set()
+                if ext == ".py":
+                    terms = self._extract_ast_imports_python(content)
+                elif ext in [".js", ".jsx"]:
+                    terms = self._extract_ast_imports_js_ts(content, "javascript")
+                elif ext in [".ts", ".tsx"]:
+                    terms = self._extract_ast_imports_js_ts(content, "typescript")
+                elif ext in [".html", ".css", ".md"]:
+                    continue
+                else:
+                    for line in content.splitlines():
+                        for pattern in self.fallback_patterns:
+                            match = pattern.search(line)
+                            if match:
+                                term = match.group(1).split('/')[0] if '/' in match.group(1) else match.group(1)
+                                if term and not term.startswith('.'):
+                                    terms.add(term.strip().lower())
+                
+                for t in terms:
+                    imported_terms.add(t)
+                    self.term_sources.setdefault(t, set()).add(rel_path)
+            except Exception:
+                pass
+        return imported_terms
+
+    def compute_smart_gaps(self, technical_terms: Set[str], existing_notes_meta: Dict[str, Dict], collection = None) -> List[Dict]:
         """
         Cross-references terms with defensive vector checks. Even if an explicit 
         note file doesn't match the term name, a semantic vector check verifies 
@@ -165,11 +238,14 @@ class SmartGapDetector:
                         "classification": "knowledge_debt",
                         "reason": f"Note file '{term}.md' exists but lacks clear conceptual content body definitions.",
                         "detected_from": sources
-                    })
+					})
                 continue
 
             # Step B: Semantic Search Guardrail 
-            semantic_matches = self.vector_store.semantic_search(query=term, limit=1)
+            if collection is not None:
+                semantic_matches = self.vector_store.semantic_search_on_collection(collection, query=term, limit=1)
+            else:
+                semantic_matches = self.vector_store.semantic_search(query=term, limit=1)
             
             is_covered_semantically = False
             if semantic_matches:
