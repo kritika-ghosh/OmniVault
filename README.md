@@ -4,7 +4,7 @@ emoji: 🗃️
 colorFrom: indigo
 colorTo: purple
 sdk: gradio
-app_file: app.py
+app_file: main.py
 pinned: false
 ---
 
@@ -32,8 +32,8 @@ All custom endpoints are exposed under the `/gradio_api/` prefix to bypass Gradi
 
 To deploy this backend as a Space on Hugging Face:
 1. Create a new Space on [Hugging Face](https://huggingface.co/new-space).
-2. Set the SDK to **Gradio** (it will use `app.py` as entrypoint).
+2. Set the SDK to **Gradio** (it will use `main.py` as entrypoint).
 3. Upload/push this repository to your Space repository.
 4. Set your **Space Secrets** (in Space settings):
    *   `GROQ_API_KEY`: Your Groq platform API key.
-5. The container will build automatically, run `app.py`, and expose the API and Gradio health check on port `7860`.
+5. The container will build automatically, run `main.py`, and expose the API and Gradio health check on port `7860`.

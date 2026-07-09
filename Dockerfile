@@ -21,10 +21,10 @@ RUN pip install --no-cache-dir -r ./requirements.txt
 # Copy the rest of the application files
 COPY app/ ./app/
 COPY testing/ ./testing/
-COPY app.py ./app.py
+COPY main.py ./main.py
 
 # Expose default port (Render defaults to 10000, Hugging Face to 7860)
 EXPOSE 10000
 
 # Start the uvicorn server on the port injected dynamically by the host environment
-CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-10000}"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000}"]
