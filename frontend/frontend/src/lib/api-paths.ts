@@ -1,4 +1,4 @@
-export const HOST = "https://omnivault.onrender.com";
+export const HOST = process.env.NEXT_PUBLIC_BACKEND_URL || "https://omnivault.onrender.com";
 
 export const API_PATHS = {
     SCAN: "/v1/scan",
