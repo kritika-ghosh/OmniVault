@@ -25,15 +25,25 @@ export async function readFilesRecursively(
     const entryPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
     if (entry.kind === "file") {
       try {
-        const file = await entry.getFile();
-        const content = await file.text();
-        files.push({ path: entryPath, content });
+        const ext = entry.name.split(".").pop()?.toLowerCase() || "";
+        const allowedExtensions = [
+          "py", "js", "jsx", "ts", "tsx", "json", "txt", "toml", "mod", 
+          "gemfile", "gem", "md", "html", "css", "yaml", "yml", "ini", "conf"
+        ];
+        const isSpecialConfig = ["gemfile", "gemfile.lock", "go.mod", "cargo.toml"].includes(entry.name.toLowerCase());
+
+        if (allowedExtensions.includes(ext) || isSpecialConfig) {
+          const file = await entry.getFile();
+          const content = await file.text();
+          files.push({ path: entryPath, content });
+        }
       } catch (err) {
         console.error(`Failed to read file ${entryPath}:`, err);
       }
     } else if (entry.kind === "directory") {
       // Exclude standard build/env folders to speed up processing
-      if (!["node_modules", ".git", "venv", ".next", "dist", "build", "__pycache__"].includes(entry.name)) {
+      const excludedDirs = ["node_modules", ".git", "venv", ".next", "dist", "build", "__pycache__", "chroma_db", ".vercel", "testing", ".agents"];
+      if (!excludedDirs.includes(entry.name)) {
         files.push(...(await readFilesRecursively(entry, entryPath)));
       }
     }
