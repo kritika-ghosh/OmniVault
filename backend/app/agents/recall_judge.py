@@ -3,6 +3,7 @@ import sys
 import json
 import subprocess
 import tempfile
+# pyrefly: ignore [missing-import]
 from litellm import completion
 from typing import List, Dict
 from app.config import settings

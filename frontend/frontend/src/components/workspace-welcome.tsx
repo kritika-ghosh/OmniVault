@@ -2,13 +2,12 @@
 
 import React from "react";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import { useWorkspace } from "@/context/WorkspaceContext";
+import { Folder, Play, CheckCircle2, History, Database } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function WorkspaceWelcome() {
   const {
-    apiHost,
-    setApiHost,
     projectPath,
     setProjectPath,
     notesPath,
@@ -21,7 +20,7 @@ export default function WorkspaceWelcome() {
     statusMessage,
     setStatusMessage,
     executeScan,
-    loadMockData,
+    vaults,
   } = useWorkspace();
 
   const handleSelectProjectDir = async () => {
@@ -57,128 +56,122 @@ export default function WorkspaceWelcome() {
   };
 
   return (
-    <div className="w-full flex-1 flex flex-col items-center justify-center p-6 md:p-12 overflow-y-auto">
-      <div className="max-w-2xl w-full flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="w-full flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto bg-background text-foreground select-none">
+      <div className="max-w-xl w-full space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
-        {/* Welcome message with text clipping */}
-        <div className="text-center space-y-3">
-          <h1 className="text-5xl font-extrabold tracking-tight bg-linear-to-r from-primary via-amber-400 to-emerald-400 bg-clip-text text-transparent pb-1">
-            Good Morning!
+        {/* Typographic Header */}
+        <div className="space-y-2 text-center">
+          <h1 className="text-4xl font-black tracking-tight text-foreground">
+            OmniVault
           </h1>
-          <p className="text-xs font-mono text-muted-foreground/80 tracking-wide">
-            // Analyze dependencies, code imports, and identify knowledge debt in your notes.
+          <p className="text-xs font-mono text-muted-foreground/75 tracking-wider">
+            // ANALYZE KNOWLEDGE DEBT AND SYSTEM BOUNDARIES
           </p>
         </div>
 
-        {/* Configuration Card */}
-        <div className="bg-card border border-border rounded-xl p-6 shadow-2xl space-y-6">
-          <div className="border-b border-border pb-3 flex items-center justify-between">
-            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" /> 
-              Initialize Workspace Scan
-            </h2>
-            <span className="text-[10px] font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded">
-              Web API
+        {/* Directory Pickers (Borderless subtle row lists) */}
+        <div className="space-y-4">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest block pl-1">
+              Workspace Directories
             </span>
-          </div>
-
-          {/* Host input */}
-          <div className="flex flex-col gap-2">
-            <label className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
-              API Base Host
-            </label>
-            <Input
-              type="text"
-              value={apiHost}
-              onChange={(e) => setApiHost(e.target.value)}
-              className="bg-background border-border text-foreground focus-visible:ring-primary font-mono text-xs h-10"
-            />
-          </div>
-
-          {/* Directory Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Project Folder */}
-            <div className="bg-muted/30 border border-border p-4 rounded-lg flex flex-col gap-3">
-              <label className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
-                Project Files Folder
-              </label>
-              <div className="flex items-center gap-2">
+            
+            <div className="space-y-2">
+              {/* Project path row */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors border border-border/20">
+                <div className="flex flex-col min-w-0 pr-4">
+                  <span className="text-xs font-bold text-foreground">Project Directory</span>
+                  <span className="text-[11px] font-mono text-muted-foreground truncate block mt-0.5">
+                    {projectPath || "Not selected"}
+                  </span>
+                </div>
                 <Button 
                   onClick={handleSelectProjectDir}
                   disabled={isLoading}
-                  className="bg-secondary hover:bg-secondary/80 text-secondary-foreground text-xs border border-border h-9 px-3 shrink-0 cursor-pointer font-semibold"
+                  variant="ghost"
+                  className="text-xs hover:bg-background border border-border/40 shrink-0 cursor-pointer h-8 px-3 font-semibold"
                 >
-                  Choose Folder
+                  <Folder className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                  Choose
                 </Button>
-                <div className="text-xs font-mono text-foreground truncate bg-background px-2.5 py-2 rounded border border-border w-full">
-                  {projectPath || "No folder selected..."}
-                </div>
               </div>
-              {projectHandle && (
-                <span className="text-[10px] text-emerald-500 font-semibold flex items-center gap-1 font-mono">
-                  ● Handles Attached
-                </span>
-              )}
-            </div>
 
-            {/* Notes Folder */}
-            <div className="bg-muted/30 border border-border p-4 rounded-lg flex flex-col gap-3">
-              <label className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
-                Notes Vault Folder
-              </label>
-              <div className="flex items-center gap-2">
+              {/* Notes path row */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors border border-border/20">
+                <div className="flex flex-col min-w-0 pr-4">
+                  <span className="text-xs font-bold text-foreground">Notes Vault</span>
+                  <span className="text-[11px] font-mono text-muted-foreground truncate block mt-0.5">
+                    {notesPath || "Not selected"}
+                  </span>
+                </div>
                 <Button 
                   onClick={handleSelectNotesDir}
                   disabled={isLoading}
-                  className="bg-secondary hover:bg-secondary/80 text-secondary-foreground text-xs border border-border h-9 px-3 shrink-0 cursor-pointer font-semibold"
+                  variant="ghost"
+                  className="text-xs hover:bg-background border border-border/40 shrink-0 cursor-pointer h-8 px-3 font-semibold"
                 >
-                  Choose Folder
+                  <Folder className="w-3.5 h-3.5 mr-1.5 text-amber-500" />
+                  Choose
                 </Button>
-                <div className="text-xs font-mono text-foreground truncate bg-background px-2.5 py-2 rounded border border-border w-full">
-                  {notesPath || "No folder selected..."}
-                </div>
               </div>
-              {notesHandle && (
-                <span className="text-[10px] text-emerald-500 font-semibold flex items-center gap-1 font-mono">
-                  ● Handles Attached
-                </span>
-              )}
             </div>
-          </div>
-
-          {/* Scan button */}
-          <Button
-            onClick={executeScan}
-            disabled={isLoading || (!projectPath && !projectHandle)}
-            className="w-full py-6 text-xs font-bold tracking-widest uppercase bg-primary hover:bg-primary/95 text-primary-foreground disabled:bg-muted disabled:text-muted-foreground rounded-lg transition-all shadow-md shadow-primary/10 cursor-pointer"
-          >
-            {isLoading ? (
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                Scanning Workspace...
-              </div>
-            ) : (
-              "Execute Workspace Scan"
-            )}
-          </Button>
-
-          {/* Load Mock Data button */}
-          <div className="flex justify-center border-t border-border pt-4">
-            <Button
-              onClick={loadMockData}
-              variant="outline"
-              disabled={isLoading}
-              className="text-xs text-muted-foreground border-border hover:bg-muted hover:text-foreground cursor-pointer font-semibold px-4 h-9 w-full flex items-center justify-center gap-1.5"
-            >
-              🚀 Load Mock Data (UI Testing)
-            </Button>
           </div>
         </div>
 
-        {/* Status log */}
+        {/* Action Button */}
+        <Button
+          onClick={executeScan}
+          disabled={isLoading || (!projectPath && !projectHandle)}
+          className="w-full h-12 text-xs font-bold tracking-widest uppercase bg-primary hover:bg-primary/95 text-primary-foreground disabled:bg-muted disabled:text-muted-foreground rounded-xl transition-all shadow-lg hover:shadow-primary/5 cursor-pointer flex items-center justify-center gap-2"
+        >
+          {isLoading ? (
+            <>
+              <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+              Scanning Vault...
+            </>
+          ) : (
+            <>
+              <Play className="w-3.5 h-3.5 fill-current" />
+              Execute Scan
+            </>
+          )}
+        </Button>
+
+        {/* Vault History List */}
+        {vaults && vaults.length > 0 && (
+          <div className="space-y-2">
+            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest block pl-1 flex items-center gap-1.5">
+              <History className="w-3.5 h-3.5 text-primary" />
+              Recent Vaults
+            </span>
+            <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto pr-1">
+              {vaults.map((vaultPath) => (
+                <button
+                  key={vaultPath}
+                  onClick={() => {
+                    setNotesPath(vaultPath);
+                    setStatusMessage(`Restored vault path: ${vaultPath}`);
+                  }}
+                  className="flex items-center justify-between text-xs font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 px-3.5 py-2.5 rounded-xl border border-border/20 bg-muted/10 transition-all text-left cursor-pointer truncate"
+                >
+                  <span className="truncate pr-4 flex items-center gap-2">
+                    <Database className="w-3.5 h-3.5 shrink-0 text-amber-500/80" />
+                    {vaultPath}
+                  </span>
+                  <span className="text-[9px] font-sans font-semibold text-primary shrink-0">
+                    Load Path
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Status Messaging */}
         {statusMessage && (
-          <div className="text-center font-mono text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 py-3 px-4 rounded-lg shadow-sm">
-            {statusMessage}
+          <div className="flex items-center gap-2 font-mono text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 py-3 px-4 rounded-xl shadow-xs select-text">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-amber-500" />
+            <span className="flex-1">{statusMessage}</span>
           </div>
         )}
       </div>

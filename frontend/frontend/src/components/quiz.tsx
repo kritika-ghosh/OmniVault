@@ -46,6 +46,9 @@ export default function Quiz() {
     setQuizUserCode,
     quizEvaluation,
     setQuizEvaluation,
+    vaultSessions,
+    activeVaultPath,
+    setActiveVaultPath,
   } = useWorkspace();
 
   const selectedNote = useMemo(() => {
@@ -138,6 +141,30 @@ export default function Quiz() {
 
   return (
     <div className="w-full h-full flex flex-col bg-background text-foreground overflow-y-auto p-6 select-none">
+      {/* Study Vault Switcher */}
+      {!currentQuiz && Object.keys(vaultSessions).length > 0 && (
+        <div className="flex items-center gap-1.5 mb-6 bg-muted/30 p-2 rounded-xl border border-border/20 self-end">
+          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest pl-1">Study Vault:</span>
+          <select
+            value={activeVaultPath}
+            onChange={(e) => {
+              setActiveVaultPath(e.target.value);
+              setQuizSelectedNotePath("");
+            }}
+            className="bg-transparent text-xs font-mono text-foreground focus:outline-hidden cursor-pointer"
+          >
+            {Object.keys(vaultSessions).map((path) => {
+              const label = path.split(/[/\\]/).pop() || path;
+              return (
+                <option key={path} value={path} className="bg-background text-foreground">
+                  {label}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+      )}
+
       {!currentQuiz ? (
         <QuizWelcome
           selectedNotePath={quizSelectedNotePath}

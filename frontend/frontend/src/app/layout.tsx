@@ -7,6 +7,13 @@ import { AppSidebar } from '@/components/app-sidebar'
 import { WorkspaceProvider } from "@/context/WorkspaceContext";
 import { Scan, FilePlus, Network, GraduationCap, Sun, Moon } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -56,7 +63,9 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
       <body className="min-h-screen bg-background text-foreground antialiased overflow-hidden">
         <WorkspaceProvider>
           <TooltipProvider>
-            <SidebarProvider className="flex flex-row h-screen w-screen overflow-hidden">
+            <ContextMenu>
+              <ContextMenuTrigger render={<div className="w-full h-full flex flex-row overflow-hidden" />}>
+                <SidebarProvider className="flex flex-row h-screen w-screen overflow-hidden">
               {/* Left stuck Vertical Menubar */}
               <header className="w-12 h-full border-r border-border bg-sidebar flex flex-col items-center justify-between py-2 z-50 shrink-0 select-none">
                 <div className="flex flex-col items-center w-full">
@@ -81,7 +90,7 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
                         onClick={() => navigate('scan')}
                         className={cn(
                           "w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer",
-                          activeView === "scan"
+                          activeView.startsWith("scan")
                             ? "bg-primary/15 text-primary font-bold shadow-xs"
                             : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                         )}
@@ -160,9 +169,30 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
                 </main>
               </div>
             </SidebarProvider>
-          </TooltipProvider>
-        </WorkspaceProvider>
-      </body>
+          </ContextMenuTrigger>
+          <ContextMenuContent className="w-52">
+            <ContextMenuItem onClick={() => navigate('scan')}>
+              <Scan className="w-4 h-4 mr-2" />
+              New Scan Dashboard
+            </ContextMenuItem>
+            <ContextMenuItem onClick={handleCreateNote}>
+              <FilePlus className="w-4 h-4 mr-2" />
+              Create New Note
+            </ContextMenuItem>
+            <ContextMenuItem onClick={() => navigate('quiz')}>
+              <GraduationCap className="w-4 h-4 mr-2" />
+              Active Recall Quiz
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem onClick={() => navigate('node-graph')}>
+              <Network className="w-4 h-4 mr-2" />
+              Knowledge Graph
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      </TooltipProvider>
+    </WorkspaceProvider>
+  </body>
     </html>
   );
 }

@@ -11,9 +11,13 @@ import "dockview-react/dist/styles/dockview.css";
 import { customTheme } from "@/lib/dockview";
 
 const components = {
-  scan: (props: IDockviewPanelProps) => (
+  scan: (props: IDockviewPanelProps<{ forceWelcome?: boolean; vaultPath?: string }>) => (
     <div className="w-full h-full overflow-y-auto">
-      <NewPage />
+      <NewPage 
+        forceWelcome={props.params.forceWelcome} 
+        vaultPath={props.params.vaultPath} 
+        panel={props.api} 
+      />
     </div>
   ),
   "node-graph": (props: IDockviewPanelProps) => (
@@ -46,7 +50,7 @@ export default function Home() {
     event.api.addPanel({
       id: "scan",
       component: "scan",
-      title: "Workspace Scan",
+      title: "Scan Workspace",
     });
   }, []);
 
@@ -60,7 +64,21 @@ export default function Home() {
       let title = view;
       if (view === "node-graph") title = "Node Graph";
       if (view === "quiz") title = "Quiz";
-      if (view === "scan") title = "Workspace Scan";
+      if (view === "scan") title = "Scan Workspace";
+
+      if (view === "scan") {
+        const panelId = `scan-${Date.now()}`;
+        api.addPanel({
+          id: panelId,
+          component: "scan",
+          title: "Scan Workspace",
+          params: {
+            forceWelcome: true,
+          },
+        });
+        window.dispatchEvent(new CustomEvent("active-view-changed", { detail: panelId }));
+        return;
+      }
 
       const existingPanel = api.getPanel(view);
       if (existingPanel) {
@@ -121,6 +139,30 @@ export default function Home() {
       }
     };
 
+    const handleOpenScanDashboard = (e: Event) => {
+      const targetPath = (e as CustomEvent).detail;
+      if (!targetPath) return;
+
+      const cleanId = targetPath.toLowerCase().replace(/[^a-z0-9]/g, "-");
+      const panelId = `scan-${cleanId}`;
+      const existingPanel = api.getPanel(panelId);
+      if (existingPanel) {
+        existingPanel.focus();
+      } else {
+        const dirName = targetPath.split(/[/\\]/).pop() || targetPath;
+        api.addPanel({
+          id: panelId,
+          component: "scan",
+          title: dirName,
+          params: {
+            forceWelcome: false,
+            vaultPath: targetPath,
+          },
+        });
+      }
+      window.dispatchEvent(new CustomEvent("active-view-changed", { detail: panelId }));
+    };
+
     const activePanelListener = api.onDidActivePanelChange((event) => {
       if (event.panel) {
         window.dispatchEvent(new CustomEvent("active-view-changed", { detail: event.panel.id }));
@@ -131,11 +173,13 @@ export default function Home() {
     window.addEventListener("open-note", handleOpenNote);
     window.addEventListener("open-quiz-editor", handleOpenQuizEditor);
     window.addEventListener("close-quiz-editor", handleCloseQuizEditor);
+    window.addEventListener("open-scan-dashboard", handleOpenScanDashboard);
     return () => {
       window.removeEventListener("navigate-view", handleNavigate);
       window.removeEventListener("open-note", handleOpenNote);
       window.removeEventListener("open-quiz-editor", handleOpenQuizEditor);
       window.removeEventListener("close-quiz-editor", handleCloseQuizEditor);
+      window.removeEventListener("open-scan-dashboard", handleOpenScanDashboard);
       activePanelListener.dispose();
     };
   }, [api]);

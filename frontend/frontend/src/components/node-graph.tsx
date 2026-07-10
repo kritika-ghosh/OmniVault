@@ -29,7 +29,7 @@ interface GraphLink {
 }
 
 export default function NodeGraph() {
-  const { notesFiles, scanResult } = useWorkspace();
+  const { notesFiles, scanResult, vaultSessions, activeVaultPath, setActiveVaultPath } = useWorkspace();
   const [is3D, setIs3D] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
@@ -195,8 +195,29 @@ export default function NodeGraph() {
           </span>
         </div>
 
-        <div className="flex items-center bg-muted p-0.5 rounded-lg border border-border">
-          <button
+        <div className="flex items-center gap-3">
+          {Object.keys(vaultSessions).length > 0 && (
+            <div className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-lg border border-border">
+              <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Vault:</span>
+              <select
+                value={activeVaultPath}
+                onChange={(e) => setActiveVaultPath(e.target.value)}
+                className="bg-transparent text-xs font-mono text-foreground focus:outline-hidden cursor-pointer"
+              >
+                {Object.keys(vaultSessions).map((path) => {
+                  const label = path.split(/[/\\]/).pop() || path;
+                  return (
+                    <option key={path} value={path} className="bg-background text-foreground">
+                      {label}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
+
+          <div className="flex items-center bg-muted p-0.5 rounded-lg border border-border">
+            <button
             onClick={() => setIs3D(false)}
             className={`px-3 py-1 rounded text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
               !is3D
@@ -220,6 +241,7 @@ export default function NodeGraph() {
           </button>
         </div>
       </div>
+    </div>
 
       {/* Render Graph Container */}
       <div ref={containerRef} className="flex-1 w-full h-full relative overflow-hidden bg-black/5 dark:bg-black/25">

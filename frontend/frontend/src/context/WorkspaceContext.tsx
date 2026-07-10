@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { HOST, API_PATHS } from "@/lib/api-paths";
 import {
   readFilesRecursively,
@@ -10,6 +10,14 @@ import {
   ScanResponse,
 } from "@/lib/file-directory";
 import { mockScanResponse, mockNotesFiles, mockSortedTerms } from "@/lib/data";
+
+export interface VaultSession {
+  notesPath: string;
+  projectPath: string;
+  scanResult: ScanResponse | null;
+  notesFiles: FilePayload[];
+  sortedTerms: string[];
+}
 
 interface WorkspaceContextProps {
   apiHost: string;
@@ -48,21 +56,28 @@ interface WorkspaceContextProps {
   setQuizUserCode: (code: string) => void;
   quizEvaluation: any | null;
   setQuizEvaluation: (evalObj: any | null) => void;
+  deleteNote: (filename: string) => Promise<void>;
+  vaults: string[];
+  setVaults: (vaults: string[]) => void;
+  vaultSessions: Record<string, VaultSession>;
+  setVaultSessions: React.Dispatch<React.SetStateAction<Record<string, VaultSession>>>;
+  activeVaultPath: string;
+  setActiveVaultPath: (path: string) => void;
+  deleteVaultSession: (path: string) => void;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextProps | undefined>(undefined);
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [apiHost, setApiHost] = useState(HOST);
-  const [projectPath, setProjectPath] = useState("");
-  const [notesPath, setNotesPath] = useState("");
   const [projectHandle, setProjectHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [notesHandle, setNotesHandle] = useState<FileSystemDirectoryHandle | null>(null);
-  const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
-  const [sortedTerms, setSortedTerms] = useState<string[]>([]);
-  const [notesFiles, setNotesFiles] = useState<FilePayload[]>([]);
+  
+  // Local picker inputs (for welcome screen when no active vault exists yet)
+  const [localProjectPath, setLocalProjectPath] = useState("");
+  const [localNotesPath, setLocalNotesPath] = useState("");
 
   // Shared Quiz states
   const [quizSelectedNotePath, setQuizSelectedNotePath] = useState("");
@@ -72,97 +87,201 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [quizUserCode, setQuizUserCode] = useState("");
   const [quizEvaluation, setQuizEvaluation] = useState<any | null>(null);
 
-  const resetWorkspace = useCallback(() => {
-    setScanResult(null);
-    setStatusMessage("");
-    setSortedTerms([]);
-    setNotesFiles([]);
-    setProjectHandle(null);
-    setNotesHandle(null);
-    setProjectPath("");
-    setNotesPath("");
-    
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("workspace_projectPath");
-      localStorage.removeItem("workspace_notesPath");
-      localStorage.removeItem("workspace_scanResult");
-      localStorage.removeItem("workspace_sortedTerms");
-      localStorage.removeItem("workspace_notesFiles");
-    }
-  }, []);
-
-  const loadMockData = useCallback(() => {
-    setScanResult(mockScanResponse);
-    setNotesFiles(mockNotesFiles);
-    setSortedTerms(mockSortedTerms);
-    setProjectPath("mock-project");
-    setNotesPath("mock-notes");
-    setStatusMessage("Loaded UI testing mock data.");
-  }, []);
+  // Vaults history list
+  const [vaults, setVaults] = useState<string[]>([]);
+  // Map of notesPath -> VaultSession
+  const [vaultSessions, setVaultSessions] = useState<Record<string, VaultSession>>({});
+  const [activeVaultPath, setActiveVaultPath] = useState<string>("");
 
   // Hydrate state from localStorage on mount
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedProjPath = localStorage.getItem("workspace_projectPath");
-      const savedNotesPath = localStorage.getItem("workspace_notesPath");
-      const savedScanResult = localStorage.getItem("workspace_scanResult");
-      const savedSortedTerms = localStorage.getItem("workspace_sortedTerms");
-      const savedNotesFiles = localStorage.getItem("workspace_notesFiles");
+      const savedVaults = localStorage.getItem("workspace_vaults");
+      const savedSessions = localStorage.getItem("workspace_vault_sessions");
+      const savedActive = localStorage.getItem("workspace_active_vault_path");
 
-      if (savedProjPath) setProjectPath(savedProjPath);
-      if (savedNotesPath) setNotesPath(savedNotesPath);
-      if (savedScanResult) {
-        try { setScanResult(JSON.parse(savedScanResult)); } catch (e) {}
+      if (savedVaults) {
+        try { setVaults(JSON.parse(savedVaults)); } catch (e) {}
       }
-      if (savedSortedTerms) {
-        try { setSortedTerms(JSON.parse(savedSortedTerms)); } catch (e) {}
+      if (savedSessions) {
+        try { setVaultSessions(JSON.parse(savedSessions)); } catch (e) {}
       }
-      if (savedNotesFiles) {
-        try { setNotesFiles(JSON.parse(savedNotesFiles)); } catch (e) {}
+      if (savedActive) {
+        setActiveVaultPath(savedActive);
       }
     }
   }, []);
 
-  // Save changes to localStorage on state updates
-  React.useEffect(() => {
+  // Save vaultSessions on changes
+  useEffect(() => {
     if (typeof window !== "undefined") {
-      if (projectPath) localStorage.setItem("workspace_projectPath", projectPath);
+      localStorage.setItem("workspace_vault_sessions", JSON.stringify(vaultSessions));
     }
-  }, [projectPath]);
+  }, [vaultSessions]);
 
-  React.useEffect(() => {
+  // Save activeVaultPath on changes
+  useEffect(() => {
     if (typeof window !== "undefined") {
-      if (notesPath) localStorage.setItem("workspace_notesPath", notesPath);
+      localStorage.setItem("workspace_active_vault_path", activeVaultPath);
     }
-  }, [notesPath]);
+  }, [activeVaultPath]);
 
-  React.useEffect(() => {
+  // Save vaults list on changes
+  useEffect(() => {
     if (typeof window !== "undefined") {
-      if (scanResult) localStorage.setItem("workspace_scanResult", JSON.stringify(scanResult));
+      localStorage.setItem("workspace_vaults", JSON.stringify(vaults));
     }
-  }, [scanResult]);
+  }, [vaults]);
 
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (sortedTerms && sortedTerms.length > 0) {
-        localStorage.setItem("workspace_sortedTerms", JSON.stringify(sortedTerms));
-      }
+  // Keep vaults history synchronized
+  useEffect(() => {
+    if (activeVaultPath && !vaults.includes(activeVaultPath) && activeVaultPath !== "mock-notes") {
+      setVaults((prev) => [...prev, activeVaultPath]);
     }
-  }, [sortedTerms]);
+  }, [activeVaultPath, vaults]);
 
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (notesFiles && notesFiles.length > 0) {
-        localStorage.setItem("workspace_notesFiles", JSON.stringify(notesFiles));
-      }
+  // Resolve values dynamically based on the active vault session
+  const activeSession = vaultSessions[activeVaultPath] || null;
+
+  const projectPath = activeSession ? activeSession.projectPath : localProjectPath;
+  const notesPath = activeSession ? activeSession.notesPath : localNotesPath;
+  const scanResult = activeSession ? activeSession.scanResult : null;
+  const notesFiles = activeSession ? activeSession.notesFiles : [];
+  const sortedTerms = activeSession ? activeSession.sortedTerms : [];
+
+  // Proxy state setters to update the active vault session
+  const setProjectPath = useCallback((path: string) => {
+    setLocalProjectPath(path);
+    if (activeVaultPath) {
+      setVaultSessions((prev) => ({
+        ...prev,
+        [activeVaultPath]: {
+          ...prev[activeVaultPath],
+          projectPath: path,
+        },
+      }));
     }
-  }, [notesFiles]);
+  }, [activeVaultPath]);
+
+  const setNotesPath = useCallback((path: string) => {
+    setLocalNotesPath(path);
+    if (vaultSessions[path]) {
+      setActiveVaultPath(path);
+    }
+  }, [vaultSessions]);
+
+  const setNotesFiles = useCallback((update: FilePayload[] | ((prev: FilePayload[]) => FilePayload[])) => {
+    setVaultSessions((prev) => {
+      if (!activeVaultPath) return prev;
+      const current = prev[activeVaultPath] || {
+        notesPath: activeVaultPath,
+        projectPath: "",
+        scanResult: null,
+        notesFiles: [],
+        sortedTerms: [],
+      };
+      const updatedFiles = typeof update === "function" ? update(current.notesFiles) : update;
+      return {
+        ...prev,
+        [activeVaultPath]: {
+          ...current,
+          notesFiles: updatedFiles,
+        },
+      };
+    });
+  }, [activeVaultPath]);
+
+  const setScanResult = useCallback((update: ScanResponse | null | ((prev: ScanResponse | null) => ScanResponse | null)) => {
+    setVaultSessions((prev) => {
+      if (!activeVaultPath) return prev;
+      const current = prev[activeVaultPath] || {
+        notesPath: activeVaultPath,
+        projectPath: "",
+        scanResult: null,
+        notesFiles: [],
+        sortedTerms: [],
+      };
+      const updatedResult = typeof update === "function" ? update(current.scanResult) : update;
+      return {
+        ...prev,
+        [activeVaultPath]: {
+          ...current,
+          scanResult: updatedResult,
+        },
+      };
+    });
+  }, [activeVaultPath]);
+
+  const setSortedTerms = useCallback((update: string[] | ((prev: string[]) => string[])) => {
+    setVaultSessions((prev) => {
+      if (!activeVaultPath) return prev;
+      const current = prev[activeVaultPath] || {
+        notesPath: activeVaultPath,
+        projectPath: "",
+        scanResult: null,
+        notesFiles: [],
+        sortedTerms: [],
+      };
+      const updatedTerms = typeof update === "function" ? update(current.sortedTerms) : update;
+      return {
+        ...prev,
+        [activeVaultPath]: {
+          ...current,
+          sortedTerms: updatedTerms,
+        },
+      };
+    });
+  }, [activeVaultPath]);
+
+  const resetWorkspace = useCallback(() => {
+    if (activeVaultPath) {
+      setVaultSessions((prev) => {
+        const updated = { ...prev };
+        delete updated[activeVaultPath];
+        return updated;
+      });
+      setVaults((prev) => prev.filter((v) => v !== activeVaultPath));
+      setActiveVaultPath("");
+    }
+    setLocalProjectPath("");
+    setLocalNotesPath("");
+    setProjectHandle(null);
+    setNotesHandle(null);
+    setStatusMessage("");
+  }, [activeVaultPath]);
+
+  const deleteVaultSession = useCallback((path: string) => {
+    setVaultSessions((prev) => {
+      const updated = { ...prev };
+      delete updated[path];
+      return updated;
+    });
+    setVaults((prev) => prev.filter((v) => v !== path));
+    if (activeVaultPath === path) {
+      setActiveVaultPath("");
+    }
+  }, [activeVaultPath]);
+
+  const loadMockData = useCallback(() => {
+    const mockSession: VaultSession = {
+      notesPath: "mock-notes",
+      projectPath: "mock-project",
+      scanResult: mockScanResponse,
+      notesFiles: mockNotesFiles,
+      sortedTerms: mockSortedTerms,
+    };
+    setVaultSessions((prev) => ({
+      ...prev,
+      "mock-notes": mockSession,
+    }));
+    setActiveVaultPath("mock-notes");
+    setStatusMessage("Loaded UI testing mock data.");
+  }, []);
 
   const saveNote = useCallback(async (filename: string, content: string) => {
     const cleanTarget = filename.replace(/\.md$/i, "").toLowerCase();
     const cleanTerm = filename.split("/").pop()?.replace(/\.md$/i, "").toLowerCase() || "";
 
-    // 1. Update state locally (update existing or append new)
     setNotesFiles((prev) => {
       const fileExists = prev.some((file) => {
         const fileBase = file.path.split("/").pop() || "";
@@ -182,7 +301,6 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // 2. Dynamically remove from gaps report
     setScanResult((prev) => {
       if (!prev) return null;
       const updatedReport = prev.report.filter(
@@ -195,7 +313,6 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       };
     });
 
-    // 2. If handle is available, write to disk
     if (notesHandle) {
       try {
         const parts = filename.split("/");
@@ -213,7 +330,6 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setStatusMessage(`Failed to save note locally: ${err.message}`);
       }
     } else {
-      // 3. Fallback to API save
       try {
         const saveUrl = `${apiHost}${API_PATHS.SAVE || "/v1/synthesize/save"}`;
         const response = await fetch(saveUrl, {
@@ -238,33 +354,51 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setStatusMessage(`Failed to save note via API: ${err.message}`);
       }
     }
-  }, [notesHandle, apiHost, notesPath]);
+  }, [notesHandle, apiHost, notesPath, setNotesFiles, setScanResult]);
+
+  const deleteNote = useCallback(async (filename: string) => {
+    setNotesFiles((prev) => prev.filter((f) => f.path !== filename));
+    if (notesHandle) {
+      try {
+        const parts = filename.split("/");
+        let currentDir = notesHandle;
+        for (let i = 0; i < parts.length - 1; i++) {
+          currentDir = await currentDir.getDirectoryHandle(parts[i]);
+        }
+        await currentDir.removeEntry(parts[parts.length - 1]);
+        setStatusMessage(`Successfully deleted old note entry: ${filename}`);
+      } catch (err: any) {
+        console.error("Failed to delete note using directory handle:", err);
+      }
+    }
+  }, [notesHandle, setNotesFiles]);
 
   const executeScan = useCallback(async () => {
     setIsLoading(true);
-    setScanResult(null);
+    const targetNotesPath = notesHandle ? notesHandle.name : (localNotesPath || notesPath);
+    const targetProjectPath = projectHandle ? projectHandle.name : (localProjectPath || projectPath);
+
     setStatusMessage("Starting scan...");
     
     try {
       let payload: any = {};
+      let notes: FilePayload[] = [];
+      let projFiles: FilePayload[] = [];
+      let sorted: string[] = [];
 
       if (projectHandle && notesHandle) {
         setStatusMessage("Reading project files recursively...");
-        const projFiles = await readFilesRecursively(projectHandle);
+        projFiles = await readFilesRecursively(projectHandle);
         
         setStatusMessage("Reading notes files recursively...");
-        const notes = await readFilesRecursively(notesHandle);
-        setNotesFiles(notes);
- 
+        notes = await readFilesRecursively(notesHandle);
+  
         setStatusMessage("Extracting dependencies and source code imports...");
         const depTerms = parseDependencies(projFiles);
         const importTerms = parseSourceImports(projFiles);
         
         const combinedTerms = new Set([...depTerms, ...importTerms]);
-        const sorted = Array.from(combinedTerms).sort();
-        setSortedTerms(sorted);
-  
-        setStatusMessage(`Found ${sorted.length} technical terms. Indexing & scanning...`);
+        sorted = Array.from(combinedTerms).sort();
 
         const virtualReqsFile: FilePayload = {
           path: "requirements.txt",
@@ -276,15 +410,15 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           notes_files: notes,
         };
       } else {
-        if (!projectPath || !notesPath) {
+        if (!targetProjectPath || !targetNotesPath) {
           throw new Error("Please select directories or input manual absolute paths.");
         }
         
         payload = {
-          project_path: projectPath,
-          notes_path: notesPath,
+          project_path: targetProjectPath,
+          notes_path: targetNotesPath,
         };
-        setStatusMessage(`Sending absolute paths to local backend: ${projectPath} and ${notesPath}`);
+        setStatusMessage(`Sending absolute paths to local backend: ${targetProjectPath} and ${targetNotesPath}`);
       }
 
       const scanUrl = `${apiHost}${API_PATHS.SCAN}`;
@@ -302,7 +436,20 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       }
 
       const data = await response.json();
-      setScanResult(data);
+      
+      const newSession: VaultSession = {
+        notesPath: targetNotesPath,
+        projectPath: targetProjectPath,
+        scanResult: data,
+        notesFiles: data.notes_files && data.notes_files.length > 0 ? data.notes_files : notes,
+        sortedTerms: sorted.length > 0 ? sorted : (data.report || []).map((r: any) => r.term).sort(),
+      };
+
+      setVaultSessions((prev) => ({
+        ...prev,
+        [targetNotesPath]: newSession,
+      }));
+      setActiveVaultPath(targetNotesPath);
       setStatusMessage("Scan completed successfully.");
     } catch (err: any) {
       console.error(err);
@@ -310,7 +457,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [apiHost, projectHandle, notesHandle, projectPath, notesPath]);
+  }, [apiHost, projectHandle, notesHandle, localProjectPath, localNotesPath, projectPath, notesPath]);
 
   return (
     <WorkspaceContext.Provider
@@ -351,6 +498,14 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setQuizUserCode,
         quizEvaluation,
         setQuizEvaluation,
+        deleteNote,
+        vaults,
+        setVaults,
+        vaultSessions,
+        setVaultSessions,
+        activeVaultPath,
+        setActiveVaultPath,
+        deleteVaultSession,
       }}
     >
       {children}
