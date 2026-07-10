@@ -139,18 +139,41 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [notesFiles]);
 
   const saveNote = useCallback(async (filename: string, content: string) => {
-    // 1. Update state locally
-    setNotesFiles((prev) =>
-      prev.map((file) => {
+    const cleanTarget = filename.replace(/\.md$/i, "").toLowerCase();
+    const cleanTerm = filename.split("/").pop()?.replace(/\.md$/i, "").toLowerCase() || "";
+
+    // 1. Update state locally (update existing or append new)
+    setNotesFiles((prev) => {
+      const fileExists = prev.some((file) => {
         const fileBase = file.path.split("/").pop() || "";
-        const cleanTarget = filename.replace(/\.md$/i, "").toLowerCase();
-        const cleanFile = fileBase.replace(/\.md$/i, "").toLowerCase();
-        if (cleanFile === cleanTarget) {
-          return { ...file, content };
-        }
-        return file;
-      })
-    );
+        return fileBase.replace(/\.md$/i, "").toLowerCase() === cleanTarget;
+      });
+
+      if (fileExists) {
+        return prev.map((file) => {
+          const fileBase = file.path.split("/").pop() || "";
+          if (fileBase.replace(/\.md$/i, "").toLowerCase() === cleanTarget) {
+            return { ...file, content };
+          }
+          return file;
+        });
+      } else {
+        return [...prev, { path: filename, content }];
+      }
+    });
+
+    // 2. Dynamically remove from gaps report
+    setScanResult((prev) => {
+      if (!prev) return null;
+      const updatedReport = prev.report.filter(
+        (gap) => gap.term.toLowerCase().trim() !== cleanTerm
+      );
+      return {
+        ...prev,
+        gaps_found: updatedReport.length,
+        report: updatedReport,
+      };
+    });
 
     // 2. If handle is available, write to disk
     if (notesHandle) {

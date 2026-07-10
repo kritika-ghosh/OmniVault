@@ -62,7 +62,7 @@ export default function WorkspaceWelcome() {
         
         {/* Welcome message with text clipping */}
         <div className="text-center space-y-3">
-          <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-amber-400 to-emerald-400 bg-clip-text text-transparent pb-1">
+          <h1 className="text-5xl font-extrabold tracking-tight bg-linear-to-r from-primary via-amber-400 to-emerald-400 bg-clip-text text-transparent pb-1">
             Good Morning!
           </h1>
           <p className="text-xs font-mono text-muted-foreground/80 tracking-wide">

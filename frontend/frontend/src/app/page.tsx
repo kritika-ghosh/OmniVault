@@ -3,7 +3,6 @@
 import NewPage from "@/components/new-page";
 import NodeGraph from "@/components/node-graph";
 import Quiz from "@/components/quiz";
-import SynthesizeNote from "@/components/synthesize-note";
 import NoteEditor from "@/components/note-editor";
 import { useEffect, useState, useCallback } from "react";
 import { DockviewReact, DockviewReadyEvent, DockviewApi, IDockviewPanelProps } from "dockview-react";
@@ -24,11 +23,6 @@ const components = {
   quiz: (props: IDockviewPanelProps) => (
     <div className="w-full h-full overflow-y-auto font-sans">
       <Quiz />
-    </div>
-  ),
-  "synthesize-note": (props: IDockviewPanelProps) => (
-    <div className="w-full h-full overflow-y-auto">
-      <SynthesizeNote />
     </div>
   ),
   "note-editor": (props: IDockviewPanelProps<{ noteName: string }>) => (
@@ -60,7 +54,6 @@ export default function Home() {
       let title = view;
       if (view === "node-graph") title = "Node Graph";
       if (view === "quiz") title = "Quiz";
-      if (view === "synthesize-note") title = "Synthesize Note";
       if (view === "scan") title = "Workspace Scan";
 
       const existingPanel = api.getPanel(view);
@@ -73,6 +66,7 @@ export default function Home() {
           title: title,
         });
       }
+      window.dispatchEvent(new CustomEvent("active-view-changed", { detail: view }));
     };
 
     const handleOpenNote = (e: Event) => {
@@ -93,13 +87,21 @@ export default function Home() {
           },
         });
       }
+      window.dispatchEvent(new CustomEvent("active-view-changed", { detail: panelId }));
     };
+
+    const activePanelListener = api.onDidActivePanelChange((event) => {
+      if (event.panel) {
+        window.dispatchEvent(new CustomEvent("active-view-changed", { detail: event.panel.id }));
+      }
+    });
 
     window.addEventListener("navigate-view", handleNavigate);
     window.addEventListener("open-note", handleOpenNote);
     return () => {
       window.removeEventListener("navigate-view", handleNavigate);
       window.removeEventListener("open-note", handleOpenNote);
+      activePanelListener.dispose();
     };
   }, [api]);
 
