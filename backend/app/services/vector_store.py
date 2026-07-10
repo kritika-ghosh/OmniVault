@@ -111,7 +111,12 @@ class VectorStoreService:
             existing_notes_meta[slug] = meta_record
 
             if not is_empty:
-                ids.append(slug)
+                unique_id = slug
+                counter = 1
+                while unique_id in ids:
+                    unique_id = f"{slug}_{counter}"
+                    counter += 1
+                ids.append(unique_id)
                 documents.append(content)
                 metadatas.append({
                     "title": title,
@@ -131,20 +136,25 @@ class VectorStoreService:
         """
         Queries an ephemeral ChromaDB collection for text similarity.
         """
-        results = collection.query(
-            query_texts=[query],
-            n_results=limit
-        )
-        
-        parsed_results = []
-        if results and results['ids'] and results['ids'][0]:
-            for i in range(len(results['ids'][0])):
-                parsed_results.append({
-                    "id": results['ids'][0][i],
-                    "score": results['distances'][0][i] if 'distances' in results else 1.0,
-                    "metadata": results['metadatas'][0][i] if 'metadatas' in results else {}
-                })
-        return parsed_results
+        try:
+            if collection.count() == 0:
+                return []
+            results = collection.query(
+                query_texts=[query],
+                n_results=limit
+            )
+            
+            parsed_results = []
+            if results and results['ids'] and results['ids'][0]:
+                for i in range(len(results['ids'][0])):
+                    parsed_results.append({
+                        "id": results['ids'][0][i],
+                        "score": results['distances'][0][i] if 'distances' in results else 1.0,
+                        "metadata": results['metadatas'][0][i] if 'metadatas' in results else {}
+                    })
+            return parsed_results
+        except Exception:
+            return []
 
     def index_notes_vault(self, notes_dir_path: str) -> Dict[str, Dict]:
         """
@@ -164,12 +174,10 @@ class VectorStoreService:
         for file_path in vault_path.rglob("*.md"):
             frontmatter, content, is_empty = self._parse_markdown_file(file_path)
             
-            # Use lowercase file stem (slug) or explicit title as the unique cross-reference key
             slug = frontmatter.get("slug", file_path.stem).lower().strip()
             title = frontmatter.get("title", file_path.stem)
             status = frontmatter.get("status", "draft")
 
-            # Document metadata strictly restricted to primitive types for ChromaDB compatibility
             meta_record = {
                 "title": title,
                 "status": status,
@@ -179,16 +187,19 @@ class VectorStoreService:
             
             existing_notes_meta[slug] = meta_record
 
-            # Only index into the vector store if it actually has substantive content to embed
             if not is_empty:
-                ids.append(slug)
+                unique_id = slug
+                counter = 1
+                while unique_id in ids:
+                    unique_id = f"{slug}_{counter}"
+                    counter += 1
+                ids.append(unique_id)
                 documents.append(content)
                 metadatas.append({
                     "title": title,
                     "status": status
                 })
 
-        # Batch upsert to indexer
         if ids:
             self.collection.upsert(
                 ids=ids,
@@ -202,17 +213,22 @@ class VectorStoreService:
         """
         Queries ChromaDB vector collection to check for semantically close notes.
         """
-        results = self.collection.query(
-            query_texts=[query],
-            n_results=limit
-        )
-        
-        parsed_results = []
-        if results and results['ids'] and results['ids'][0]:
-            for i in range(len(results['ids'][0])):
-                parsed_results.append({
-                    "id": results['ids'][0][i],
-                    "score": results['distances'][0][i] if 'distances' in results else 1.0,
-                    "metadata": results['metadatas'][0][i] if 'metadatas' in results else {}
-                })
-        return parsed_results
+        try:
+            if self.collection.count() == 0:
+                return []
+            results = self.collection.query(
+                query_texts=[query],
+                n_results=limit
+            )
+            
+            parsed_results = []
+            if results and results['ids'] and results['ids'][0]:
+                for i in range(len(results['ids'][0])):
+                    parsed_results.append({
+                        "id": results['ids'][0][i],
+                        "score": results['distances'][0][i] if 'distances' in results else 1.0,
+                        "metadata": results['metadatas'][0][i] if 'metadatas' in results else {}
+                    })
+            return parsed_results
+        except Exception:
+            return []
