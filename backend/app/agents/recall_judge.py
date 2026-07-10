@@ -59,7 +59,7 @@ class ActiveRecallJudge:
                 input=stdin_data,
                 capture_output=True,
                 text=True,
-                timeout=2.0
+                timeout=10.0
             )
             return {
                 "success": result.returncode == 0,
@@ -70,7 +70,7 @@ class ActiveRecallJudge:
             return {
                 "success": False,
                 "stdout": "",
-                "stderr": "TimeoutExpired: Execution exceeded 2.0 seconds limit."
+                "stderr": "TimeoutExpired: Execution exceeded 10.0 seconds limit."
             }
         finally:
             if os.path.exists(temp_file_path):
@@ -86,7 +86,7 @@ class ActiveRecallJudge:
                 input=stdin_data,
                 capture_output=True,
                 text=True,
-                timeout=2.0
+                timeout=10.0
             )
             return {
                 "success": result.returncode == 0,
@@ -103,7 +103,7 @@ class ActiveRecallJudge:
             return {
                 "success": False,
                 "stdout": "",
-                "stderr": "TimeoutExpired: Execution exceeded 2.0 seconds limit."
+                "stderr": "TimeoutExpired: Execution exceeded 10.0 seconds limit."
             }
         finally:
             if os.path.exists(temp_file_path):

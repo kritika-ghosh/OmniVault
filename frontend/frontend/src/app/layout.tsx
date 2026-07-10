@@ -58,7 +58,7 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
           <TooltipProvider>
             <SidebarProvider className="flex flex-row h-screen w-screen overflow-hidden">
               {/* Left stuck Vertical Menubar */}
-              <header className="w-12 h-full border-r border-border bg-sidebar flex flex-col items-center justify-between py-4 z-50 shrink-0 select-none">
+              <header className="w-12 h-full border-r border-border bg-sidebar flex flex-col items-center justify-between py-2 z-50 shrink-0 select-none">
                 <div className="flex flex-col items-center w-full">
                   {/* Logo / Short Title */}
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-bold tracking-wider text-primary select-none mt-1" title="OmniVault">
@@ -143,7 +143,7 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
                   <Tooltip>
                     <TooltipTrigger
                       onClick={toggleTheme}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted hover:bg-muted/60 transition-all border border-border/50 cursor-pointer"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all border border-border/50 cursor-pointer"
                     >
                       {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-slate-700" />}
                     </TooltipTrigger>

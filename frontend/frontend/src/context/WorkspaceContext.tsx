@@ -36,6 +36,18 @@ interface WorkspaceContextProps {
   resetWorkspace: () => void;
   loadMockData: () => void;
   saveNote: (filename: string, content: string) => Promise<void>;
+  quizSelectedNotePath: string;
+  setQuizSelectedNotePath: (path: string) => void;
+  currentQuiz: any | null;
+  setCurrentQuiz: (quiz: any | null) => void;
+  isGeneratingQuiz: boolean;
+  setIsGeneratingQuiz: (g: boolean) => void;
+  isEvaluatingQuiz: boolean;
+  setIsEvaluatingQuiz: (e: boolean) => void;
+  quizUserCode: string;
+  setQuizUserCode: (code: string) => void;
+  quizEvaluation: any | null;
+  setQuizEvaluation: (evalObj: any | null) => void;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextProps | undefined>(undefined);
@@ -51,6 +63,14 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [statusMessage, setStatusMessage] = useState("");
   const [sortedTerms, setSortedTerms] = useState<string[]>([]);
   const [notesFiles, setNotesFiles] = useState<FilePayload[]>([]);
+
+  // Shared Quiz states
+  const [quizSelectedNotePath, setQuizSelectedNotePath] = useState("");
+  const [currentQuiz, setCurrentQuiz] = useState<any | null>(null);
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
+  const [isEvaluatingQuiz, setIsEvaluatingQuiz] = useState(false);
+  const [quizUserCode, setQuizUserCode] = useState("");
+  const [quizEvaluation, setQuizEvaluation] = useState<any | null>(null);
 
   const resetWorkspace = useCallback(() => {
     setScanResult(null);
@@ -319,6 +339,18 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         resetWorkspace,
         loadMockData,
         saveNote,
+        quizSelectedNotePath,
+        setQuizSelectedNotePath,
+        currentQuiz,
+        setCurrentQuiz,
+        isGeneratingQuiz,
+        setIsGeneratingQuiz,
+        isEvaluatingQuiz,
+        setIsEvaluatingQuiz,
+        quizUserCode,
+        setQuizUserCode,
+        quizEvaluation,
+        setQuizEvaluation,
       }}
     >
       {children}

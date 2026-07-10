@@ -4,6 +4,7 @@ import NewPage from "@/components/new-page";
 import NodeGraph from "@/components/node-graph";
 import Quiz from "@/components/quiz";
 import NoteEditor from "@/components/note-editor";
+import QuizEditor from "@/components/quiz-editor";
 import { useEffect, useState, useCallback } from "react";
 import { DockviewReact, DockviewReadyEvent, DockviewApi, IDockviewPanelProps } from "dockview-react";
 import "dockview-react/dist/styles/dockview.css";
@@ -23,6 +24,11 @@ const components = {
   quiz: (props: IDockviewPanelProps) => (
     <div className="w-full h-full overflow-y-auto font-sans">
       <Quiz />
+    </div>
+  ),
+  "quiz-editor": (props: IDockviewPanelProps) => (
+    <div className="w-full h-full overflow-y-auto">
+      <QuizEditor />
     </div>
   ),
   "note-editor": (props: IDockviewPanelProps<{ noteName: string }>) => (
@@ -90,6 +96,31 @@ export default function Home() {
       window.dispatchEvent(new CustomEvent("active-view-changed", { detail: panelId }));
     };
 
+    const handleOpenQuizEditor = () => {
+      const panelId = "quiz-editor";
+      const existingPanel = api.getPanel(panelId);
+      if (existingPanel) {
+        existingPanel.focus();
+      } else {
+        api.addPanel({
+          id: panelId,
+          component: "quiz-editor",
+          title: "Quiz Answer Terminal",
+          position: {
+            referencePanel: "quiz",
+            direction: "right",
+          },
+        });
+      }
+    };
+
+    const handleCloseQuizEditor = () => {
+      const panel = api.getPanel("quiz-editor");
+      if (panel) {
+        api.removePanel(panel);
+      }
+    };
+
     const activePanelListener = api.onDidActivePanelChange((event) => {
       if (event.panel) {
         window.dispatchEvent(new CustomEvent("active-view-changed", { detail: event.panel.id }));
@@ -98,9 +129,13 @@ export default function Home() {
 
     window.addEventListener("navigate-view", handleNavigate);
     window.addEventListener("open-note", handleOpenNote);
+    window.addEventListener("open-quiz-editor", handleOpenQuizEditor);
+    window.addEventListener("close-quiz-editor", handleCloseQuizEditor);
     return () => {
       window.removeEventListener("navigate-view", handleNavigate);
       window.removeEventListener("open-note", handleOpenNote);
+      window.removeEventListener("open-quiz-editor", handleOpenQuizEditor);
+      window.removeEventListener("close-quiz-editor", handleCloseQuizEditor);
       activePanelListener.dispose();
     };
   }, [api]);
