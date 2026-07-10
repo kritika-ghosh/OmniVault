@@ -4,11 +4,11 @@ import NewPage from "@/components/new-page";
 import NodeGraph from "@/components/node-graph";
 import Quiz from "@/components/quiz";
 import SynthesizeNote from "@/components/synthesize-note";
+import NoteEditor from "@/components/note-editor";
 import { useEffect, useState, useCallback } from "react";
 import { DockviewReact, DockviewReadyEvent, DockviewApi, IDockviewPanelProps } from "dockview-react";
 import "dockview-react/dist/styles/dockview.css";
 import { customTheme } from "@/lib/dockview";
-import { themeAbyss } from 'dockview-react';
 
 const components = {
   scan: (props: IDockviewPanelProps) => (
@@ -29,6 +29,11 @@ const components = {
   "synthesize-note": (props: IDockviewPanelProps) => (
     <div className="w-full h-full overflow-y-auto">
       <SynthesizeNote />
+    </div>
+  ),
+  "note-editor": (props: IDockviewPanelProps<{ noteName: string }>) => (
+    <div className="w-full h-full overflow-y-auto">
+      <NoteEditor noteName={props.params.noteName} />
     </div>
   ),
 };
@@ -70,8 +75,32 @@ export default function Home() {
       }
     };
 
+    const handleOpenNote = (e: Event) => {
+      const noteName = (e as CustomEvent).detail;
+      if (!noteName) return;
+
+      const panelId = `note-${noteName.toLowerCase()}`;
+      const existingPanel = api.getPanel(panelId);
+      if (existingPanel) {
+        existingPanel.focus();
+      } else {
+        api.addPanel({
+          id: panelId,
+          component: "note-editor",
+          title: noteName,
+          params: {
+            noteName: noteName,
+          },
+        });
+      }
+    };
+
     window.addEventListener("navigate-view", handleNavigate);
-    return () => window.removeEventListener("navigate-view", handleNavigate);
+    window.addEventListener("open-note", handleOpenNote);
+    return () => {
+      window.removeEventListener("navigate-view", handleNavigate);
+      window.removeEventListener("open-note", handleOpenNote);
+    };
   }, [api]);
 
   return (

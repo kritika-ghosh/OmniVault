@@ -78,11 +78,11 @@
   --chart-4: oklch(0.508 0.118 165.612);
   --chart-5: oklch(0.432 0.095 166.913);
   --radius: 0.625rem;
-  --sidebar: oklch(0.987 0.002 197.1);
+  --sidebar: oklch(0.96 0.002 197.1);
   --sidebar-foreground: oklch(0.148 0.004 228.8);
   --sidebar-primary: oklch(0.6 0.118 184.704);
   --sidebar-primary-foreground: oklch(0.984 0.014 180.72);
-  --sidebar-accent: oklch(0.963 0.002 197.1);
+  --sidebar-accent: oklch(0.91 0.005 214.3);
   --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
   --sidebar-border: oklch(0.925 0.005 214.3);
   --sidebar-ring: oklch(0.723 0.014 214.4);
@@ -112,11 +112,11 @@
   --chart-3: oklch(0.596 0.145 163.225);
   --chart-4: oklch(0.508 0.118 165.612);
   --chart-5: oklch(0.432 0.095 166.913);
-  --sidebar: oklch(0.218 0.008 223.9);
+  --sidebar: oklch(0.11 0.004 228.8);
   --sidebar-foreground: oklch(0.987 0.002 197.1);
   --sidebar-primary: oklch(0.704 0.14 182.503);
   --sidebar-primary-foreground: oklch(0.277 0.046 192.524);
-  --sidebar-accent: oklch(0.275 0.011 216.9);
+  --sidebar-accent: oklch(0.16 0.006 223.9);
   --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.56 0.021 213.5);
@@ -133,4 +133,41 @@
     @apply font-sans;
   }
 }
+
+/* Dockview theme override to support dynamic light/dark modes */
+.dockview-theme-custom {
+  --dv-drag-over-background-color: var(--primary) !important;
+  --dv-floating-group-dragging-opacity: 0.15 !important;
+  --dv-spacing-padding: 0px !important;
+  --dv-tabs-and-actions-container-height: 32px !important;
+  --dv-tabs-and-actions-container-font-size: 13px !important;
+  --dv-border-radius: 6px !important;
+  --dv-tab-border-radius: 6px !important;
+  --dv-sash-border-radius: 6px !important;
+  --dv-font-family: var(--font-sans) !important;
+  
+  /* Backgrounds */
+  --dv-group-view-background-color: var(--background) !important;
+  --dv-tabs-and-actions-container-background-color: var(--muted) !important;
+  --dv-separator-border: var(--border) !important;
+  --dv-tab-divider-color: var(--border) !important;
+  
+  /* Active group tabs */
+  --dv-activegroup-visiblepanel-tab-background-color: var(--background) !important;
+  --dv-activegroup-visiblepanel-tab-foreground-color: var(--foreground) !important;
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--muted) !important;
+  --dv-activegroup-hiddenpanel-tab-foreground-color: var(--muted-foreground) !important;
+  
+  /* Inactive group tabs */
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--background) !important;
+  --dv-inactivegroup-visiblepanel-tab-foreground-color: var(--muted-foreground) !important;
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--muted) !important;
+  --dv-inactivegroup-hiddenpanel-tab-foreground-color: var(--muted-foreground) !important;
+  
+  /* Selection borders */
+  --dv-active-tab-selected-border-color: var(--primary) !important;
+  --dv-inactive-tab-selected-border-color: var(--muted-foreground) !important;
+}
+
+
 
