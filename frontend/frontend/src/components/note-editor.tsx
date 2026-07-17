@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "./ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { API_PATHS } from "@/lib/api-paths";
-import { Save, Edit2, Eye, Check, Sparkles } from "lucide-react";
+import { Save, Edit2, Eye, Check, Sparkles, Link2 } from "lucide-react";
 
 interface FrontMatter {
   title?: string;
@@ -38,17 +38,34 @@ function parseMarkdown(rawContent: string) {
   return { metadata: null, markdownContent: rawContent };
 }
 
+function preprocessWikiLinks(text: string): string {
+  // Replace [[TargetNote|Custom Label]]
+  let processed = text.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, (match, target, label) => {
+    return `[${label.trim()}](wiki://${encodeURIComponent(target.trim())})`;
+  });
+  // Replace [[TargetNote]]
+  processed = processed.replace(/\[\[([^\]]+)\]\]/g, (match, target) => {
+    return `[${target.trim()}](wiki://${encodeURIComponent(target.trim())})`;
+  });
+  return processed;
+}
+
 interface NoteEditorProps {
   noteName: string;
 }
 
 export default function NoteEditor({ noteName }: NoteEditorProps) {
-  const { notesFiles, saveNote, statusMessage, apiHost } = useWorkspace();
+  const { notesFiles, saveNote, statusMessage, apiHost, scanResult } = useWorkspace();
   const [content, setContent] = useState("");
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSavedIndicator, setShowSavedIndicator] = useState(false);
+
+  // Suggestions states
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionQuery, setSuggestionQuery] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
 
   const filename = noteName.endsWith(".md") ? noteName : `${noteName}.md`;
 
@@ -134,6 +151,105 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
     }
   };
 
+  // Find backlinks to this note
+  const backlinks = useMemo(() => {
+    const cleanTarget = noteName.replace(/\.md$/i, "").toLowerCase();
+    
+    return notesFiles.filter((file) => {
+      const fileBase = file.path.split("/").pop() || "";
+      const fileTerm = fileBase.replace(/\.md$/i, "").toLowerCase();
+      if (fileTerm === cleanTarget) return false;
+      
+      const contentBody = file.content || "";
+      // Match [[noteName]] or [[noteName|label]]
+      const escapedNote = noteName.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const wikiLinkRegex = new RegExp(`\\[\\[${escapedNote}(?:\\|[^\\]]+)?\\]\\]`, "i");
+      
+      return wikiLinkRegex.test(contentBody);
+    });
+  }, [noteName, notesFiles]);
+
+  // Suggestions for autocomplete
+  const filteredSuggestions = useMemo(() => {
+    const allTerms = new Set<string>();
+    
+    notesFiles.forEach((file) => {
+      const filename = file.path.split("/").pop() || "";
+      allTerms.add(filename.replace(/\.md$/i, ""));
+    });
+    
+    if (scanResult?.report) {
+      scanResult.report.forEach((gap) => {
+        allTerms.add(gap.term);
+      });
+    }
+    
+    const query = suggestionQuery.toLowerCase().trim();
+    if (!query) return Array.from(allTerms).slice(0, 8);
+    
+    return Array.from(allTerms)
+      .filter((term) => term.toLowerCase().includes(query))
+      .slice(0, 8);
+  }, [notesFiles, scanResult, suggestionQuery]);
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    const pos = e.target.selectionStart;
+    setContent(val);
+    
+    const textBeforeCursor = val.slice(0, pos);
+    const lastOpenIdx = textBeforeCursor.lastIndexOf("[[");
+    const lastCloseIdx = textBeforeCursor.lastIndexOf("]]");
+    
+    if (lastOpenIdx !== -1 && lastOpenIdx > lastCloseIdx) {
+      const query = textBeforeCursor.slice(lastOpenIdx + 2);
+      if (!query.includes("\n")) {
+        setSuggestionQuery(query);
+        setShowSuggestions(true);
+        setCursorPosition(pos);
+        return;
+      }
+    }
+    
+    setShowSuggestions(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (showSuggestions) {
+      if (e.key === "Escape") {
+        setShowSuggestions(false);
+        e.preventDefault();
+      }
+    }
+  };
+
+  const insertSuggestion = (termName: string) => {
+    const val = content;
+    const pos = cursorPosition;
+    
+    const textBeforeCursor = val.slice(0, pos);
+    const lastOpenIdx = textBeforeCursor.lastIndexOf("[[");
+    
+    if (lastOpenIdx !== -1) {
+      const beforeLink = val.slice(0, lastOpenIdx);
+      const afterCursor = val.slice(pos);
+      
+      const newLink = `[[${termName}]]`;
+      const newContent = beforeLink + newLink + afterCursor;
+      setContent(newContent);
+      setShowSuggestions(false);
+      
+      setTimeout(() => {
+        const textarea = document.getElementById("note-textarea") as HTMLTextAreaElement;
+        if (textarea) {
+          textarea.focus();
+          const newPos = lastOpenIdx + newLink.length;
+          textarea.setSelectionRange(newPos, newPos);
+        }
+      }, 50);
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col bg-background text-foreground overflow-hidden">
       {/* Editor Controls Bar */}
@@ -189,16 +305,37 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
       </div>
 
       {/* Editor Content Area */}
-      <div className="flex-1 overflow-hidden relative">
+      <div className="flex-1 overflow-hidden relative flex flex-col">
         {activeTab === "edit" ? (
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full h-full p-6 bg-background text-foreground font-mono text-sm focus:outline-none resize-none leading-relaxed overflow-y-auto"
-            placeholder="Type your markdown here..."
-          />
+          <div className="flex-1 relative w-full h-full">
+            <textarea
+              id="note-textarea"
+              value={content}
+              onChange={handleTextareaChange}
+              onKeyDown={handleKeyDown}
+              className="w-full h-full p-6 bg-background text-foreground font-mono text-sm focus:outline-hidden resize-none leading-relaxed overflow-y-auto"
+              placeholder="Type your markdown here... Use [[ to link concepts."
+            />
+            {/* Auto-complete suggestions */}
+            {showSuggestions && filteredSuggestions.length > 0 && (
+              <div className="absolute left-6 bottom-6 max-h-48 w-64 overflow-y-auto bg-popover text-popover-foreground border border-border rounded-lg shadow-md z-50 flex flex-col p-1.5 font-sans">
+                <span className="text-[9px] font-bold text-muted-foreground uppercase px-2 py-1 tracking-wider border-b border-border/40 mb-1">
+                  Link suggestions
+                </span>
+                {filteredSuggestions.map((term) => (
+                  <button
+                    key={term}
+                    onClick={() => insertSuggestion(term)}
+                    className="text-left text-xs px-2 py-1.5 hover:bg-accent hover:text-accent-foreground rounded cursor-pointer transition-colors font-medium flex items-center justify-between"
+                  >
+                    <span>{term}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
-          <div className="w-full h-full p-6 overflow-y-auto prose dark:prose-invert prose-neutral prose-sm max-w-none prose-headings:text-foreground prose-a:text-primary prose-strong:text-foreground">
+          <div className="flex-1 w-full h-full p-6 overflow-y-auto prose dark:prose-invert prose-neutral prose-sm max-w-none prose-headings:text-foreground prose-a:text-primary prose-strong:text-foreground">
             {(() => {
               const { metadata, markdownContent } = parseMarkdown(content);
               return (
@@ -244,7 +381,68 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
                       </div>
                     </div>
                   )}
-                  <ReactMarkdown>{markdownContent}</ReactMarkdown>
+                  
+                  <ReactMarkdown
+                    components={{
+                      a: ({ href, children, ...props }) => {
+                        if (href && href.startsWith("wiki://")) {
+                          const target = decodeURIComponent(href.slice(7));
+                          const cleanTarget = target.replace(/\.md$/i, "").toLowerCase();
+                          
+                          const noteExists = notesFiles.some(file => {
+                            const fileBase = file.path.split("/").pop() || "";
+                            return fileBase.replace(/\.md$/i, "").toLowerCase() === cleanTarget;
+                          });
+
+                          return (
+                            <a
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                window.dispatchEvent(new CustomEvent("open-note", { detail: target }));
+                              }}
+                              className={
+                                noteExists
+                                  ? "text-primary underline cursor-pointer hover:text-primary/80 font-semibold"
+                                  : "text-amber-500 border-b border-dashed border-amber-500 hover:text-amber-400 cursor-pointer font-semibold"
+                              }
+                              title={noteExists ? `Open Note: ${target}` : `Create Note: ${target} (Gap)`}
+                            >
+                              {children}
+                            </a>
+                          );
+                        }
+                        return <a href={href} {...props}>{children}</a>;
+                      }
+                    }}
+                  >
+                    {preprocessWikiLinks(markdownContent)}
+                  </ReactMarkdown>
+
+                  {/* Backlinks Panel */}
+                  {backlinks.length > 0 && (
+                    <div className="mt-8 pt-6 border-t border-border/60 shrink-0 select-none">
+                      <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                        <Link2 className="w-3.5 h-3.5 text-primary" />
+                        Backlinks ({backlinks.length})
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {backlinks.map((file) => {
+                          const filename = file.path.split("/").pop() || "";
+                          const termName = filename.replace(/\.md$/i, "");
+                          return (
+                            <button
+                              key={file.path}
+                              onClick={() => window.dispatchEvent(new CustomEvent("open-note", { detail: termName }))}
+                              className="text-xs px-2.5 py-1 bg-muted hover:bg-muted/80 text-foreground rounded border border-border transition-all cursor-pointer font-medium"
+                            >
+                              {termName}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </>
               );
             })()}
