@@ -11,3 +11,6 @@ httpx
 beautifulsoup4
 tree-sitter-languages
 websockets
+pypdf
+openai
+python-multipart

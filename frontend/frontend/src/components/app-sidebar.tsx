@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 import { useWorkspace } from "@/context/WorkspaceContext"
-import { ChevronDown, ChevronRight, FileText, Folder, Play, Trash2 } from "lucide-react"
+import { ChevronDown, ChevronRight, FileText, Folder, Play, Trash2, Sparkles } from "lucide-react"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 
 interface TreeNode {
@@ -149,6 +149,24 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
       </SidebarHeader>
 
       <SidebarContent className="p-2 overflow-y-auto overflow-x-hidden select-none space-y-3">
+        {/* Adaptive Planner Entry Link */}
+        <div className="px-1.5 pb-1 shrink-0">
+          <button
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("navigate-view", { detail: "mutated-companion" }));
+              }
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 bg-primary/10 border border-primary/20 hover:bg-primary/15 hover:border-primary/30 rounded-xl transition-all text-xs font-extrabold text-primary text-left cursor-pointer shadow-xs"
+          >
+            <Sparkles className="w-4 h-4 shrink-0 text-primary animate-pulse" />
+            <div className="flex flex-col min-w-0">
+              <span>Mutated Study Planner</span>
+              <span className="text-[9px] text-primary/70 font-normal mt-0.5">Adaptive RAG syllabus loop</span>
+            </div>
+          </button>
+        </div>
+
         {Object.keys(vaultSessions).length === 0 ? (
           <div className="text-xs text-muted-foreground/50 italic p-4 text-center">
             No active vaults. Initialize a scan to display trees.

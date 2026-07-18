@@ -28,6 +28,15 @@ app.include_router(synthesizer.router)
 app.include_router(quiz.router)
 app.include_router(websocket.router)
 
+# Register Mutated Companion endpoints
+from app.features.mutated_companion.routes import session as mutated_session
+from app.features.mutated_companion.routes import curriculum as mutated_curriculum
+from app.features.mutated_companion.routes import agent as mutated_agent
+
+app.include_router(mutated_session.router)
+app.include_router(mutated_curriculum.router)
+app.include_router(mutated_agent.router)
+
 @app.get("/")
 def home_root():
     return {"status": "online", "engine": "OmniVault 3-Agent Loop Gateway"}

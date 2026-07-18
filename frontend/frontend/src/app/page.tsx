@@ -5,6 +5,7 @@ import NodeGraph from "@/components/node-graph";
 import Quiz from "@/components/quiz";
 import NoteEditor from "@/components/note-editor";
 import QuizEditor from "@/components/quiz-editor";
+import MutatedCompanion from "@/components/mutated-companion";
 import { useEffect, useState, useCallback } from "react";
 import { DockviewReact, DockviewReadyEvent, DockviewApi, IDockviewPanelProps } from "dockview-react";
 import "dockview-react/dist/styles/dockview.css";
@@ -40,6 +41,11 @@ const components = {
       <NoteEditor noteName={props.params.noteName} />
     </div>
   ),
+  "mutated-companion": (props: IDockviewPanelProps) => (
+    <div className="w-full h-full overflow-y-auto">
+      <MutatedCompanion />
+    </div>
+  ),
 };
 
 export default function Home() {
@@ -65,6 +71,7 @@ export default function Home() {
       if (view === "node-graph") title = "Node Graph";
       if (view === "quiz") title = "Quiz";
       if (view === "scan") title = "Scan Workspace";
+      if (view === "mutated-companion") title = "Mutated Study Planner";
 
       if (view === "scan") {
         const panelId = `scan-${Date.now()}`;

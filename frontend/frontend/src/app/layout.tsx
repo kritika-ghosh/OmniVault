@@ -5,7 +5,7 @@ import '@/app/globals.css'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
 import { WorkspaceProvider } from "@/context/WorkspaceContext";
-import { Scan, FilePlus, Network, GraduationCap, Sun, Moon } from "lucide-react";
+import { Scan, FilePlus, Network, GraduationCap, Sun, Moon, Sparkles } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
   ContextMenu,
@@ -143,6 +143,21 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
                         <GraduationCap className="w-4 h-4" />
                       </TooltipTrigger>
                       <TooltipContent side="right">Quiz</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger
+                        onClick={() => navigate('mutated-companion')}
+                        className={cn(
+                          "w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer",
+                          activeView === "mutated-companion"
+                            ? "bg-primary/15 text-primary font-bold shadow-xs"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                        )}
+                      >
+                        <Sparkles className="w-4 h-4" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right">Mutated Study Planner</TooltipContent>
                     </Tooltip>
                   </div>
                 </div>
