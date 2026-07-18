@@ -45,7 +45,15 @@ interface SessionState {
 }
 
 export default function MutatedCompanion() {
-  const { apiHost, notesPath } = useWorkspace();
+  const { notesPath } = useWorkspace();
+
+  const getMutatedApiHost = () => {
+    if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+      return "http://localhost:8000";
+    }
+    return "https://mutated-backend.onrender.com";
+  };
+  const mutatedApiHost = getMutatedApiHost();
 
   // State definitions
   const [session, setSession] = useState<SessionState | null>(null);
@@ -131,7 +139,7 @@ export default function MutatedCompanion() {
     }
 
     try {
-      const response = await fetch(`${apiHost}/session/init`, {
+      const response = await fetch(`${mutatedApiHost}/session/init`, {
         method: "POST",
         body: formData,
       });
@@ -157,7 +165,7 @@ export default function MutatedCompanion() {
     if (!session || !selectedNode) return;
     setIsLoadingContext(true);
     try {
-      const url = `${apiHost}/curriculum/${session.session_id}/node/${selectedNode.id}/context?description=${encodeURIComponent(selectedNode.description)}`;
+      const url = `${mutatedApiHost}/curriculum/${session.session_id}/node/${selectedNode.id}/context?description=${encodeURIComponent(selectedNode.description)}`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -176,7 +184,7 @@ export default function MutatedCompanion() {
     setQuizAnswers({});
     setSubmitResult(null);
     try {
-      const url = `${apiHost}/curriculum/${session.session_id}/node/${selectedNode.id}/quiz?description=${encodeURIComponent(selectedNode.description)}`;
+      const url = `${mutatedApiHost}/curriculum/${session.session_id}/node/${selectedNode.id}/quiz?description=${encodeURIComponent(selectedNode.description)}`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -193,7 +201,7 @@ export default function MutatedCompanion() {
     if (!session || !selectedNode) return;
     setIsSubmittingQuiz(true);
     try {
-      const url = `${apiHost}/curriculum/${session.session_id}/node/${selectedNode.id}/submit`;
+      const url = `${mutatedApiHost}/curriculum/${session.session_id}/node/${selectedNode.id}/submit`;
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -225,7 +233,7 @@ export default function MutatedCompanion() {
     if (!session || !selectedNode) return;
     setIsReplanning(true);
     try {
-      const url = `${apiHost}/agent/${session.session_id}/replan?target_node_id=${selectedNode.id}`;
+      const url = `${mutatedApiHost}/agent/${session.session_id}/replan?target_node_id=${selectedNode.id}`;
       const res = await fetch(url, { method: "POST" });
       if (res.ok) {
         const data = await res.json();
