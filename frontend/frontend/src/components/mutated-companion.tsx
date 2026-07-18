@@ -45,7 +45,7 @@ interface SessionState {
 }
 
 export default function MutatedCompanion() {
-  const { notesPath } = useWorkspace();
+  const { notesPath, notesFiles } = useWorkspace();
 
   const getMutatedApiHost = () => {
     if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
@@ -130,8 +130,13 @@ export default function MutatedCompanion() {
     const formData = new FormData();
     formData.append("goal", goalInput);
 
-    if (useExistingFolder && notesPath) {
-      formData.append("folder_path", notesPath);
+    if (useExistingFolder && notesFiles && notesFiles.length > 0) {
+      // Direct file blob upload for zero-backend changes compatibility!
+      notesFiles.forEach((file) => {
+        const filename = file.path.split(/[/\\]/).pop() || "note.md";
+        const blob = new Blob([file.content], { type: "text/markdown" });
+        formData.append("files", blob, filename);
+      });
     } else if (selectedFiles && selectedFiles.length > 0) {
       for (let i = 0; i < selectedFiles.length; i++) {
         formData.append("files", selectedFiles[i]);
