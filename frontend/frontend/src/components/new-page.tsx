@@ -49,7 +49,7 @@ export default function NewPage({ forceWelcome, panel, vaultPath }: NewPageProps
 
   return (
     <div className="w-full h-full flex flex-col bg-background text-foreground overflow-hidden">
-      {showWelcome ? <WorkspaceWelcome /> : <WorkspaceResults />}
+      {showWelcome ? <WorkspaceWelcome /> : <WorkspaceResults vaultPath={notesPath} />}
     </div>
   );
 }

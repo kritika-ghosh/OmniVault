@@ -6,6 +6,7 @@ import { Button } from "./ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { API_PATHS } from "@/lib/api-paths";
 import { Save, Edit2, Eye, Check, Sparkles, Link2 } from "lucide-react";
+import { normalizeTerm } from "@/lib/utils";
 
 interface FrontMatter {
   title?: string;
@@ -41,11 +42,11 @@ function parseMarkdown(rawContent: string) {
 function preprocessWikiLinks(text: string): string {
   // Replace [[TargetNote|Custom Label]]
   let processed = text.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, (match, target, label) => {
-    return `[${label.trim()}](wiki://${encodeURIComponent(target.trim())})`;
+    return `[${label.trim()}](/wiki/${encodeURIComponent(target.trim())})`;
   });
   // Replace [[TargetNote]]
   processed = processed.replace(/\[\[([^\]]+)\]\]/g, (match, target) => {
-    return `[${target.trim()}](wiki://${encodeURIComponent(target.trim())})`;
+    return `[${target.trim()}](/wiki/${encodeURIComponent(target.trim())})`;
   });
   return processed;
 }
@@ -71,10 +72,10 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
 
   // Hydrate content from context on load
   useEffect(() => {
-    const cleanTarget = noteName.replace(/\.md$/i, "").toLowerCase();
+    const cleanTarget = normalizeTerm(noteName);
     const existingFile = notesFiles.find((file) => {
       const fileBase = file.path.split("/").pop() || "";
-      return fileBase.replace(/\.md$/i, "").toLowerCase() === cleanTarget;
+      return normalizeTerm(fileBase.replace(/\.md$/i, "")) === cleanTarget;
     });
 
     if (existingFile) {
@@ -85,11 +86,18 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
         `# ${noteName}\n\nThis note was generated as a placeholder for the knowledge gap **${noteName}**.\n\n## Overview\nAdd your overview of ${noteName} here...\n\n## Syntax / API Reference\n\`\`\`javascript\n// Examples...\n\`\`\`\n`
       );
     }
-  }, [noteName, notesFiles]);
+  }, [noteName]);
 
   const handleSave = async () => {
     setIsSaving(true);
-    await saveNote(filename, content);
+    // Find the correct filename/path if the file already exists (e.g. to preserve folders/slugs)
+    const cleanTarget = normalizeTerm(noteName);
+    const existingFile = notesFiles.find((file) => {
+      const fileBase = file.path.split("/").pop() || "";
+      return normalizeTerm(fileBase.replace(/\.md$/i, "")) === cleanTarget;
+    });
+    const targetFilename = existingFile ? existingFile.path : (noteName.endsWith(".md") ? noteName : `${noteName}.md`);
+    await saveNote(targetFilename, content);
     setIsSaving(false);
     setShowSavedIndicator(true);
     setTimeout(() => setShowSavedIndicator(false), 2000);
@@ -153,19 +161,23 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
 
   // Find backlinks to this note
   const backlinks = useMemo(() => {
-    const cleanTarget = noteName.replace(/\.md$/i, "").toLowerCase();
+    const targetNormalized = normalizeTerm(noteName);
     
     return notesFiles.filter((file) => {
       const fileBase = file.path.split("/").pop() || "";
-      const fileTerm = fileBase.replace(/\.md$/i, "").toLowerCase();
-      if (fileTerm === cleanTarget) return false;
+      const fileTerm = fileBase.replace(/\.md$/i, "");
+      if (normalizeTerm(fileTerm) === targetNormalized) return false;
       
       const contentBody = file.content || "";
-      // Match [[noteName]] or [[noteName|label]]
-      const escapedNote = noteName.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
-      const wikiLinkRegex = new RegExp(`\\[\\[${escapedNote}(?:\\|[^\\]]+)?\\]\\]`, "i");
-      
-      return wikiLinkRegex.test(contentBody);
+      // Match [[noteName]] or [[noteName|label]] using normalized comparison
+      const wikiLinkRegex = /\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g;
+      let match;
+      while ((match = wikiLinkRegex.exec(contentBody)) !== null) {
+        if (normalizeTerm(match[1]) === targetNormalized) {
+          return true;
+        }
+      }
+      return false;
     });
   }, [noteName, notesFiles]);
 
@@ -385,20 +397,23 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
                   <ReactMarkdown
                     components={{
                       a: ({ href, children, ...props }) => {
-                        if (href && href.startsWith("wiki://")) {
-                          const target = decodeURIComponent(href.slice(7));
-                          const cleanTarget = target.replace(/\.md$/i, "").toLowerCase();
+                        console.log("[ReactMarkdown Link Rendered] href:", href);
+                        if (href && href.startsWith("/wiki/")) {
+                          const target = decodeURIComponent(href.slice(6));
+                          const cleanTarget = normalizeTerm(target);
                           
                           const noteExists = notesFiles.some(file => {
                             const fileBase = file.path.split("/").pop() || "";
-                            return fileBase.replace(/\.md$/i, "").toLowerCase() === cleanTarget;
+                            return normalizeTerm(fileBase.replace(/\.md$/i, "")) === cleanTarget;
                           });
 
                           return (
                             <a
                               href="#"
-                              onClick={(e) => {
+                              onClick={async (e) => {
                                 e.preventDefault();
+                                await handleSave();
+                                console.log("[Wiki-Link Clicked] Dispatching open-note for:", target);
                                 window.dispatchEvent(new CustomEvent("open-note", { detail: target }));
                               }}
                               className={

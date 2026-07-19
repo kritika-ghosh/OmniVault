@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Button } from "./ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { Compass, Layers, Zap } from "lucide-react";
+import DotGrid from "./dot-grid";
 
 // Dynamically import force graphs to prevent Next.js SSR WebGL/Three.js crashes
 const ForceGraph2D = dynamic(
@@ -244,7 +245,16 @@ export default function NodeGraph() {
     </div>
 
       {/* Render Graph Container */}
-      <div ref={containerRef} className="flex-1 w-full h-full relative overflow-hidden bg-black/5 dark:bg-black/25">
+      <div ref={containerRef} className="flex-1 w-full h-full relative overflow-hidden bg-background">
+        {graphData.nodes.length > 0 && (
+          <div className="absolute inset-0 opacity-15 pointer-events-none z-0">
+            <DotGrid
+              dotSize={3}
+              gap={24}
+              baseColor="var(--muted-foreground)"
+            />
+          </div>
+        )}
         {graphData.nodes.length === 0 ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center select-none">
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">

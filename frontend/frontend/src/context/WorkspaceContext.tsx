@@ -1,7 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { HOST, API_PATHS } from "@/lib/api-paths";
+import { normalizeTerm } from "@/lib/utils";
 import {
   readFilesRecursively,
   parseDependencies,
@@ -40,7 +41,12 @@ interface WorkspaceContextProps {
   setSortedTerms: (terms: string[]) => void;
   notesFiles: FilePayload[];
   setNotesFiles: (files: FilePayload[]) => void;
-  executeScan: () => Promise<void>;
+  executeScan: (
+    projectPath?: string,
+    notesPath?: string,
+    projectHandle?: FileSystemDirectoryHandle | null,
+    notesHandle?: FileSystemDirectoryHandle | null
+  ) => Promise<void>;
   resetWorkspace: () => void;
   loadMockData: () => void;
   saveNote: (filename: string, content: string) => Promise<void>;
@@ -93,6 +99,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [vaultSessions, setVaultSessions] = useState<Record<string, VaultSession>>({});
   const [activeVaultPath, setActiveVaultPath] = useState<string>("");
 
+  const isHydrated = useRef(false);
+
   // Hydrate state from localStorage on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -109,26 +117,27 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       if (savedActive) {
         setActiveVaultPath(savedActive);
       }
+      isHydrated.current = true;
     }
   }, []);
 
   // Save vaultSessions on changes
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && isHydrated.current) {
       localStorage.setItem("workspace_vault_sessions", JSON.stringify(vaultSessions));
     }
   }, [vaultSessions]);
 
   // Save activeVaultPath on changes
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && isHydrated.current) {
       localStorage.setItem("workspace_active_vault_path", activeVaultPath);
     }
   }, [activeVaultPath]);
 
   // Save vaults list on changes
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && isHydrated.current) {
       localStorage.setItem("workspace_vaults", JSON.stringify(vaults));
     }
   }, [vaults]);
@@ -279,19 +288,19 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const saveNote = useCallback(async (filename: string, content: string) => {
-    const cleanTarget = filename.replace(/\.md$/i, "").toLowerCase();
-    const cleanTerm = filename.split("/").pop()?.replace(/\.md$/i, "").toLowerCase() || "";
+    const cleanTarget = normalizeTerm(filename.replace(/\.md$/i, ""));
+    const cleanTerm = normalizeTerm(filename.split("/").pop()?.replace(/\.md$/i, "") || "");
 
     setNotesFiles((prev) => {
       const fileExists = prev.some((file) => {
         const fileBase = file.path.split("/").pop() || "";
-        return fileBase.replace(/\.md$/i, "").toLowerCase() === cleanTarget;
+        return normalizeTerm(fileBase.replace(/\.md$/i, "")) === cleanTarget;
       });
 
       if (fileExists) {
         return prev.map((file) => {
           const fileBase = file.path.split("/").pop() || "";
-          if (fileBase.replace(/\.md$/i, "").toLowerCase() === cleanTarget) {
+          if (normalizeTerm(fileBase.replace(/\.md$/i, "")) === cleanTarget) {
             return { ...file, content };
           }
           return file;
@@ -304,7 +313,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setScanResult((prev) => {
       if (!prev) return null;
       const updatedReport = prev.report.filter(
-        (gap) => gap.term.toLowerCase().trim() !== cleanTerm
+        (gap) => normalizeTerm(gap.term) !== cleanTerm
       );
       return {
         ...prev,
@@ -332,19 +341,36 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     } else {
       try {
         const saveUrl = `${apiHost}${API_PATHS.SAVE || "/v1/synthesize/save"}`;
-        const response = await fetch(saveUrl, {
+        let response = await fetch(saveUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            notes_path: notesPath || "in-memory",
+            notes_path: (notesPath === "mock-notes" || !notesPath) ? "in-memory" : notesPath,
             filename: filename.endsWith(".md") ? filename : `${filename}.md`,
             content,
           }),
         });
+
+        let didFallback = (notesPath === "mock-notes" || !notesPath);
+        if (response.status === 400) {
+          didFallback = true;
+          response = await fetch(saveUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              notes_path: "in-memory",
+              filename: filename.endsWith(".md") ? filename : `${filename}.md`,
+              content,
+            }),
+          });
+        }
+
         if (response.ok) {
-          setStatusMessage(`Successfully saved ${filename} using local API.`);
+          setStatusMessage(`[API CALL SUCCESS] Saved ${filename} to ${didFallback ? "In-Memory fallback" : "Disk path: " + notesPath}`);
         } else {
           const errText = await response.text();
           throw new Error(errText);
@@ -373,10 +399,22 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }
   }, [notesHandle, setNotesFiles]);
 
-  const executeScan = useCallback(async () => {
+  const executeScan = useCallback(async (
+    customProjectPath?: string,
+    customNotesPath?: string,
+    customProjectHandle?: FileSystemDirectoryHandle | null,
+    customNotesHandle?: FileSystemDirectoryHandle | null
+  ) => {
     setIsLoading(true);
-    const targetNotesPath = notesHandle ? notesHandle.name : (localNotesPath || notesPath);
-    const targetProjectPath = projectHandle ? projectHandle.name : (localProjectPath || projectPath);
+    
+    const activeProjHandle = customProjectHandle !== undefined ? customProjectHandle : projectHandle;
+    const activeNotesHandle = customNotesHandle !== undefined ? customNotesHandle : notesHandle;
+    
+    const activeProjPath = customProjectPath !== undefined ? customProjectPath : (localProjectPath || projectPath);
+    const activeNotesPath = customNotesPath !== undefined ? customNotesPath : (localNotesPath || notesPath);
+
+    const targetNotesPath = activeNotesHandle ? activeNotesHandle.name : activeNotesPath;
+    const targetProjectPath = activeProjHandle ? activeProjHandle.name : activeProjPath;
 
     setStatusMessage("Starting scan...");
     
@@ -386,12 +424,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       let projFiles: FilePayload[] = [];
       let sorted: string[] = [];
 
-      if (projectHandle && notesHandle) {
+      if (activeProjHandle && activeNotesHandle) {
         setStatusMessage("Reading project files recursively...");
-        projFiles = await readFilesRecursively(projectHandle);
+        projFiles = await readFilesRecursively(activeProjHandle);
         
         setStatusMessage("Reading notes files recursively...");
-        notes = await readFilesRecursively(notesHandle);
+        notes = await readFilesRecursively(activeNotesHandle);
   
         setStatusMessage("Extracting dependencies and source code imports...");
         const depTerms = parseDependencies(projFiles);

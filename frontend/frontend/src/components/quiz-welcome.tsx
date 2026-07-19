@@ -20,6 +20,15 @@ export default function QuizWelcome({
   isGenerating,
   notesFiles,
 }: QuizWelcomeProps) {
+  const uniqueNotesFiles = React.useMemo(() => {
+    const seen = new Set<string>();
+    return notesFiles.filter((file) => {
+      if (!file.path || seen.has(file.path)) return false;
+      seen.add(file.path);
+      return true;
+    });
+  }, [notesFiles]);
+
   return (
     <div className="flex flex-col h-full justify-center max-w-md mx-auto space-y-5 py-8 select-none">
       <div className="flex items-center gap-2.5">
@@ -37,7 +46,7 @@ export default function QuizWelcome({
           className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer font-medium"
         >
           <option value="">-- Select a Topic --</option>
-          {notesFiles.map((file) => {
+          {uniqueNotesFiles.map((file) => {
             const parts = file.path.split("/");
             const cleanName = (parts[parts.length - 1] || "").replace(/\.md$/i, "");
             return (

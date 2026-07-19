@@ -4,15 +4,31 @@ import React, { useState, useMemo } from "react";
 import { Button } from "./ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 
-export default function WorkspaceResults() {
+interface WorkspaceResultsProps {
+  vaultPath?: string;
+}
+
+export default function WorkspaceResults({ vaultPath }: WorkspaceResultsProps) {
   const {
-    scanResult,
-    sortedTerms,
-    notesFiles,
+    vaultSessions,
     isLoading,
     executeScan,
     resetWorkspace,
+    activeVaultPath,
   } = useWorkspace();
+
+  const resolvedVaultPath = vaultPath || activeVaultPath;
+  const activeSession = vaultSessions[resolvedVaultPath] || null;
+
+  const scanResult = activeSession ? activeSession.scanResult : null;
+  const sortedTerms = activeSession ? activeSession.sortedTerms : [];
+  const notesFiles = activeSession ? activeSession.notesFiles : [];
+
+  const handleReScan = () => {
+    if (activeSession) {
+      executeScan(activeSession.projectPath, activeSession.notesPath);
+    }
+  };
 
   const [activeTab, setActiveTab] = useState<"all" | "gaps" | "notes">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,7 +127,7 @@ export default function WorkspaceResults() {
         </div>
         <div className="flex items-center gap-2">
           <Button
-            onClick={executeScan}
+            onClick={handleReScan}
             disabled={isLoading}
             className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold cursor-pointer h-9 px-4 flex items-center gap-1.5"
           >
@@ -255,7 +271,14 @@ export default function WorkspaceResults() {
               </div>
 
               {item.isGap ? (
-                <Button className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-black font-bold shrink-0 px-4 cursor-pointer border border-amber-500/10">
+                <Button
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      window.dispatchEvent(new CustomEvent("open-note", { detail: item.term }));
+                    }
+                  }}
+                  className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-black font-bold shrink-0 px-4 cursor-pointer border border-amber-500/10"
+                >
                   Fill Gap
                 </Button>
               ) : (

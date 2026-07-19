@@ -1,21 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { Folder, Play, CheckCircle2, History, Database } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export default function WorkspaceWelcome() {
   const {
-    projectPath,
-    setProjectPath,
-    notesPath,
-    setNotesPath,
-    projectHandle,
-    setProjectHandle,
-    notesHandle,
-    setNotesHandle,
     isLoading,
     statusMessage,
     setStatusMessage,
@@ -23,11 +14,16 @@ export default function WorkspaceWelcome() {
     vaults,
   } = useWorkspace();
 
+  const [localProjPath, setLocalProjPath] = useState("");
+  const [localNotesPath, setLocalNotesPath] = useState("");
+  const [localProjHandle, setLocalProjHandle] = useState<FileSystemDirectoryHandle | null>(null);
+  const [localNotesHandle, setLocalNotesHandle] = useState<FileSystemDirectoryHandle | null>(null);
+
   const handleSelectProjectDir = async () => {
     try {
       const handle = await window.showDirectoryPicker();
-      setProjectHandle(handle);
-      setProjectPath(handle.name);
+      setLocalProjHandle(handle);
+      setLocalProjPath(handle.name);
       setStatusMessage(`Selected project folder: ${handle.name}`);
     } catch (err: any) {
       if (err.name === "AbortError") {
@@ -42,8 +38,8 @@ export default function WorkspaceWelcome() {
   const handleSelectNotesDir = async () => {
     try {
       const handle = await window.showDirectoryPicker();
-      setNotesHandle(handle);
-      setNotesPath(handle.name);
+      setLocalNotesHandle(handle);
+      setLocalNotesPath(handle.name);
       setStatusMessage(`Selected notes folder: ${handle.name}`);
     } catch (err: any) {
       if (err.name === "AbortError") {
@@ -53,6 +49,10 @@ export default function WorkspaceWelcome() {
         setStatusMessage(`Failed to select notes directory: ${err.message}`);
       }
     }
+  };
+
+  const handleExecuteScan = () => {
+    executeScan(localProjPath, localNotesPath, localProjHandle, localNotesHandle);
   };
 
   return (
@@ -69,50 +69,68 @@ export default function WorkspaceWelcome() {
           </p>
         </div>
 
-        {/* Directory Pickers (Borderless subtle row lists) */}
+        {/* Directory Pickers */}
         <div className="space-y-4">
           <div className="flex flex-col gap-1.5">
             <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest block pl-1">
-              Workspace Directories
+              Workspace Configuration
             </span>
             
-            <div className="space-y-2">
+            <div className="space-y-3">
               {/* Project path row */}
-              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors border border-border/20">
-                <div className="flex flex-col min-w-0 pr-4">
-                  <span className="text-xs font-bold text-foreground">Project Directory</span>
-                  <span className="text-[11px] font-mono text-muted-foreground truncate block mt-0.5">
-                    {projectPath || "Not selected"}
-                  </span>
+              <div className="flex flex-col gap-2 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors border border-border/20">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex flex-col min-w-0 pr-4">
+                    <span className="text-xs font-bold text-foreground">Project Directory</span>
+                  </div>
+                  <Button 
+                    onClick={handleSelectProjectDir}
+                    disabled={isLoading}
+                    variant="ghost"
+                    className="text-xs hover:bg-background border border-border/40 shrink-0 cursor-pointer h-8 px-3 font-semibold"
+                  >
+                    <Folder className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                    Choose Folder
+                  </Button>
                 </div>
-                <Button 
-                  onClick={handleSelectProjectDir}
-                  disabled={isLoading}
-                  variant="ghost"
-                  className="text-xs hover:bg-background border border-border/40 shrink-0 cursor-pointer h-8 px-3 font-semibold"
-                >
-                  <Folder className="w-3.5 h-3.5 mr-1.5 text-primary" />
-                  Choose
-                </Button>
+                <input
+                  type="text"
+                  placeholder="Or paste absolute project path (e.g. C:\Dev\project)"
+                  value={localProjPath}
+                  onChange={(e) => {
+                    setLocalProjPath(e.target.value);
+                    setLocalProjHandle(null);
+                  }}
+                  className="w-full text-xs font-mono bg-background border border-border/40 rounded-lg h-9 px-3 focus:outline-none focus:ring-1 focus:ring-primary text-foreground select-text"
+                />
               </div>
 
               {/* Notes path row */}
-              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors border border-border/20">
-                <div className="flex flex-col min-w-0 pr-4">
-                  <span className="text-xs font-bold text-foreground">Notes Vault</span>
-                  <span className="text-[11px] font-mono text-muted-foreground truncate block mt-0.5">
-                    {notesPath || "Not selected"}
-                  </span>
+              <div className="flex flex-col gap-2 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors border border-border/20">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex flex-col min-w-0 pr-4">
+                    <span className="text-xs font-bold text-foreground">Notes Vault</span>
+                  </div>
+                  <Button 
+                    onClick={handleSelectNotesDir}
+                    disabled={isLoading}
+                    variant="ghost"
+                    className="text-xs hover:bg-background border border-border/40 shrink-0 cursor-pointer h-8 px-3 font-semibold"
+                  >
+                    <Folder className="w-3.5 h-3.5 mr-1.5 text-amber-500" />
+                    Choose Folder
+                  </Button>
                 </div>
-                <Button 
-                  onClick={handleSelectNotesDir}
-                  disabled={isLoading}
-                  variant="ghost"
-                  className="text-xs hover:bg-background border border-border/40 shrink-0 cursor-pointer h-8 px-3 font-semibold"
-                >
-                  <Folder className="w-3.5 h-3.5 mr-1.5 text-amber-500" />
-                  Choose
-                </Button>
+                <input
+                  type="text"
+                  placeholder="Or paste absolute notes path (e.g. C:\Dev\notes)"
+                  value={localNotesPath}
+                  onChange={(e) => {
+                    setLocalNotesPath(e.target.value);
+                    setLocalNotesHandle(null);
+                  }}
+                  className="w-full text-xs font-mono bg-background border border-border/40 rounded-lg h-9 px-3 focus:outline-none focus:ring-1 focus:ring-primary text-foreground select-text"
+                />
               </div>
             </div>
           </div>
@@ -120,8 +138,8 @@ export default function WorkspaceWelcome() {
 
         {/* Action Button */}
         <Button
-          onClick={executeScan}
-          disabled={isLoading || (!projectPath && !projectHandle)}
+          onClick={handleExecuteScan}
+          disabled={isLoading || !localProjPath || !localNotesPath}
           className="w-full h-12 text-xs font-bold tracking-widest uppercase bg-primary hover:bg-primary/95 text-primary-foreground disabled:bg-muted disabled:text-muted-foreground rounded-xl transition-all shadow-lg hover:shadow-primary/5 cursor-pointer flex items-center justify-center gap-2"
         >
           {isLoading ? (
@@ -149,7 +167,8 @@ export default function WorkspaceWelcome() {
                 <button
                   key={vaultPath}
                   onClick={() => {
-                    setNotesPath(vaultPath);
+                    setLocalNotesPath(vaultPath);
+                    setLocalNotesHandle(null);
                     setStatusMessage(`Restored vault path: ${vaultPath}`);
                   }}
                   className="flex items-center justify-between text-xs font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 px-3.5 py-2.5 rounded-xl border border-border/20 bg-muted/10 transition-all text-left cursor-pointer truncate"

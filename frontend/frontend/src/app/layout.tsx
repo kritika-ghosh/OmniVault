@@ -63,9 +63,7 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
       <body className="min-h-screen bg-background text-foreground antialiased overflow-hidden">
         <WorkspaceProvider>
           <TooltipProvider>
-            <ContextMenu>
-              <ContextMenuTrigger render={<div className="w-full h-full flex flex-row overflow-hidden" />}>
-                <SidebarProvider className="flex flex-row h-screen w-screen overflow-hidden">
+            <SidebarProvider className="flex flex-row h-screen w-screen overflow-hidden">
               {/* Left stuck Vertical Menubar */}
               <header className="w-12 h-full border-r border-border bg-sidebar flex flex-col items-center justify-between py-2 z-50 shrink-0 select-none">
                 <div className="flex flex-col items-center w-full">
@@ -178,33 +176,35 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
 
               {/* Main workspace layout */}
               <div className="flex-1 flex overflow-hidden relative w-full h-full">
-                <AppSidebar className="h-full" />
+                <ContextMenu>
+                  <ContextMenuTrigger render={<div className="h-full shrink-0 flex" />}>
+                    <AppSidebar className="h-full" />
+                  </ContextMenuTrigger>
+                  <ContextMenuContent className="w-52">
+                    <ContextMenuItem onClick={() => navigate('scan')}>
+                      <Scan className="w-4 h-4 mr-2" />
+                      New Scan Dashboard
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={handleCreateNote}>
+                      <FilePlus className="w-4 h-4 mr-2" />
+                      Create New Note
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={() => navigate('quiz')}>
+                      <GraduationCap className="w-4 h-4 mr-2" />
+                      Active Recall Quiz
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem onClick={() => navigate('node-graph')}>
+                      <Network className="w-4 h-4 mr-2" />
+                      Knowledge Graph
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
                 <main className="flex-1 h-full w-full relative overflow-hidden">
                   {children}
                 </main>
               </div>
             </SidebarProvider>
-          </ContextMenuTrigger>
-          <ContextMenuContent className="w-52">
-            <ContextMenuItem onClick={() => navigate('scan')}>
-              <Scan className="w-4 h-4 mr-2" />
-              New Scan Dashboard
-            </ContextMenuItem>
-            <ContextMenuItem onClick={handleCreateNote}>
-              <FilePlus className="w-4 h-4 mr-2" />
-              Create New Note
-            </ContextMenuItem>
-            <ContextMenuItem onClick={() => navigate('quiz')}>
-              <GraduationCap className="w-4 h-4 mr-2" />
-              Active Recall Quiz
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem onClick={() => navigate('node-graph')}>
-              <Network className="w-4 h-4 mr-2" />
-              Knowledge Graph
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
       </TooltipProvider>
     </WorkspaceProvider>
   </body>
