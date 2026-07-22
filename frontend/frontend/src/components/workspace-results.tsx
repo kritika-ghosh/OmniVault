@@ -5,15 +5,31 @@ import { Button } from "./ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { RefreshCw, RotateCcw, Search, Sparkles, CheckCircle2 } from "lucide-react";
 
-export default function WorkspaceResults() {
+interface WorkspaceResultsProps {
+  vaultPath?: string;
+}
+
+export default function WorkspaceResults({ vaultPath }: WorkspaceResultsProps) {
   const {
-    scanResult,
-    sortedTerms,
-    notesFiles,
+    vaultSessions,
     isLoading,
     executeScan,
     resetWorkspace,
+    activeVaultPath,
   } = useWorkspace();
+
+  const resolvedVaultPath = vaultPath || activeVaultPath;
+  const activeSession = vaultSessions[resolvedVaultPath] || null;
+
+  const scanResult = activeSession ? activeSession.scanResult : null;
+  const sortedTerms = activeSession ? activeSession.sortedTerms : [];
+  const notesFiles = activeSession ? activeSession.notesFiles : [];
+
+  const handleReScan = () => {
+    if (activeSession) {
+      executeScan(activeSession.projectPath, activeSession.notesPath);
+    }
+  };
 
   const [activeTab, setActiveTab] = useState<"all" | "gaps" | "notes">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,7 +127,7 @@ export default function WorkspaceResults() {
         </div>
         <div className="flex items-center gap-2">
           <Button
-            onClick={executeScan}
+            onClick={handleReScan}
             disabled={isLoading}
             className="bg-accent hover:bg-accent/90 text-white font-mono font-bold text-xs cursor-pointer h-9 px-4 flex items-center gap-1.5 shadow-md"
           >
@@ -258,7 +274,11 @@ export default function WorkspaceResults() {
 
               {item.isGap ? (
                 <Button 
-                  onClick={() => window.dispatchEvent(new CustomEvent("open-note", { detail: item.term }))}
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      window.dispatchEvent(new CustomEvent("open-note", { detail: item.term }));
+                    }
+                  }}
                   className="h-8 text-xs bg-accent hover:bg-accent/90 text-white font-bold font-mono shrink-0 px-4 cursor-pointer shadow-md"
                 >
                   <Sparkles className="w-3.5 h-3.5 mr-1" /> Fill Gap

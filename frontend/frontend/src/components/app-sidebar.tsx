@@ -181,8 +181,8 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
               <Collapsible key={session.notesPath} defaultOpen={true} className="w-full">
                 <div className={cn(
                   "flex items-center justify-between w-full hover:bg-muted/40 rounded-xl px-1.5 py-1 transition-all border border-transparent mb-1",
-                  isActive && "bg-primary/5 border-primary/20",
-                  isDragOverRoot === session.notesPath && "bg-primary/10 border-dashed border-primary"
+                  isActive && "bg-primary/10 border-primary/25 shadow-xs",
+                  isDragOverRoot === session.notesPath && "bg-primary/15 border-dashed border-primary"
                 )}>
                   <CollapsibleTrigger
                     onDragOver={(e) => handleDragOverRoot(e, session.notesPath)}
@@ -192,7 +192,7 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
                   >
                     <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
                     <Folder className={cn("w-4 h-4 shrink-0", isActive ? "text-primary" : "text-muted-foreground/70")} />
-                    <span className="truncate">{notesDirName}</span>
+                    <span className={cn("truncate", isActive && "text-primary font-black")}>{notesDirName}</span>
                   </CollapsibleTrigger>
 
                   {/* Launch & Delete controls */}

@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Button } from "./ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { Compass, Layers, Zap } from "lucide-react";
+import DotGrid from "./dot-grid";
 
 // Dynamically import force graphs to prevent Next.js SSR WebGL/Three.js crashes
 const ForceGraph2D = dynamic(
