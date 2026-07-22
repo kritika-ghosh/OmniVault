@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { Button } from "./ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
+import { RefreshCw, RotateCcw, Search, Sparkles, CheckCircle2 } from "lucide-react";
 
 export default function WorkspaceResults() {
   const {
@@ -53,7 +54,6 @@ export default function WorkspaceResults() {
 
   // Combine everything to list all scanned terms and vault files
   const items = useMemo(() => {
-    // Collect all unique terms from both scanned codebase terms and existing vault files
     const allTermsSet = new Set<string>();
     
     sortedTerms.forEach((t) => allTermsSet.add(t.trim()));
@@ -98,74 +98,74 @@ export default function WorkspaceResults() {
   }, [items, activeTab, searchQuery]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-background text-foreground overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-graph-paper text-foreground overflow-hidden">
       {/* Top action header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b border-border shrink-0 bg-muted/20">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b border-border shrink-0 bg-muted/90 backdrop-blur-md">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            Workspace Debt Analysis
+          <h2 className="text-2xl font-extrabold tracking-tight text-foreground font-handwriting flex items-center gap-2">
+            Workspace Debt Analysis :-
           </h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Overview of knowledge base coverage and missing documentation.
+          <p className="text-xs font-mono text-muted-foreground mt-0.5">
+            AST import parsing & documentation gap coverage report
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
             onClick={executeScan}
             disabled={isLoading}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold cursor-pointer h-9 px-4 flex items-center gap-1.5"
+            className="bg-accent hover:bg-accent/90 text-white font-mono font-bold text-xs cursor-pointer h-9 px-4 flex items-center gap-1.5 shadow-md"
           >
             {isLoading ? (
               <>
-                <span className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 Scanning...
               </>
             ) : (
-              "Re-scan"
+              "Re-scan Vault"
             )}
           </Button>
           <Button
             onClick={resetWorkspace}
             disabled={isLoading}
             variant="outline"
-            className="border-border text-muted-foreground hover:text-foreground text-xs cursor-pointer h-9 px-4"
+            className="border-border bg-card text-muted-foreground hover:text-foreground font-mono text-xs cursor-pointer h-9 px-4"
           >
             Reset
           </Button>
         </div>
       </div>
 
-      {/* Stats counter grid */}
-      <div className="grid grid-cols-3 gap-4 px-6 py-4 border-b border-border shrink-0 bg-card">
-        <div className="bg-muted/30 border border-border p-3.5 rounded-lg text-center">
+      {/* Stats counter grid - Dark Notebook Cards */}
+      <div className="grid grid-cols-3 gap-4 px-6 py-4 border-b border-border shrink-0 bg-[#0d1420]/50">
+        <div className="bg-card border border-border p-3.5 rounded-xl text-center">
           <div className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">Scanned Items</div>
-          <div className="text-xl font-bold text-foreground mt-1">
+          <div className="text-2xl font-bold text-foreground mt-0.5 font-mono">
             {scanResult?.total_terms_scanned || items.length}
           </div>
         </div>
-        <div className="bg-amber-500/5 border border-amber-500/20 p-3.5 rounded-lg text-center">
-          <div className="text-[10px] uppercase font-mono tracking-wider text-amber-500 font-semibold">Gaps Found</div>
-          <div className="text-xl font-bold text-amber-500 mt-1">
+        <div className="bg-accent/10 border border-accent/30 p-3.5 rounded-xl text-center animate-pulse">
+          <div className="text-[10px] uppercase font-mono tracking-wider text-accent font-semibold">Gaps Found</div>
+          <div className="text-2xl font-bold text-accent mt-0.5 font-mono">
             {scanResult?.gaps_found || gaps.length}
           </div>
         </div>
-        <div className="bg-primary/5 border border-primary/20 p-3.5 rounded-lg text-center">
+        <div className="bg-primary/10 border border-primary/30 p-3.5 rounded-xl text-center">
           <div className="text-[10px] uppercase font-mono tracking-wider text-primary font-semibold">Saved Notes</div>
-          <div className="text-xl font-bold text-primary mt-1">
+          <div className="text-2xl font-bold text-primary mt-0.5 font-mono">
             {existingNotes.length}
           </div>
         </div>
       </div>
 
       {/* Tabs and search filters */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-3 border-b border-border bg-muted/10 shrink-0">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-3 border-b border-border bg-muted/80 shrink-0">
         {/* Tab buttons */}
-        <div className="flex items-center bg-muted p-1 rounded-lg border border-border self-start">
+        <div className="flex items-center bg-card p-1 rounded-xl border border-border self-start font-mono">
           <button
             onClick={() => setActiveTab("all")}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               activeTab === "all"
-                ? "bg-background text-foreground shadow-sm"
+                ? "bg-[#6e346b] text-white font-bold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -173,9 +173,9 @@ export default function WorkspaceResults() {
           </button>
           <button
             onClick={() => setActiveTab("gaps")}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               activeTab === "gaps"
-                ? "bg-amber-500/10 text-amber-500 shadow-sm border border-amber-500/10"
+                ? "bg-accent/20 text-accent font-bold border border-accent/30"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -183,9 +183,9 @@ export default function WorkspaceResults() {
           </button>
           <button
             onClick={() => setActiveTab("notes")}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               activeTab === "notes"
-                ? "bg-primary/10 text-primary shadow-sm border border-primary/10"
+                ? "bg-primary/20 text-primary font-bold border border-primary/30"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -194,52 +194,54 @@ export default function WorkspaceResults() {
         </div>
 
         {/* Search Input */}
-        <div className="w-full sm:w-60">
+        <div className="w-full sm:w-60 relative">
           <input
             type="text"
-            placeholder="Search technical terms..."
+            placeholder="Search terms..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-1.5 bg-background border border-border rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-foreground"
+            className="w-full px-3 py-1.5 bg-[#0a0f16] border border-border rounded-xl text-xs font-mono text-foreground focus:outline-none focus:border-primary pl-8"
           />
+          <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-2.5" />
         </div>
       </div>
 
       {/* Results content list */}
       <div className="flex-1 overflow-y-auto p-6 space-y-3">
         {filteredItems.length === 0 ? (
-          <div className="h-40 flex flex-col items-center justify-center border border-dashed border-border rounded-lg text-center p-6">
-            <span className="text-xl">🔍</span>
-            <p className="text-xs text-muted-foreground mt-2">No matching items found in scan results.</p>
+          <div className="h-40 flex flex-col items-center justify-center border border-dashed border-border rounded-2xl text-center p-6 bg-card">
+            <Search className="w-8 h-8 text-muted-foreground/60 mb-2" />
+            <p className="text-xs font-mono text-muted-foreground">No matching items found in scan results.</p>
           </div>
         ) : (
           filteredItems.map((item) => (
             <div
               key={item.term}
-              className={`border p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-200 ${
+              className={`border p-4.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-200 ${
                 item.isGap
-                  ? "bg-amber-500/5 hover:bg-amber-500/10 border-amber-500/20 hover:border-amber-500/30"
-                  : "bg-card hover:bg-muted/30 border-border hover:border-primary/20"
+                  ? "bg-accent/5 hover:bg-accent/10 border-accent/30"
+                  : "bg-card hover:bg-muted border-border"
               }`}
             >
               <div className="space-y-1.5 flex-1 min-w-0">
                 <div className="flex items-center flex-wrap gap-2">
-                  <span className="font-mono text-sm font-bold text-foreground truncate max-w-xs sm:max-w-md">
+                  <span className={`${item.isGap ? "text-accent" : "text-primary"} font-bold font-mono`}>↳</span>
+                  <span className="font-handwriting text-lg font-bold text-foreground truncate max-w-xs sm:max-w-md">
                     {item.term}
                   </span>
                   
                   {item.isGap ? (
-                    <span className="text-[9px] font-mono font-bold tracking-wider px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded-full border border-amber-500/25 uppercase shrink-0">
+                    <span className="text-[9px] font-mono font-bold tracking-wider px-2 py-0.5 bg-accent/20 text-accent rounded-md border border-accent/30 uppercase shrink-0">
                       GAP
                     </span>
                   ) : (
-                    <span className="text-[9px] font-mono font-bold tracking-wider px-2 py-0.5 bg-primary/10 text-primary rounded-full border border-primary/25 uppercase shrink-0">
+                    <span className="text-[9px] font-mono font-bold tracking-wider px-2 py-0.5 bg-primary/20 text-primary rounded-md border border-primary/30 uppercase shrink-0">
                       SAVED
                     </span>
                   )}
                   
                   {item.classification !== "existing_note" && (
-                    <span className="text-[9px] font-mono px-2 py-0.5 bg-muted text-muted-foreground rounded-full border border-border uppercase shrink-0">
+                    <span className="text-[9px] font-mono px-2 py-0.5 bg-muted text-muted-foreground rounded-md border border-border uppercase shrink-0">
                       {item.classification.replace("_", " ")}
                     </span>
                   )}
@@ -249,18 +251,25 @@ export default function WorkspaceResults() {
                   {item.reason}
                 </p>
                 
-                <div className="text-[10px] font-mono text-muted-foreground/60 truncate">
+                <div className="text-[10px] font-mono text-muted-foreground/75 truncate">
                   Source: {item.sources.join(", ")}
                 </div>
               </div>
 
               {item.isGap ? (
-                <Button className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-black font-bold shrink-0 px-4 cursor-pointer border border-amber-500/10">
-                  Fill Gap
+                <Button 
+                  onClick={() => window.dispatchEvent(new CustomEvent("open-note", { detail: item.term }))}
+                  className="h-8 text-xs bg-accent hover:bg-accent/90 text-white font-bold font-mono shrink-0 px-4 cursor-pointer shadow-md"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1" /> Fill Gap
                 </Button>
               ) : (
-                <Button variant="ghost" className="h-8 text-xs text-primary font-semibold shrink-0 px-3 cursor-default hover:bg-transparent">
-                  ✓ Documented
+                <Button 
+                  onClick={() => window.dispatchEvent(new CustomEvent("open-note", { detail: item.term }))}
+                  variant="ghost" 
+                  className="h-8 text-xs text-primary font-mono font-semibold shrink-0 px-3 hover:bg-primary/10 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Documented Note →
                 </Button>
               )}
             </div>

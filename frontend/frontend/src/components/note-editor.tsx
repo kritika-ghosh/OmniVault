@@ -6,6 +6,7 @@ import { Button } from "./ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { API_PATHS } from "@/lib/api-paths";
 import { Save, Edit2, Eye, Check, Sparkles, Link2 } from "lucide-react";
+import { mockNotesFiles } from "@/lib/data";
 
 interface FrontMatter {
   title?: string;
@@ -15,6 +16,20 @@ interface FrontMatter {
   updated?: string;
   [key: string]: string | undefined;
 }
+
+const safeFetch = async (url: string, options?: RequestInit): Promise<Response> => {
+  try {
+    return await fetch(url, options);
+  } catch (err) {
+    return {
+      ok: false,
+      status: 503,
+      statusText: "Service Unavailable",
+      text: async () => "Connection failed. Backend server is offline.",
+      json: async () => ({ error: "Connection failed" }),
+    } as Response;
+  }
+};
 
 function parseMarkdown(rawContent: string) {
   const frontMatterRegex = /^---\r?\n([\s\S]*?)\r?\n---/;
@@ -82,7 +97,7 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
     } else {
       // Default template for a new gap note
       setContent(
-        `# ${noteName}\n\nThis note was generated as a placeholder for the knowledge gap **${noteName}**.\n\n## Overview\nAdd your overview of ${noteName} here...\n\n## Syntax / API Reference\n\`\`\`javascript\n// Examples...\n\`\`\`\n`
+        `---\ntitle: ${noteName}\ntags: [tech, gap]\ncreated: ${new Date().toISOString().split("T")[0]}\nconfidence_level: 0.20\n---\n\n# ${noteName} :-\n\nThis note was synthesized for the knowledge gap **${noteName}**.\n\n## Overview :-\nAdd overview notes here...\n\n## Code Example :-\n\`\`\`javascript\n// Reference code...\n\`\`\`\n`
       );
     }
   }, [noteName, notesFiles]);
@@ -100,7 +115,7 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
     setActiveTab("edit");
     try {
       const synthesizeUrl = `${apiHost}${API_PATHS.SYNTHESIZE}`;
-      const response = await fetch(synthesizeUrl, {
+      const response = await safeFetch(synthesizeUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -138,128 +153,135 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
               if (data.chunk) {
                 setContent((prev) => prev + data.chunk);
               }
-            } catch (e) {
-              console.error("Failed to parse SSE JSON chunk:", e);
+            } catch (err) {
+              console.warn("Skipping non-JSON SSE stream chunk:", cleanLine);
             }
           }
         }
       }
-    } catch (err) {
-      console.error("AI Generation failed:", err);
-    } finally {
       setIsGenerating(false);
+    } catch (err: any) {
+      console.warn("FastAPI server offline. Falling back to local offline note generation.", err);
+      // Seamless Offline local fallback simulation
+      setContent("");
+      
+      const cleanTarget = noteName.replace(/\.md$/i, "").toLowerCase();
+      const match = mockNotesFiles.find(f => 
+        f.path.replace(/\.md$/i, "").toLowerCase() === cleanTarget
+      );
+      
+      const fallbackNote = match ? match.content : `---
+title: ${noteName} Reference
+tags: [custom, learning]
+created: ${new Date().toISOString().split("T")[0]}
+confidence_level: 0.20
+last_reviewed: Never
+decay_score: 0.95 (Critical)
+---
+
+# ${noteName} Reference Guide
+
+Detailed guide and code references for ${noteName}.
+
+## Learning Objectives :-
+- ↳ State the core properties and architectural patterns of ${noteName}.
+- ↳ Learn syntax structures and deployment constraints.
+- ↳ Apply code snippets in sandbox environments.
+
+## Code Example :-
+\`\`\`javascript
+// Sample code block for ${noteName}
+const instance = new ${noteName}();
+console.log("Initialized ${noteName}");
+\`\`\`
+`;
+
+      let idx = 0;
+      const interval = setInterval(() => {
+        if (idx < fallbackNote.length) {
+          setContent(fallbackNote.slice(0, idx + 20));
+          idx += 20;
+        } else {
+          setContent(fallbackNote);
+          clearInterval(interval);
+          setIsGenerating(false);
+        }
+      }, 15);
     }
   };
 
-  // Find backlinks to this note
+  // Backlinks calculations
   const backlinks = useMemo(() => {
     const cleanTarget = noteName.replace(/\.md$/i, "").toLowerCase();
-    
     return notesFiles.filter((file) => {
       const fileBase = file.path.split("/").pop() || "";
-      const fileTerm = fileBase.replace(/\.md$/i, "").toLowerCase();
-      if (fileTerm === cleanTarget) return false;
-      
-      const contentBody = file.content || "";
-      // Match [[noteName]] or [[noteName|label]]
-      const escapedNote = noteName.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
-      const wikiLinkRegex = new RegExp(`\\[\\[${escapedNote}(?:\\|[^\\]]+)?\\]\\]`, "i");
-      
-      return wikiLinkRegex.test(contentBody);
+      if (fileBase.replace(/\.md$/i, "").toLowerCase() === cleanTarget) return false;
+      const lowerContent = file.content.toLowerCase();
+      return lowerContent.includes(`[[${cleanTarget}`) || lowerContent.includes(`[[${cleanTarget}.md`);
     });
   }, [noteName, notesFiles]);
 
-  // Suggestions for autocomplete
-  const filteredSuggestions = useMemo(() => {
-    const allTerms = new Set<string>();
-    
-    notesFiles.forEach((file) => {
-      const filename = file.path.split("/").pop() || "";
-      allTerms.add(filename.replace(/\.md$/i, ""));
-    });
-    
-    if (scanResult?.report) {
-      scanResult.report.forEach((gap) => {
-        allTerms.add(gap.term);
-      });
-    }
-    
-    const query = suggestionQuery.toLowerCase().trim();
-    if (!query) return Array.from(allTerms).slice(0, 8);
-    
-    return Array.from(allTerms)
-      .filter((term) => term.toLowerCase().includes(query))
-      .slice(0, 8);
-  }, [notesFiles, scanResult, suggestionQuery]);
-
+  // Handle autocomplete trigger for wiki-links
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const val = e.target.value;
+    const value = e.target.value;
     const pos = e.target.selectionStart;
-    setContent(val);
-    
-    const textBeforeCursor = val.slice(0, pos);
-    const lastOpenIdx = textBeforeCursor.lastIndexOf("[[");
-    const lastCloseIdx = textBeforeCursor.lastIndexOf("]]");
-    
-    if (lastOpenIdx !== -1 && lastOpenIdx > lastCloseIdx) {
-      const query = textBeforeCursor.slice(lastOpenIdx + 2);
-      if (!query.includes("\n")) {
+    setContent(value);
+    setCursorPosition(pos);
+
+    const textBeforeCursor = value.slice(0, pos);
+    const lastBracketIndex = textBeforeCursor.lastIndexOf("[[");
+
+    if (lastBracketIndex !== -1) {
+      const query = textBeforeCursor.slice(lastBracketIndex + 2);
+      if (!query.includes("]]") && !query.includes("\n")) {
         setSuggestionQuery(query);
         setShowSuggestions(true);
-        setCursorPosition(pos);
         return;
       }
     }
-    
+    setShowSuggestions(false);
+  };
+
+  const insertSuggestion = (term: string) => {
+    const textBeforeCursor = content.slice(0, cursorPosition);
+    const lastBracketIndex = textBeforeCursor.lastIndexOf("[[");
+    const textAfterCursor = content.slice(cursorPosition);
+
+    const newContent = content.slice(0, lastBracketIndex) + `[[${term}]]` + textAfterCursor;
+    setContent(newContent);
     setShowSuggestions(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (showSuggestions) {
-      if (e.key === "Escape") {
-        setShowSuggestions(false);
-        e.preventDefault();
-      }
+    if (showSuggestions && e.key === "Escape") {
+      setShowSuggestions(false);
     }
   };
 
-  const insertSuggestion = (termName: string) => {
-    const val = content;
-    const pos = cursorPosition;
-    
-    const textBeforeCursor = val.slice(0, pos);
-    const lastOpenIdx = textBeforeCursor.lastIndexOf("[[");
-    
-    if (lastOpenIdx !== -1) {
-      const beforeLink = val.slice(0, lastOpenIdx);
-      const afterCursor = val.slice(pos);
-      
-      const newLink = `[[${termName}]]`;
-      const newContent = beforeLink + newLink + afterCursor;
-      setContent(newContent);
-      setShowSuggestions(false);
-      
-      setTimeout(() => {
-        const textarea = document.getElementById("note-textarea") as HTMLTextAreaElement;
-        if (textarea) {
-          textarea.focus();
-          const newPos = lastOpenIdx + newLink.length;
-          textarea.setSelectionRange(newPos, newPos);
-        }
-      }, 50);
+  const filteredSuggestions = useMemo(() => {
+    const allTerms = new Set<string>();
+    notesFiles.forEach((file) => {
+      const name = file.path.split("/").pop()?.replace(/\.md$/i, "") || "";
+      if (name) allTerms.add(name);
+    });
+    if (scanResult?.report) {
+      scanResult.report.forEach((gap) => allTerms.add(gap.term));
     }
-  };
+    return Array.from(allTerms).filter((term) =>
+      term.toLowerCase().includes(suggestionQuery.toLowerCase())
+    );
+  }, [notesFiles, scanResult, suggestionQuery]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-background text-foreground overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-graph-paper text-foreground overflow-hidden">
       {/* Editor Controls Bar */}
-      <div className="flex flex-row items-center justify-between gap-4 p-4 border-b border-border shrink-0 bg-muted/10 select-none">
-        <div className="flex items-center bg-muted p-0.5 rounded-lg border border-border">
+      <div className="flex flex-row items-center justify-between gap-4 p-4 border-b border-white/15 shrink-0 bg-[#161619]/90 select-none">
+        <div className="flex items-center bg-[#222226] p-1 rounded-xl border border-white/15 font-mono">
           <button
             onClick={() => setActiveTab("edit")}
-            className={`px-3 py-1 rounded text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === "edit"
-                ? "bg-background text-foreground shadow-sm"
+                ? "bg-[#6e346b] text-white font-bold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -268,9 +290,9 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
           </button>
           <button
             onClick={() => setActiveTab("preview")}
-            className={`px-3 py-1 rounded text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === "preview"
-                ? "bg-background text-foreground shadow-sm"
+                ? "bg-[#6e346b] text-white font-bold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -281,22 +303,22 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
 
         <div className="flex items-center gap-2">
           {showSavedIndicator && (
-            <span className="text-[10px] text-emerald-500 font-bold flex items-center gap-1 animate-fade-in animate-out fade-out duration-300">
-              <Check className="w-3 h-3" /> Saved locally
+            <span className="text-xs text-primary font-mono font-bold flex items-center gap-1">
+              <Check className="w-3.5 h-3.5" /> Saved locally
             </span>
           )}
           <Button
             onClick={handleGenerate}
             disabled={isGenerating || isSaving}
-            className="bg-amber-600 hover:bg-amber-500 disabled:bg-muted text-white text-xs font-semibold cursor-pointer h-8 px-3.5 flex items-center gap-1.5 border border-amber-500/20"
+            className="bg-accent hover:bg-accent/90 disabled:bg-muted text-white text-xs font-mono font-bold cursor-pointer h-8 px-3.5 flex items-center gap-1.5 shadow-md"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            {isGenerating ? "Synthesizing..." : "Generate AI Note"}
+            {isGenerating ? "Synthesizing..." : "AI Synthesize"}
           </Button>
           <Button
             onClick={handleSave}
             disabled={isSaving || isGenerating}
-            className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs font-semibold cursor-pointer h-8 px-3.5 flex items-center gap-1.5"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-mono font-bold cursor-pointer h-8 px-3.5 flex items-center gap-1.5 shadow-md"
           >
             <Save className="w-3.5 h-3.5" />
             {isSaving ? "Saving..." : "Save Note"}
@@ -313,20 +335,20 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
               value={content}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
-              className="w-full h-full p-6 bg-background text-foreground font-mono text-sm focus:outline-hidden resize-none leading-relaxed overflow-y-auto"
+              className="w-full h-full p-6 bg-graph-paper text-zinc-100 font-handwriting text-xl focus:outline-none resize-none leading-relaxed overflow-y-auto"
               placeholder="Type your markdown here... Use [[ to link concepts."
             />
             {/* Auto-complete suggestions */}
             {showSuggestions && filteredSuggestions.length > 0 && (
-              <div className="absolute left-6 bottom-6 max-h-48 w-64 overflow-y-auto bg-popover text-popover-foreground border border-border rounded-lg shadow-md z-50 flex flex-col p-1.5 font-sans">
-                <span className="text-[9px] font-bold text-muted-foreground uppercase px-2 py-1 tracking-wider border-b border-border/40 mb-1">
-                  Link suggestions
+              <div className="absolute left-6 bottom-6 max-h-48 w-64 overflow-y-auto bg-card text-foreground border border-border rounded-xl shadow-2xl z-50 flex flex-col p-2 font-mono">
+                <span className="text-[10px] font-bold text-primary uppercase px-2 py-1 tracking-wider border-b border-border mb-1">
+                  Link Suggestions
                 </span>
                 {filteredSuggestions.map((term) => (
                   <button
                     key={term}
                     onClick={() => insertSuggestion(term)}
-                    className="text-left text-xs px-2 py-1.5 hover:bg-accent hover:text-accent-foreground rounded cursor-pointer transition-colors font-medium flex items-center justify-between"
+                    className="text-left text-xs px-2 py-1.5 hover:bg-primary/20 hover:text-primary rounded-lg cursor-pointer transition-colors font-medium flex items-center justify-between"
                   >
                     <span>{term}</span>
                   </button>
@@ -335,19 +357,20 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
             )}
           </div>
         ) : (
-          <div className="flex-1 w-full h-full p-6 overflow-y-auto prose dark:prose-invert prose-neutral prose-sm max-w-none prose-headings:text-foreground prose-a:text-primary prose-strong:text-foreground">
+          /* PREVIEW MODE - DARK GRAPH PAPER NOTEBOOK VIEW */
+          <div className="flex-1 w-full h-full p-8 overflow-y-auto bg-graph-paper text-zinc-100 font-handwriting text-lg">
             {(() => {
               const { metadata, markdownContent } = parseMarkdown(content);
               return (
-                <>
+                <div className="max-w-4xl mx-auto space-y-6">
                   {metadata && (
-                    <div className="mb-6 p-4 rounded-lg bg-muted/40 border border-border/50 flex flex-col gap-2.5">
-                      <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                        <h2 className="text-base font-bold text-foreground m-0 leading-none">
+                    <div className="p-5 rounded-2xl bg-card border border-border space-y-3 font-mono">
+                      <div className="flex items-center justify-between border-b border-border pb-2">
+                        <h2 className="text-base font-bold text-foreground font-handwriting text-xl notebook-underline m-0">
                           {metadata.title || noteName}
                         </h2>
                         {metadata.status && (
-                          <span className="text-[10px] font-mono font-bold tracking-wider px-2 py-0.5 bg-primary/10 text-primary rounded-full border border-primary/20 uppercase shrink-0">
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-primary/20 text-primary rounded border border-primary/30 uppercase">
                             {metadata.status}
                           </span>
                         )}
@@ -356,22 +379,22 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                         {metadata.created && (
                           <div>
-                            <span className="text-muted-foreground font-mono block text-[10px] uppercase">Created</span>
+                            <span className="text-muted-foreground block text-[10px] uppercase">Created</span>
                             <span className="text-foreground font-medium">{metadata.created}</span>
                           </div>
                         )}
-                        {metadata.updated && (
+                        {metadata.confidence_level && (
                           <div>
-                            <span className="text-muted-foreground font-mono block text-[10px] uppercase">Updated</span>
-                            <span className="text-foreground font-medium">{metadata.updated}</span>
+                            <span className="text-muted-foreground block text-[10px] uppercase">Confidence</span>
+                            <span className="text-primary font-bold">{metadata.confidence_level}</span>
                           </div>
                         )}
                         {metadata.tags && (
                           <div className="col-span-2 sm:col-span-1">
-                            <span className="text-muted-foreground font-mono block text-[10px] uppercase">Tags</span>
+                            <span className="text-muted-foreground block text-[10px] uppercase">Tags</span>
                             <div className="flex flex-wrap gap-1 mt-1">
                               {metadata.tags.split(",").map(t => t.trim()).filter(Boolean).map(t => (
-                                <span key={t} className="text-[9px] font-semibold bg-muted px-1.5 py-0.5 rounded border border-border text-muted-foreground">
+                                <span key={t} className="text-[9px] font-mono bg-muted px-2 py-0.5 rounded border border-border text-primary">
                                   {t}
                                 </span>
                               ))}
@@ -382,47 +405,52 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
                     </div>
                   )}
                   
-                  <ReactMarkdown
-                    components={{
-                      a: ({ href, children, ...props }) => {
-                        if (href && href.startsWith("wiki://")) {
-                          const target = decodeURIComponent(href.slice(7));
-                          const cleanTarget = target.replace(/\.md$/i, "").toLowerCase();
-                          
-                          const noteExists = notesFiles.some(file => {
-                            const fileBase = file.path.split("/").pop() || "";
-                            return fileBase.replace(/\.md$/i, "").toLowerCase() === cleanTarget;
-                          });
+                  <div className="prose dark:prose-invert max-w-none font-handwriting text-lg leading-relaxed text-zinc-100">
+                    <ReactMarkdown
+                      components={{
+                        h1: ({ children }) => <h1 className="text-2xl font-bold font-handwriting text-foreground notebook-underline mt-6 mb-3">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-xl font-bold font-handwriting text-foreground notebook-underline mt-5 mb-2">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-lg font-bold font-handwriting text-foreground notebook-underline mt-4 mb-2">{children}</h3>,
+                        a: ({ href, children, ...props }) => {
+                          if (href && href.startsWith("wiki://")) {
+                            const target = decodeURIComponent(href.slice(7));
+                            const cleanTarget = target.replace(/\.md$/i, "").toLowerCase();
+                            
+                            const noteExists = notesFiles.some(file => {
+                              const fileBase = file.path.split("/").pop() || "";
+                              return fileBase.replace(/\.md$/i, "").toLowerCase() === cleanTarget;
+                            });
 
-                          return (
-                            <a
-                              href="#"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                window.dispatchEvent(new CustomEvent("open-note", { detail: target }));
-                              }}
-                              className={
-                                noteExists
-                                  ? "text-primary underline cursor-pointer hover:text-primary/80 font-semibold"
-                                  : "text-amber-500 border-b border-dashed border-amber-500 hover:text-amber-400 cursor-pointer font-semibold"
-                              }
-                              title={noteExists ? `Open Note: ${target}` : `Create Note: ${target} (Gap)`}
-                            >
-                              {children}
-                            </a>
-                          );
+                            return (
+                              <a
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  window.dispatchEvent(new CustomEvent("open-note", { detail: target }));
+                                }}
+                                className={
+                                  noteExists
+                                    ? "text-primary underline cursor-pointer font-bold font-mono"
+                                    : "text-accent border-b border-dashed border-accent cursor-pointer font-bold font-mono"
+                                }
+                                title={noteExists ? `Open Note: ${target}` : `Create Note: ${target} (Gap)`}
+                              >
+                                {children}
+                              </a>
+                            );
+                          }
+                          return <a href={href} {...props}>{children}</a>;
                         }
-                        return <a href={href} {...props}>{children}</a>;
-                      }
-                    }}
-                  >
-                    {preprocessWikiLinks(markdownContent)}
-                  </ReactMarkdown>
+                      }}
+                    >
+                      {preprocessWikiLinks(markdownContent)}
+                    </ReactMarkdown>
+                  </div>
 
                   {/* Backlinks Panel */}
                   {backlinks.length > 0 && (
-                    <div className="mt-8 pt-6 border-t border-border/60 shrink-0 select-none">
-                      <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                    <div className="mt-8 pt-6 border-t border-border select-none font-mono">
+                      <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-primary mb-3 flex items-center gap-1.5">
                         <Link2 className="w-3.5 h-3.5 text-primary" />
                         Backlinks ({backlinks.length})
                       </h3>
@@ -434,16 +462,16 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
                             <button
                               key={file.path}
                               onClick={() => window.dispatchEvent(new CustomEvent("open-note", { detail: termName }))}
-                              className="text-xs px-2.5 py-1 bg-muted hover:bg-muted/80 text-foreground rounded border border-border transition-all cursor-pointer font-medium"
+                              className="text-xs px-3 py-1.5 bg-card hover:bg-muted text-primary rounded-xl border border-border transition-all cursor-pointer font-mono font-bold"
                             >
-                              {termName}
+                              [[{termName}]]
                             </button>
                           );
                         })}
                       </div>
                     </div>
                   )}
-                </>
+                </div>
               );
             })()}
           </div>

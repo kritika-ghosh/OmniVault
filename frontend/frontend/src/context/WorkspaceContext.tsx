@@ -11,6 +11,20 @@ import {
 } from "@/lib/file-directory";
 import { mockScanResponse, mockNotesFiles, mockSortedTerms } from "@/lib/data";
 
+const safeFetch = async (url: string, options?: RequestInit): Promise<Response> => {
+  try {
+    return await fetch(url, options);
+  } catch (err) {
+    return {
+      ok: false,
+      status: 503,
+      statusText: "Service Unavailable",
+      text: async () => "Connection failed. Backend server is offline.",
+      json: async () => ({ error: "Connection failed" }),
+    } as Response;
+  }
+};
+
 export interface VaultSession {
   notesPath: string;
   projectPath: string;
@@ -103,9 +117,27 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       if (savedVaults) {
         try { setVaults(JSON.parse(savedVaults)); } catch (e) {}
       }
+      
+      const freshMockSession = {
+        notesPath: "mock-notes",
+        projectPath: "mock-project",
+        scanResult: mockScanResponse,
+        notesFiles: mockNotesFiles,
+        sortedTerms: mockSortedTerms,
+      };
+
       if (savedSessions) {
-        try { setVaultSessions(JSON.parse(savedSessions)); } catch (e) {}
+        try {
+          const parsed = JSON.parse(savedSessions);
+          parsed["mock-notes"] = freshMockSession;
+          setVaultSessions(parsed);
+        } catch (e) {
+          setVaultSessions({ "mock-notes": freshMockSession });
+        }
+      } else {
+        setVaultSessions({ "mock-notes": freshMockSession });
       }
+
       if (savedActive) {
         setActiveVaultPath(savedActive);
       }
@@ -313,6 +345,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       };
     });
 
+    if (activeVaultPath === "mock-notes" || notesPath === "mock-notes") {
+      setStatusMessage(`Successfully saved ${filename} in memory (Demo Mode).`);
+      return;
+    }
+
     if (notesHandle) {
       try {
         const parts = filename.split("/");
@@ -326,13 +363,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         await writable.close();
         setStatusMessage(`Successfully saved ${filename} to local system.`);
       } catch (err: any) {
-        console.error("Failed to write note using directory handle:", err);
+        console.warn("Failed to write note using directory handle:", err);
         setStatusMessage(`Failed to save note locally: ${err.message}`);
       }
     } else {
       try {
         const saveUrl = `${apiHost}${API_PATHS.SAVE || "/v1/synthesize/save"}`;
-        const response = await fetch(saveUrl, {
+        const response = await safeFetch(saveUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -350,7 +387,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           throw new Error(errText);
         }
       } catch (err: any) {
-        console.error("Failed to save note via API:", err);
+        console.warn("Failed to save note via API:", err);
         setStatusMessage(`Failed to save note via API: ${err.message}`);
       }
     }
@@ -368,13 +405,25 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         await currentDir.removeEntry(parts[parts.length - 1]);
         setStatusMessage(`Successfully deleted old note entry: ${filename}`);
       } catch (err: any) {
-        console.error("Failed to delete note using directory handle:", err);
+        console.warn("Failed to delete note using directory handle:", err);
       }
     }
   }, [notesHandle, setNotesFiles]);
 
   const executeScan = useCallback(async () => {
     setIsLoading(true);
+    if (activeVaultPath === "mock-notes" || notesPath === "mock-notes") {
+      setStatusMessage("Scanning mock demo vault...");
+      setTimeout(() => {
+        setScanResult(mockScanResponse);
+        setNotesFiles(mockNotesFiles);
+        setSortedTerms(mockSortedTerms);
+        setIsLoading(false);
+        setStatusMessage("Mock scan analysis completed!");
+      }, 1000);
+      return;
+    }
+
     const targetNotesPath = notesHandle ? notesHandle.name : (localNotesPath || notesPath);
     const targetProjectPath = projectHandle ? projectHandle.name : (localProjectPath || projectPath);
 
@@ -422,7 +471,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       }
 
       const scanUrl = `${apiHost}${API_PATHS.SCAN}`;
-      const response = await fetch(scanUrl, {
+      const response = await safeFetch(scanUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -452,7 +501,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       setActiveVaultPath(targetNotesPath);
       setStatusMessage("Scan completed successfully.");
     } catch (err: any) {
-      console.error(err);
+      console.warn("Failed to execute scan:", err);
       setStatusMessage(`Scan failed: ${err.message}`);
     } finally {
       setIsLoading(false);

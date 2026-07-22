@@ -138,12 +138,12 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
   };
 
   return (
-    <Sidebar className={cn("border-r border-border/40", className)} {...props}>
-      <SidebarHeader className="px-4 py-2 border-b border-border/30 shrink-0">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Workspace Tree</span>
-          <span className="text-[10px] font-mono text-muted-foreground/60">
-            {totalNotesCount} items total
+    <Sidebar className={cn("border-r border-border bg-[#070b10]", className)} {...props}>
+      <SidebarHeader className="px-4 py-3 border-b border-border shrink-0 bg-muted">
+        <div className="flex flex-col gap-0.5 font-mono">
+          <span className="text-xs font-bold font-handwriting text-foreground text-base notebook-underline">Vault Tree :-</span>
+          <span className="text-[10px] text-muted-foreground">
+            {totalNotesCount} vault items
           </span>
         </div>
       </SidebarHeader>
@@ -321,7 +321,7 @@ function RenderTreeNode({ node, level, sessionPath }: RenderTreeNodeProps) {
           ) : (
             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           )}
-          <Folder className="w-3.5 h-3.5 text-amber-500/80 shrink-0" />
+          <Folder className="w-3.5 h-3.5 text-primary/80 shrink-0" />
           <span className="truncate">{node.name}</span>
         </CollapsibleTrigger>
         <CollapsibleContent className="w-full">
@@ -356,7 +356,7 @@ function RenderTreeNode({ node, level, sessionPath }: RenderTreeNodeProps) {
         className={cn(
           "flex items-center gap-1.5 flex-1 py-0.5 text-left cursor-pointer transition-colors font-medium border border-transparent active:opacity-60 min-w-0",
           node.isGap
-            ? "text-amber-500 hover:text-amber-400"
+            ? "text-accent hover:text-accent/80"
             : "text-muted-foreground hover:text-foreground"
         )}
         style={{ paddingLeft: `${level * 12 + 20}px` }}
@@ -364,12 +364,12 @@ function RenderTreeNode({ node, level, sessionPath }: RenderTreeNodeProps) {
         <FileText
           className={cn(
             "w-3.5 h-3.5 shrink-0",
-            node.isGap ? "text-amber-500" : "text-primary/75"
+            node.isGap ? "text-accent" : "text-primary/75"
           )}
         />
         <span className="truncate">{node.name}</span>
         {node.isGap && (
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" title="Knowledge Gap" />
+          <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" title="Knowledge Gap" />
         )}
       </button>
 

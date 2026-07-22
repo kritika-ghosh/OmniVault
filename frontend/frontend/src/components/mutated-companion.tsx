@@ -276,13 +276,13 @@ export default function MutatedCompanion() {
         stateStyle = "bg-muted/10 border-border/40 text-muted-foreground/60 cursor-not-allowed opacity-50";
         break;
       case "unlocked":
-        stateStyle = "bg-blue-500/5 border-blue-500/20 text-foreground hover:bg-blue-500/10 hover:border-blue-500/35";
+        stateStyle = "bg-primary/5 border-primary/20 text-foreground hover:bg-primary/10 hover:border-primary/35";
         break;
       case "mastered":
-        stateStyle = "bg-emerald-500/5 border-emerald-500/35 text-foreground hover:bg-emerald-500/10";
+        stateStyle = "bg-primary/5 border-primary/35 text-foreground hover:bg-primary/10";
         break;
       case "shaky":
-        stateStyle = "bg-amber-500/5 border-amber-500/35 text-foreground hover:bg-amber-500/10";
+        stateStyle = "bg-accent/5 border-accent/35 text-foreground hover:bg-accent/10";
         break;
       case "blocked":
         stateStyle = "bg-destructive/5 border-destructive/35 text-foreground hover:bg-destructive/10";
@@ -303,31 +303,31 @@ export default function MutatedCompanion() {
       case "locked":
         return <Lock className="w-4 h-4 text-muted-foreground/60 shrink-0" />;
       case "mastered":
-        return <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />;
+        return <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />;
       case "shaky":
-        return <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />;
+        return <AlertTriangle className="w-4 h-4 text-accent shrink-0" />;
       case "blocked":
         return <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />;
       default:
-        return <Unlock className="w-4 h-4 text-blue-500 shrink-0" />;
+        return <Unlock className="w-4 h-4 text-primary shrink-0" />;
     }
   };
 
   // Renders the initial loading / ingestion screen
   if (!session && !isLoading) {
     return (
-      <div className="w-full h-full flex items-center justify-center p-8 bg-gradient-to-b from-background to-muted/20">
-        <div className="max-w-2xl w-full border border-border/50 bg-card/65 backdrop-blur-xl p-8 rounded-3xl shadow-2xl flex flex-col gap-6">
+      <div className="w-full h-full flex items-center justify-center p-8 bg-graph-paper select-none">
+        <div className="max-w-2xl w-full border border-border bg-card p-8 rounded-3xl shadow-2xl flex flex-col gap-6 font-sans">
           <div className="space-y-2 text-center">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-2">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-mono mb-2">
               <Sparkles className="w-3.5 h-3.5" />
-              NextGen Adaptive Curriculum Planner
+              Adaptive Study Planner & Decay Vault
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-              Stop studying static guides
+            <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl font-handwriting notebook-underline">
+              Stop Studying Static Notes
             </h1>
-            <p className="text-sm text-muted-foreground max-w-lg mx-auto">
-              mutatED uses localized Retrieval-Augmented Generation (RAG) and autonomous AI planning loops to dynamically re-engineer your study tree roadmap live as you learn.
+            <p className="text-xs text-zinc-400 max-w-lg mx-auto">
+              mutatED uses localized RAG memory layers to dynamically re-engineer your study roadmap live as you learn.
             </p>
           </div>
 
@@ -438,7 +438,7 @@ export default function MutatedCompanion() {
             <h3 className="text-lg font-bold text-foreground">Assembling Adaptive Syllabus</h3>
             <p className="text-xs text-muted-foreground">Inference pipeline running via Groq LPU...</p>
           </div>
-          <div className="p-4 rounded-2xl bg-black border border-border/40 font-mono text-[10px] text-emerald-500/90 min-h-[50px] flex items-center justify-center text-center">
+          <div className="p-4 rounded-2xl bg-[#0a0f16] border border-border/40 font-mono text-[10px] text-accent/90 min-h-[50px] flex items-center justify-center text-center">
             {loadingMessages[loadingStep]}
           </div>
         </div>
@@ -448,9 +448,9 @@ export default function MutatedCompanion() {
 
   // Main Split-screen Workspace view
   return (
-    <div className="w-full h-full flex overflow-hidden bg-background text-foreground font-sans">
+    <div className="w-full h-full flex overflow-hidden bg-graph-paper text-foreground font-sans">
       {/* 1. Left Layout Panel: The Evolving Roadmap Visualizer */}
-      <div className="w-[380px] border-r border-border shrink-0 flex flex-col bg-card/20 h-full">
+      <div className="w-[380px] border-r border-border shrink-0 flex flex-col bg-muted/30 h-full">
         {/* Workspace details header */}
         <div className="p-5 border-b border-border flex items-start justify-between gap-3 shrink-0 bg-muted/10">
           <div className="min-w-0">
@@ -634,9 +634,9 @@ export default function MutatedCompanion() {
                       <div className="flex items-center gap-3">
                         <div className={`p-2.5 rounded-full ${
                           submitResult.node_status === "mastered" 
-                            ? "bg-emerald-500/10 text-emerald-500" 
+                            ? "bg-primary/10 text-primary" 
                             : submitResult.node_status === "shaky"
-                              ? "bg-amber-500/10 text-amber-500"
+                              ? "bg-accent/10 text-accent"
                               : "bg-destructive/10 text-destructive"
                         }`}>
                           <Sparkles className="w-6 h-6 animate-pulse" />
@@ -758,8 +758,8 @@ export default function MutatedCompanion() {
 
           {/* TAB C: Agent Autonomous Loop Log Terminal */}
           {activeTab === "logs" && (
-            <div className="w-full h-full p-4 flex flex-col overflow-hidden bg-black text-emerald-500 font-mono text-xs leading-relaxed">
-              <div className="border-b border-emerald-950/60 pb-2 px-2 flex justify-between items-center text-[10px] tracking-wider text-emerald-600/80 shrink-0">
+            <div className="w-full h-full p-4 flex flex-col overflow-hidden bg-[#0a0f16] text-accent font-mono text-xs leading-relaxed">
+              <div className="border-b border-accent/25 pb-2 px-2 flex justify-between items-center text-[10px] tracking-wider text-accent/80 shrink-0">
                 <span>AUTONOMOUS PLANNER REASONING TERMINAL FEED</span>
                 <span className="animate-pulse">● LOGS ACTIVE</span>
               </div>
@@ -767,12 +767,12 @@ export default function MutatedCompanion() {
                 {session?.agent_log && session.agent_log.length > 0 ? (
                   session.agent_log.map((log, index) => (
                     <div key={index} className="flex gap-2">
-                      <span className="text-emerald-700/80 shrink-0">[{log.timestamp.slice(11, 19)}]</span>
+                      <span className="text-accent/60 shrink-0">[{log.timestamp.slice(11, 19)}]</span>
                       <span className="whitespace-pre-wrap">{log.message}</span>
                     </div>
                   ))
                 ) : (
-                  <div className="text-center text-emerald-800 italic pt-10">
+                  <div className="text-center text-accent/40 italic pt-10">
                     No planning logs written yet.
                   </div>
                 )}

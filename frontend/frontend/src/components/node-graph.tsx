@@ -182,32 +182,32 @@ export default function NodeGraph() {
   }, [is3D, graphData]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-background text-foreground overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-graph-paper text-foreground overflow-hidden">
       {/* Graph Toolbar Controls */}
-      <div className="flex flex-row items-center justify-between gap-4 p-4 border-b border-border shrink-0 bg-muted/10 select-none">
+      <div className="flex flex-row items-center justify-between gap-4 p-4 border-b border-border shrink-0 bg-muted/95 select-none">
         <div className="flex flex-col gap-0.5">
-          <h2 className="text-sm font-bold flex items-center gap-1.5 text-foreground">
-            <Compass className="w-4 h-4 text-primary" />
-            Knowledge Graph Explorer
+          <h2 className="text-base font-bold flex items-center gap-2 text-foreground font-handwriting text-lg notebook-underline">
+            <Compass className="w-4 h-4 text-accent" />
+            Knowledge Graph Explorer :-
           </h2>
-          <span className="text-[10px] font-mono text-muted-foreground/80">
+          <span className="text-[10px] font-mono text-muted-foreground">
             {graphData.nodes.length} nodes · {graphData.links.length} relationships
           </span>
         </div>
 
         <div className="flex items-center gap-3">
           {Object.keys(vaultSessions).length > 0 && (
-            <div className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-lg border border-border">
+            <div className="flex items-center gap-1.5 bg-card px-2.5 py-1 rounded-xl border border-border">
               <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Vault:</span>
               <select
                 value={activeVaultPath}
                 onChange={(e) => setActiveVaultPath(e.target.value)}
-                className="bg-transparent text-xs font-mono text-foreground focus:outline-hidden cursor-pointer"
+                className="bg-transparent text-xs font-mono text-foreground focus:outline-none cursor-pointer"
               >
                 {Object.keys(vaultSessions).map((path) => {
                   const label = path.split(/[/\\]/).pop() || path;
                   return (
-                    <option key={path} value={path} className="bg-background text-foreground">
+                    <option key={path} value={path} className="bg-card text-foreground">
                       {label}
                     </option>
                   );
@@ -216,35 +216,35 @@ export default function NodeGraph() {
             </div>
           )}
 
-          <div className="flex items-center bg-muted p-0.5 rounded-lg border border-border">
+          <div className="flex items-center bg-card p-1 rounded-xl border border-border font-mono">
             <button
-            onClick={() => setIs3D(false)}
-            className={`px-3 py-1 rounded text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-              !is3D
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            2D Graph
-          </button>
-          <button
-            onClick={() => setIs3D(true)}
-            className={`px-3 py-1 rounded text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-              is3D
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5" />
-            3D Graph
-          </button>
+              onClick={() => setIs3D(false)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                !is3D
+                  ? "bg-[#6e346b] text-white font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              2D Graph
+            </button>
+            <button
+              onClick={() => setIs3D(true)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                is3D
+                  ? "bg-[#6e346b] text-white font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              3D Graph
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
       {/* Render Graph Container */}
-      <div ref={containerRef} className="flex-1 w-full h-full relative overflow-hidden bg-black/5 dark:bg-black/25">
+      <div ref={containerRef} className="flex-1 w-full h-full relative overflow-hidden bg-graph-paper">
         {graphData.nodes.length === 0 ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center select-none">
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
@@ -262,11 +262,11 @@ export default function NodeGraph() {
             width={dimensions.width}
             height={dimensions.height}
             backgroundColor="rgba(0,0,0,0)"
-            nodeColor={(node: any) => (node.isGap ? "#f59e0b" : "#14b8a6")}
+            nodeColor={(node: any) => (node.isGap ? "#af547b" : "#9eb0d2")}
             nodeVal={4}
             nodeLabel={(node: any) => `${node.name} (${node.isGap ? "Gap Warning" : "Documented"})`}
             linkWidth={1.5}
-            linkColor={() => "rgba(148, 163, 184, 0.65)"}
+            linkColor={() => "rgba(158, 176, 210, 0.4)"}
             linkDirectionalParticles={3}
             linkDirectionalParticleWidth={2}
             linkDirectionalParticleSpeed={0.006}
@@ -279,7 +279,7 @@ export default function NodeGraph() {
             height={dimensions.height}
             backgroundColor="rgba(0,0,0,0)"
             linkWidth={1.5}
-            linkColor={() => "rgba(148, 163, 184, 0.65)"}
+            linkColor={() => "rgba(158, 176, 210, 0.4)"}
             linkDirectionalParticles={2}
             linkDirectionalParticleWidth={1.5}
             linkDirectionalParticleSpeed={0.005}
@@ -291,8 +291,8 @@ export default function NodeGraph() {
               // Render Glowing Node Sphere
               ctx.beginPath();
               ctx.arc(node.x, node.y, 5, 0, 2 * Math.PI, false);
-              ctx.fillStyle = node.isGap ? "#f59e0b" : "#14b8a6";
-              ctx.shadowColor = node.isGap ? "#f59e0b" : "#14b8a6";
+              ctx.fillStyle = node.isGap ? "#af547b" : "#9eb0d2";
+              ctx.shadowColor = node.isGap ? "#af547b" : "#9eb0d2";
               ctx.shadowBlur = Math.max(2, 6 / globalScale);
               ctx.fill();
               ctx.shadowBlur = 0; // reset blur

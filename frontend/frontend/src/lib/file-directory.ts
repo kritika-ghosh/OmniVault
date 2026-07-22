@@ -34,6 +34,10 @@ export async function readFilesRecursively(
 
         if (allowedExtensions.includes(ext) || isSpecialConfig) {
           const file = await entry.getFile();
+          if (file.size > 150000) {
+            console.warn(`Skipping large file ${entryPath} (${file.size} bytes) to prevent payload bloat.`);
+            continue;
+          }
           const content = await file.text();
           files.push({ path: entryPath, content });
         }
@@ -42,7 +46,7 @@ export async function readFilesRecursively(
       }
     } else if (entry.kind === "directory") {
       // Exclude standard build/env folders to speed up processing
-      const excludedDirs = ["node_modules", ".git", "venv", ".next", "dist", "build", "__pycache__", "chroma_db", ".vercel", "testing", ".agents"];
+      const excludedDirs = ["node_modules", ".git", "venv", ".venv", "env", ".env", ".next", "dist", "build", "__pycache__", "chroma_db", ".vercel", "testing", ".agents", "out", "target"];
       if (!excludedDirs.includes(entry.name)) {
         files.push(...(await readFilesRecursively(entry, entryPath)));
       }
