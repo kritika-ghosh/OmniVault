@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import gsap from "gsap";
 import { GridDistortionCanvas, Header, Footer } from "@/components/landing/landing-layout";
 import { HeroSection, MockIDEPreview } from "@/components/landing/hero-section";
+import { ScrollytellingSection } from "@/components/landing/scrollytelling-section";
 import {
   InteractivePlayground,
   AgentArchitecture,
@@ -77,11 +78,11 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-graph-paper text-foreground flex flex-col font-sans select-none overflow-x-hidden antialiased relative">
+    <div className="min-h-screen text-foreground flex flex-col font-sans select-none antialiased relative">
       <GridDistortionCanvas />
       <Header />
       <HeroSection />
-      <MockIDEPreview />
+      <ScrollytellingSection />
       <InteractivePlayground />
       <AgentArchitecture />
       <FeatureMatrix />

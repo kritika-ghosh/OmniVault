@@ -113,7 +113,7 @@ export function GridDistortionCanvas() {
             ctx.lineTo(pRight.x, pRight.y);
             ctx.strokeStyle = isNear
               ? `rgba(175, 84, 123, ${0.45 * (1 - distMouse / radius)})`
-              : "rgba(255, 255, 255, 0.04)";
+              : "rgba(255, 255, 255, 0.15)";
             ctx.stroke();
           }
 
@@ -127,15 +127,15 @@ export function GridDistortionCanvas() {
             ctx.lineTo(pDown.x, pDown.y);
             ctx.strokeStyle = isNear
               ? `rgba(56, 189, 248, ${0.45 * (1 - distMouse / radius)})`
-              : "rgba(255, 255, 255, 0.04)";
+              : "rgba(255, 255, 255, 0.15)";
             ctx.stroke();
           }
 
           const distMouse = Math.hypot(pt.x - mouse.x, pt.y - mouse.y);
           if (distMouse < radius) {
             ctx.beginPath();
-            ctx.arc(pt.x, pt.y, 2, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(56, 189, 248, ${0.8 * (1 - distMouse / radius)})`;
+            ctx.arc(pt.x, pt.y, 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(158, 176, 210, ${0.4 * (1 - distMouse / radius)})`;
             ctx.fill();
           }
         }
@@ -156,7 +156,7 @@ export function GridDistortionCanvas() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0 opacity-80"
+      className="fixed inset-0 pointer-events-none z-0 opacity-40"
     />
   );
 }
@@ -167,16 +167,16 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-6 h-15 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-accent/20 border border-accent/30 flex items-center justify-center text-accent font-mono font-bold text-xs group-hover:scale-105 transition-transform">
+          <div className="w-8 h-8 rounded-lg bg-accent/20 border border-accent/30 flex items-center justify-center text-accent font-mono font-bold text-sm group-hover:scale-105 transition-transform">
             OV
           </div>
-          <span className="font-extrabold text-sm tracking-tight text-foreground flex items-center gap-1.5 font-sans text-base">
+          <span className="font-extrabold text-base tracking-tight text-foreground flex items-center gap-1.5 font-sans">
             OmniVault <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-muted text-accent border border-accent/30">Vault 1.0</span>
           </span>
         </Link>
 
         {/* Nav Links */}
-        <nav className="hidden md:flex items-center gap-8 text-xs font-mono text-muted-foreground">
+        <nav className="hidden md:flex items-center gap-8 text-sm font-mono text-muted-foreground">
           <a href="#playground" className="hover:text-foreground transition-colors">
             Playground
           </a>
@@ -193,15 +193,16 @@ export function Header() {
 
         {/* Action CTAs */}
         <div className="flex items-center gap-3">
-          <Link href="/auth">
-            <Button variant="outline" className="h-9 border-border bg-card hover:bg-muted text-xs font-mono font-bold cursor-pointer">
+          <Link href="/auth" className="hidden sm:block">
+            <Button variant="outline" className="h-9 border-border bg-card hover:bg-muted text-sm font-mono font-bold cursor-pointer">
               Sign In
             </Button>
           </Link>
 
           <Link href="/workspace">
-            <Button className="bg-accent hover:bg-accent/90 text-white font-bold text-xs h-9 px-5 rounded-lg transition-all cursor-pointer flex items-center gap-2 font-mono">
-              <span>Launch Workspace</span>
+            <Button className="bg-accent hover:bg-accent/90 text-white font-bold text-sm h-9 px-5 rounded-lg transition-all cursor-pointer flex items-center gap-2 font-mono">
+              <span className="hidden sm:inline">Launch Workspace</span>
+              <span className="sm:hidden">Launch</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Button>
           </Link>
@@ -214,10 +215,10 @@ export function Header() {
 export function Footer() {
   return (
     <footer className="relative z-10 border-t border-border py-8 px-6 bg-[#070b10] mt-auto">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground font-mono">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-foreground font-sans text-sm">OmniVault AI</span>
-          <span>— Dark Graph Paper Vault Workspace</span>
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-sm text-muted-foreground font-mono text-center sm:text-left">
+        <div className="flex flex-col sm:flex-row items-center gap-2">
+          <span className="font-bold text-foreground font-sans text-base">OmniVault AI</span>
+          <span className="hidden sm:inline">— Dark Graph Paper Vault Workspace</span>
         </div>
 
         <div className="flex items-center gap-6">
