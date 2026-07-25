@@ -580,7 +580,7 @@ export default function LandingPage() {
       </header>
 
       {/* HERO SECTION */}
-      <section className="relative z-10 pt-20 pb-16 px-6 max-w-6xl mx-auto text-center flex flex-col items-center">
+      <section className="relative z-10 pt-20 pb-16 px-6 max-w-6xl mx-auto text-center flex flex-col items-center justify-center min-h-[calc(100vh-5rem)]">
         {/* Notebook Title Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-card border border-border text-xs font-mono text-primary mb-8 shadow-lg gsap-hero-badge">
           <BookOpen className="w-4 h-4 text-primary" />
@@ -588,9 +588,9 @@ export default function LandingPage() {
         </div>
 
         {/* Hero Title */}
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-foreground leading-[1.2] mb-6 font-sans gsap-hero-title">
-          Bridge Codebase Dependencies with Personal{" "}
-          <span className="font-handwriting text-accent notebook-underline text-5xl sm:text-7xl inline-block px-1 min-w-[320px]">
+        <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-foreground leading-[1.25] mb-6 font-sans gsap-hero-title">
+          Bridge Codebase Dependencies with Personal
+          <span className="block mt-3 font-handwriting text-accent notebook-underline text-5xl sm:text-7xl min-h-[1.2em]">
             {typedText}
             <span className="animate-pulse ml-0.5 select-none font-sans font-normal text-3xl sm:text-5xl text-accent">|</span>
           </span>
@@ -619,8 +619,16 @@ export default function LandingPage() {
           </a>
         </div>
 
-        {/* HERO MOCK IDE PREVIEW */}
-        <div className="w-full max-w-5xl rounded-2xl border border-border bg-graph-paper-dense shadow-2xl overflow-hidden text-left flex flex-col mb-12 gsap-mock-ide">
+        {/* Scroll Indicator */}
+        <a href="#mock-ide" className="inline-flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors animate-bounce cursor-pointer pt-2">
+          <span>Scroll to view Grid Vault Canvas</span>
+          <ChevronDown className="w-4 h-4 text-accent" />
+        </a>
+      </section>
+
+      {/* HERO MOCK IDE PREVIEW (Pushed below initial viewport) */}
+      <div id="mock-ide" className="w-full max-w-5xl mx-auto px-6 mb-24 pt-12 gsap-mock-ide">
+        <div className="rounded-2xl border border-border bg-graph-paper-dense shadow-2xl overflow-hidden text-left flex flex-col">
           {/* Titlebar */}
           <div className="px-4 py-3 bg-muted border-b border-border flex items-center justify-between text-xs font-mono text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -694,7 +702,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
       {/* PLAYGROUND */}
       <section id="playground" className="relative z-10 py-16 px-6 max-w-7xl mx-auto w-full">
