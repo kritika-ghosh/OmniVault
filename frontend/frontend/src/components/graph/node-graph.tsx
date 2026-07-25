@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { Compass, Layers, Zap } from "lucide-react";
-import DotGrid from "./dot-grid";
+import { isHighValueConcept } from "@/lib/file-directory";
 
 // Dynamically import force graphs to prevent Next.js SSR WebGL/Three.js crashes
 const ForceGraph2D = dynamic(
@@ -58,24 +58,26 @@ export default function NodeGraph() {
     const links: GraphLink[] = [];
     const nodeIds = new Set<string>();
 
-    // 1. Add documented notes as nodes
-    notesFiles.forEach((file) => {
-      const filename = file.path.split("/").pop() || "";
-      const termName = filename.replace(/\.md$/i, "");
-      const id = termName.toLowerCase().trim();
+    // 1. Add documented notes as nodes (excluding .obsidian metadata and noise)
+    notesFiles
+      .filter((file) => !file.path.startsWith(".obsidian") && !file.path.includes("/.obsidian"))
+      .forEach((file) => {
+        const filename = file.path.split("/").pop() || "";
+        const termName = filename.replace(/\.md$/i, "");
+        const id = termName.toLowerCase().trim();
 
-      if (id && !nodeIds.has(id)) {
-        nodes.push({
-          id,
-          name: termName,
-          isGap: false,
-        });
-        nodeIds.add(id);
-      }
-    });
+        if (id && !nodeIds.has(id) && isHighValueConcept(termName)) {
+          nodes.push({
+            id,
+            name: termName,
+            isGap: false,
+          });
+          nodeIds.add(id);
+        }
+      });
 
-    // 2. Add gaps as nodes
-    const gaps = scanResult?.report || [];
+    // 2. Add gaps as nodes (only high-value concepts)
+    const gaps = (scanResult?.report || []).filter((gap) => isHighValueConcept(gap.term));
     gaps.forEach((gap) => {
       const termName = gap.term;
       const id = termName.toLowerCase().trim();

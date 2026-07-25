@@ -54,8 +54,8 @@ export async function readFilesRecursively(
         console.error(`Failed to read file ${entryPath}:`, err);
       }
     } else if (entry.kind === "directory") {
-      // Exclude standard build/env folders to speed up processing
-      const excludedDirs = ["node_modules", ".git", "venv", ".venv", "env", ".env", ".next", "dist", "build", "__pycache__", "chroma_db", ".vercel", "testing", ".agents", "out", "target"];
+      // Exclude standard build/env folders & Obsidian metadata to speed up processing
+      const excludedDirs = [".obsidian", "node_modules", ".git", "venv", ".venv", "env", ".env", ".next", "dist", "build", "__pycache__", "chroma_db", ".vercel", "testing", ".agents", "out", "target"];
       if (!excludedDirs.includes(entry.name)) {
         files.push(...(await readFilesRecursively(entry, entryPath)));
       }
@@ -182,7 +182,11 @@ export function parseDependencies(files: FilePayload[]): Set<string> {
     }
   }
 
-  return terms;
+  const filtered = new Set<string>();
+  terms.forEach((t) => {
+    if (isHighValueConcept(t)) filtered.add(t);
+  });
+  return filtered;
 }
 
 // Extracts technical terms directly from code file import/require statements
@@ -234,5 +238,107 @@ export function parseSourceImports(files: FilePayload[]): Set<string> {
     }
   }
 
-  return terms;
+  // Filter out low-level noise terms before returning
+  const filtered = new Set<string>();
+  terms.forEach((t) => {
+    if (isHighValueConcept(t)) filtered.add(t);
+  });
+  return filtered;
+}
+
+const LOW_VALUE_NOISE_TERMS = new Set([
+  // Python Stdlib
+  "os", "sys", "re", "json", "ast", "typing", "uuid", "math", "time", "datetime", "pathlib", "hashlib",
+  "subprocess", "unittest", "logging", "shutil", "tempfile", "copy", "collections", "functools", "itertools",
+  "io", "base64", "struct", "socket", "select", "threading", "multiprocessing", "contextlib", "inspect",
+  "random", "string", "glob", "csv", "xml", "html", "http", "urllib", "ftplib", "email", "mimetypes",
+  "platform", "sysconfig", "builtins", "codecs", "errno", "gc", "signal", "traceback", "warnings", "weakref",
+  "zipfile", "tarfile", "gzip", "bz2", "lzma", "ctypes", "dataclasses", "enum", "typing_extensions",
+  "annotated_types", "types", "importlib", "pkg_resources", "site", "abc", "numbers", "decimal", "fractions",
+  // JS/Node Stdlib & Trivial Globals
+  "fs", "path", "url", "events", "util", "stream", "buffer", "crypto", "child_process", "cluster", "net",
+  "tls", "dns", "assert", "v8", "vm", "zlib", "console", "process", "window", "document", "global",
+  // Low-level Micro Transitive Dependencies
+  "six", "certifi", "idna", "urllib3", "charset_normalizer", "charset-normalizer", "zipp", "importlib_metadata",
+  "importlib-metadata", "importlib_resources", "importlib-resources", "attrs", "rpds_py", "rpds-py", "colorama",
+  "tqdm", "filelock", "h11", "sniffio", "fsspec", "pyasn1", "pycparser", "soupsieve", "backoff", "annotated-types",
+  "typing-extensions", "packaging", "platformdirs", "pyproject_hooks", "pyproject-hooks", "et_xmlfile",
+  "et-xmlfile", "httpcore", "httpx_sse", "httpx-sse", "aiosignal", "frozenlist", "yarl", "multidict", "proglog",
+  "distro", "pywin32", "wincertstore", "cffi", "pytz", "python_dateutil", "python-dateutil", "tenacity",
+  "watchfiles", "mdit_py_plugins", "mdit-py-plugins", "markdown_it_py", "markdown-it-py", "pygments", "jsonref",
+  "referencing", "jsonschema", "jsonschema_specifications", "jsonschema-specifications", "opentelemetry_proto",
+  "opentelemetry-proto", "opentelemetry_api", "opentelemetry-api", "opentelemetry_exporter_otlp_proto_http",
+  "opentelemetry-exporter-otlp-proto-http", "opentelemetry-exporter-otlp-proto-grpc", "grpcio_status",
+  "grpcio-status", "google_api_python_client", "google_api_core", "googleapis_common_protos", "google_auth_httplib2",
+  "google_auth", "google-auth", "google-auth-httplib2", "google-ai-generativelanguage", "openpyxl", "pdfminer_six",
+  "pdfminer.six", "pdfplumber", "pypdf", "tiktoken", "tokenizers", "huggingface_hub", "huggingface-hub", "safetensors",
+  "flatbuffers", "lance_namespace", "lance-namespace", "lance-namespace-urllib3-client", "appdirs", "alohappyeyeballs",
+  "aiofiles", "aiosqlite", "propcache", "pypika", "sniffio", "click", "build", "trash", "estimation", "preview",
+  "docstring_parser", "httplib2", "grpcio", "pyaes", "pyarrow", "async_timeout", "overrides", "wrapt", "annotated-doc"
+]);
+
+export function isHighValueConcept(term: string): boolean {
+  if (!term || term.trim().length < 3) return false;
+  const clean = term.toLowerCase().trim();
+  if (LOW_VALUE_NOISE_TERMS.has(clean)) return false;
+  if (clean.length <= 3 && !["css", "sql", "api", "git", "jwt", "orm", "aws", "gcp"].includes(clean)) {
+    return false;
+  }
+  return true;
+}
+
+// Extracts implicit in-between architectural & networking concepts from code patterns
+export function parseImplicitInbetweenConcepts(files: FilePayload[]): Set<string> {
+  const concepts = new Set<string>();
+
+  for (const file of files) {
+    const content = file.content.toLowerCase();
+
+    // 1. CORS / Cross-Origin Resource Sharing
+    if (content.includes("cors") || content.includes("corsmiddleware") || content.includes("access-control-allow-origin")) {
+      concepts.add("CORS / Cross-Origin Sharing");
+    }
+
+    // 2. JWT / Bearer Authentication
+    if (content.includes("jwt") || content.includes("bearer") || content.includes("oauth2") || content.includes("passlib") || content.includes("bcrypt")) {
+      concepts.add("JWT Bearer Authentication");
+    }
+
+    // 3. Database Connection Pooling & ORM Session Lifecycle
+    if (content.includes("create_engine") || content.includes("sessionmaker") || content.includes("sessionlocal") || content.includes("pool_size") || content.includes("declarative_base")) {
+      concepts.add("Database Connection Pooling");
+    }
+
+    // 4. Asynchronous Event Loop & Non-Blocking I/O
+    if (content.includes("async def") || content.includes("asyncio") || content.includes("taskgroup") || content.includes("promise.all")) {
+      concepts.add("Asynchronous Non-Blocking Event Loop");
+    }
+
+    // 5. Pydantic Data Validation & Schema Serialization
+    if (content.includes("basemodel") || content.includes("field(") || content.includes("validator") || content.includes("model_validator")) {
+      concepts.add("Pydantic Data Serialization");
+    }
+
+    // 6. Vector Embedding Retrieval & Cosine Similarity
+    if (content.includes("chromadb") || content.includes("vector_store") || content.includes("embedding") || content.includes("cosine")) {
+      concepts.add("Vector Search & Embedding Retrieval");
+    }
+
+    // 7. REST Middleware & Exception Interception
+    if (content.includes("middleware") || content.includes("httpexception") || content.includes("exception_handler")) {
+      concepts.add("REST API Middleware Interception");
+    }
+
+    // 8. State Hydration & Session Storage
+    if (content.includes("sessionstorage") || content.includes("localstorage") || content.includes("usecontext") || content.includes("useworkspace")) {
+      concepts.add("State Hydration & Session Management");
+    }
+
+    // 9. Active Recall Memory Decay
+    if (content.includes("ebbinghaus") || content.includes("decay_score") || content.includes("confidence_level")) {
+      concepts.add("Spaced Repetition & Memory Decay");
+    }
+  }
+
+  return concepts;
 }
