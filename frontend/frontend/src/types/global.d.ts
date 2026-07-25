@@ -8,3 +8,7 @@ interface Window {
 interface FileSystemDirectoryHandle {
   values(): AsyncIterableIterator<FileSystemDirectoryHandle | FileSystemFileHandle>;
 }
+
+declare module "react-force-graph-2d";
+declare module "react-force-graph-3d";
+

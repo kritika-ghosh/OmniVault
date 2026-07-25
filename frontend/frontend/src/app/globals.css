@@ -120,7 +120,26 @@
     @apply border-border outline-ring/50;
   }
   body {
+    font-family: var(--font-sans);
     @apply bg-background text-foreground;
+  }
+  h1, h2, h3, h4, h5, h6,
+  button,
+  nav,
+  .nav-item,
+  .ui-control,
+  input,
+  select,
+  textarea {
+    font-family: var(--font-sans);
+  }
+  
+  pre, code, kbd, samp,
+  .font-mono,
+  .file-name,
+  .ast-output,
+  table, th, td {
+    font-family: var(--font-mono) !important;
   }
 }
 
@@ -141,8 +160,14 @@
   background-size: 16px 16px;
 }
 
-.font-handwriting {
-  font-family: "Patrick Hand", "Architects Daughter", cursive, sans-serif;
+.font-handwriting,
+.typewriter,
+.typewriter-text,
+.callout,
+.notebook-callout,
+.notebook-annotation,
+.notebook-underline {
+  font-family: "Patrick Hand", "Architects Daughter", cursive, sans-serif !important;
   letter-spacing: 0.02em;
 }
 

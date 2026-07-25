@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { 
   BookOpen, 
   HelpCircle, 
@@ -681,7 +681,7 @@ export default function MutatedCompanion() {
                                   className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-xs cursor-pointer transition-all ${
                                     isChecked 
                                       ? "bg-primary/5 border-primary font-semibold" 
-                                      : "bg-background/50 border-border/60 hover:bg-muted/40"
+                                      : "bg-[#0a0f16]/50 border-border/60 hover:bg-muted/40"
                                   }`}
                                 >
                                   <input

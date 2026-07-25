@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 // Dynamically import the Workspace IDE component with SSR disabled
 // to prevent hydration mismatches and window-undefined errors.
-const WorkspaceIDE = dynamic(() => import("@/components/workspace-ide"), {
+const WorkspaceIDE = dynamic(() => import("@/components/workspace/workspace-ide"), {
   ssr: false,
   loading: () => (
     <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-[#0a0f16] text-muted-foreground font-mono text-xs select-none">

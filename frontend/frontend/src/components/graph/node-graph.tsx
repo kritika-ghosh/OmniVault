@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { Compass, Layers, Zap } from "lucide-react";
 import DotGrid from "./dot-grid";
@@ -11,12 +11,12 @@ import DotGrid from "./dot-grid";
 const ForceGraph2D = dynamic(
   () => import("react-force-graph-2d"),
   { ssr: false }
-);
+) as any;
 
 const ForceGraph3D = dynamic(
   () => import("react-force-graph-3d"),
   { ssr: false }
-);
+) as any;
 
 interface GraphNode {
   id: string;
@@ -284,7 +284,7 @@ export default function NodeGraph() {
             linkDirectionalParticles={2}
             linkDirectionalParticleWidth={1.5}
             linkDirectionalParticleSpeed={0.005}
-            nodeCanvasObject={(node: any, ctx, globalScale) => {
+            nodeCanvasObject={(node: any, ctx: any, globalScale: number) => {
               const label = node.name;
               const fontSize = Math.max(3, 11 / globalScale);
               ctx.font = `${fontSize}px Sans-Serif`;

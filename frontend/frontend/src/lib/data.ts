@@ -246,3 +246,31 @@ export const mockSortedTerms: string[] = [
   "dockview",
   "typescript"
 ];
+
+export interface QuizChallengeData {
+  question_text: string;
+  code_snippet: string | null;
+  expected_concepts: string[];
+  test_cases: { input: string; expected_output: string }[] | null;
+}
+
+export const mockQuizChallenge: QuizChallengeData = {
+  question_text: "Write a Python function to read a CSV file 'data.csv' using Pandas, drop missing values, and calculate the mean by category.",
+  code_snippet: `import pandas as pd
+import numpy as np
+
+def process_data(file_path: str):
+    # TODO: Read CSV, drop missing values using dropna(), and return mean grouped by category
+    df = pd.read_csv(file_path)
+    clean_df = df.dropna()
+    return clean_df.groupby("category").mean()
+`,
+  expected_concepts: ["read_csv", "dropna", "groupby", "mean"],
+  test_cases: [
+    {
+      input: "data.csv",
+      expected_output: "DataFrame(category=['A', 'B'], mean=[12.5, 45.2])"
+    }
+  ]
+};
+

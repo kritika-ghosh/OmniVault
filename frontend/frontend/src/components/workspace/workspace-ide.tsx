@@ -1,17 +1,17 @@
 "use client";
 
-import NewPage from "@/components/new-page";
-import NodeGraph from "@/components/node-graph";
+import NewPage from "@/components/workspace/new-page";
+import NodeGraph from "@/components/graph/node-graph";
 import Quiz from "@/components/quiz";
-import NoteEditor from "@/components/note-editor";
-import QuizEditor from "@/components/quiz-editor";
-import MutatedCompanion from "@/components/mutated-companion";
+import NoteEditor from "@/components/editor/note-editor";
+import QuizEditor from "@/components/quiz/quiz-editor";
+import MutatedCompanion from "@/components/companion/mutated-companion";
 import { useEffect, useState, useCallback } from "react";
 import { DockviewReact, DockviewReadyEvent, DockviewApi, IDockviewPanelProps } from "dockview-react";
 import "dockview-react/dist/styles/dockview.css";
 import { customTheme } from "@/lib/dockview";
 
-import ProjectAnalyzerModal from "@/components/project-analyzer-modal";
+import ProjectAnalyzerModal from "@/components/workspace/project-analyzer-modal";
 
 const components = {
   scan: (props: IDockviewPanelProps<{ forceWelcome?: boolean; vaultPath?: string }>) => (

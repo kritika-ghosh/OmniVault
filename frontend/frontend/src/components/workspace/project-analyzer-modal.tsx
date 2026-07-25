@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { 
   Folder, 
   Play, 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { RefreshCw, RotateCcw, Search, Sparkles, CheckCircle2 } from "lucide-react";
 

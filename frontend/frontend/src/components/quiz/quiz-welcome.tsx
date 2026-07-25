@@ -1,14 +1,15 @@
 "use client";
 
 import React from "react";
-import { Button } from "./ui/button";
-import { GraduationCap, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { GraduationCap, Sparkles, Play } from "lucide-react";
 import { FilePayload } from "@/lib/file-directory";
 
 interface QuizWelcomeProps {
   selectedNotePath: string;
   setSelectedNotePath: (path: string) => void;
   onStart: () => void;
+  onDemo: () => void;
   isGenerating: boolean;
   notesFiles: FilePayload[];
 }
@@ -17,6 +18,7 @@ export default function QuizWelcome({
   selectedNotePath,
   setSelectedNotePath,
   onStart,
+  onDemo,
   isGenerating,
   notesFiles,
 }: QuizWelcomeProps) {
@@ -41,7 +43,7 @@ export default function QuizWelcome({
         </div>
       </div>
 
-      <div className="space-y-2 bg-card p-5 rounded-2xl border border-border">
+      <div className="space-y-3 bg-card p-5 rounded-2xl border border-border">
         <label className="text-xs font-handwriting text-foreground text-base notebook-underline block">
           Select Vault Topic :-
         </label>
@@ -62,14 +64,32 @@ export default function QuizWelcome({
           })}
         </select>
 
-        <Button
-          onClick={onStart}
-          disabled={isGenerating || !selectedNotePath}
-          className="bg-accent hover:bg-accent/90 text-white font-mono font-bold text-xs h-10 px-4 flex items-center justify-center gap-2 cursor-pointer w-full mt-3 rounded-xl shadow-lg"
-        >
-          <Sparkles className="w-4 h-4" />
-          {isGenerating ? "Generating challenge..." : "Generate Quiz Exercise Sheet"}
-        </Button>
+        <div className="space-y-2 pt-1">
+          <Button
+            onClick={onStart}
+            disabled={isGenerating || !selectedNotePath}
+            className="bg-accent hover:bg-accent/90 text-white font-mono font-bold text-xs h-10 px-4 flex items-center justify-center gap-2 cursor-pointer w-full rounded-xl shadow-lg"
+          >
+            <Sparkles className="w-4 h-4" />
+            {isGenerating ? "Generating challenge..." : "Generate Quiz Exercise Sheet"}
+          </Button>
+
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-border/60"></div>
+            <span className="flex-shrink mx-2 text-[10px] font-mono text-muted-foreground uppercase">or</span>
+            <div className="flex-grow border-t border-border/60"></div>
+          </div>
+
+          <Button
+            onClick={onDemo}
+            disabled={isGenerating}
+            variant="outline"
+            className="w-full border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary font-mono font-bold text-xs h-10 px-4 flex items-center justify-center gap-2 cursor-pointer rounded-xl transition-all"
+          >
+            <Play className="w-3.5 h-3.5 fill-current" />
+            Try Demo Challenge (Mock Response)
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import '@/app/globals.css'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { AppSidebar } from '@/components/app-sidebar'
+import { AppSidebar } from '@/components/workspace/app-sidebar'
 import { WorkspaceProvider } from "@/context/WorkspaceContext";
 import { Scan, FilePlus, Network, GraduationCap, Sun, Moon, Sparkles, Home, ChevronLeft } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";

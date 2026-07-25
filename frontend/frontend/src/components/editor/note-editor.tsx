@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { API_PATHS } from "@/lib/api-paths";
 import { Save, Edit2, Eye, Check, Sparkles, Link2, HelpCircle } from "lucide-react";
