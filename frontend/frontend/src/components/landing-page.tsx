@@ -268,8 +268,8 @@ function GridDistortionCanvas() {
             ctx.moveTo(pt.x, pt.y);
             ctx.lineTo(pRight.x, pRight.y);
             ctx.strokeStyle = isNear
-              ? `rgba(236, 72, 153, ${0.45 * (1 - distMouse / radius)})`
-              : "rgba(255, 255, 255, 0.05)";
+              ? `rgba(175, 84, 123, ${0.45 * (1 - distMouse / radius)})`
+              : "rgba(255, 255, 255, 0.04)";
             ctx.stroke();
           }
 
@@ -283,7 +283,7 @@ function GridDistortionCanvas() {
             ctx.lineTo(pDown.x, pDown.y);
             ctx.strokeStyle = isNear
               ? `rgba(56, 189, 248, ${0.45 * (1 - distMouse / radius)})`
-              : "rgba(255, 255, 255, 0.05)";
+              : "rgba(255, 255, 255, 0.04)";
             ctx.stroke();
           }
 
@@ -564,10 +564,11 @@ export default function LandingPage() {
 
           {/* Action CTAs */}
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-[#af547b]/10 border border-[#af547b]/30 text-[11px] font-mono text-accent">
-              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              Vault Active
-            </div>
+            <Link href="/auth">
+              <Button variant="outline" className="h-9 border-border bg-card hover:bg-muted text-xs font-mono font-bold cursor-pointer">
+                Sign In
+              </Button>
+            </Link>
 
             <Link href="/workspace">
               <Button className="bg-accent hover:bg-accent/90 text-white font-bold text-xs h-9 px-5 rounded-lg transition-all cursor-pointer flex items-center gap-2 font-mono">

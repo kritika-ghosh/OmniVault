@@ -8,8 +8,9 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
-import { useWorkspace } from "@/context/WorkspaceContext"
-import { ChevronDown, ChevronRight, FileText, Folder, Play, Trash2, Sparkles, Layers } from "lucide-react"
+import Link from "next/link";
+import { useWorkspace } from "@/context/WorkspaceContext";
+import { ChevronDown, ChevronRight, FileText, Folder, Play, Trash2, Sparkles, Layers, User } from "lucide-react"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 
 interface TreeNode {
@@ -269,10 +270,19 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-2 border-t border-border/30 bg-muted/10 shrink-0">
-        <div className="text-[10px] font-mono text-muted-foreground/50 text-center">
-          OmniVault v0.1.0
-        </div>
+      <SidebarFooter className="p-2 border-t border-border/30 bg-muted/10 shrink-0 font-mono">
+        <Link href="/auth" className="flex items-center justify-between p-2 rounded-xl bg-card border border-border hover:border-accent/40 transition-colors">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-6 h-6 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-accent text-[10px] font-bold shrink-0">
+              <User className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[11px] font-bold text-foreground truncate">Vault Account</span>
+              <span className="text-[9px] text-muted-foreground truncate">Session-only Auth</span>
+            </div>
+          </div>
+          <span className="text-[10px] text-accent font-bold px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20">Sign In</span>
+        </Link>
       </SidebarFooter>
     </Sidebar>
   );

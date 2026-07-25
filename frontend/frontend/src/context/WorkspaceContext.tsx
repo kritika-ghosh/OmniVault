@@ -121,12 +121,17 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   const isHydrated = useRef(false);
 
-  // Hydrate state from localStorage on mount
+  // Hydrate state from sessionStorage (Session-only: closing tab/browser forgets connected vaults)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedVaults = localStorage.getItem("workspace_vaults");
-      const savedSessions = localStorage.getItem("workspace_vault_sessions");
-      const savedActive = localStorage.getItem("workspace_active_vault_path");
+      // Clear any old persistent localStorage cache as per user requirement
+      localStorage.removeItem("workspace_vaults");
+      localStorage.removeItem("workspace_vault_sessions");
+      localStorage.removeItem("workspace_active_vault_path");
+
+      const savedVaults = sessionStorage.getItem("workspace_vaults");
+      const savedSessions = sessionStorage.getItem("workspace_vault_sessions");
+      const savedActive = sessionStorage.getItem("workspace_active_vault_path");
 
       if (savedVaults) {
         try { setVaults(JSON.parse(savedVaults)); } catch (e) {}
@@ -159,24 +164,24 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Save vaultSessions on changes
+  // Save vaultSessions on changes in sessionStorage
   useEffect(() => {
     if (typeof window !== "undefined" && isHydrated.current) {
-      localStorage.setItem("workspace_vault_sessions", JSON.stringify(vaultSessions));
+      sessionStorage.setItem("workspace_vault_sessions", JSON.stringify(vaultSessions));
     }
   }, [vaultSessions]);
 
-  // Save activeVaultPath on changes
+  // Save activeVaultPath on changes in sessionStorage
   useEffect(() => {
     if (typeof window !== "undefined" && isHydrated.current) {
-      localStorage.setItem("workspace_active_vault_path", activeVaultPath);
+      sessionStorage.setItem("workspace_active_vault_path", activeVaultPath);
     }
   }, [activeVaultPath]);
 
-  // Save vaults list on changes
+  // Save vaults list on changes in sessionStorage
   useEffect(() => {
     if (typeof window !== "undefined" && isHydrated.current) {
-      localStorage.setItem("workspace_vaults", JSON.stringify(vaults));
+      sessionStorage.setItem("workspace_vaults", JSON.stringify(vaults));
     }
   }, [vaults]);
 
