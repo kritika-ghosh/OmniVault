@@ -191,13 +191,23 @@ Add technical overview and key definitions here...
                       className="p-3 bg-[#161c26] border border-white/10 hover:border-accent/40 rounded-xl flex items-center justify-between gap-3 transition-colors"
                     >
                       <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-bold text-foreground">{gap.term}</span>
                           <span className="text-[9px] px-1.5 py-0.5 bg-accent/20 text-accent rounded font-semibold uppercase">
                             {gap.classification}
                           </span>
+                          {(gap as any).required_expertise && (
+                            <span className="text-[9px] px-1.5 py-0.5 bg-primary/20 text-primary border border-primary/30 rounded font-semibold uppercase">
+                              Req: {(gap as any).required_expertise}
+                            </span>
+                          )}
+                          {(gap as any).expertise_level && (gap as any).expertise_level !== "missing" && (
+                            <span className="text-[9px] px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded font-semibold uppercase">
+                              Current: {(gap as any).expertise_level}
+                            </span>
+                          )}
                         </div>
-                        <span className="text-[10px] text-muted-foreground truncate mt-0.5">
+                        <span className="text-[10px] text-muted-foreground truncate mt-1">
                           {gap.reason}
                         </span>
                       </div>
@@ -207,7 +217,7 @@ Add technical overview and key definitions here...
                         className="h-7 px-2.5 text-[10px] font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg cursor-pointer flex items-center gap-1 shrink-0"
                       >
                         <PlusCircle className="w-3 h-3" />
-                        Create Note
+                        {(gap as any).classification === "expertise_gap" ? "Upgrade Note" : "Create Note"}
                       </Button>
                     </div>
                   ))}

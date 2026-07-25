@@ -72,21 +72,17 @@ async def execute_chunked_workspace_scan(payload: ChunkScanRequest):
     smart_detector.term_sources = {}
     collection, existing_notes_meta = vector_store.index_notes_vault_in_memory(n_files)
     
-    declared_deps = smart_detector.extract_dependencies_in_memory(p_files)
-    code_imports = smart_detector.scan_workspace_codebase_in_memory(p_files)
-    all_terms = declared_deps.union(code_imports)
-    
-    detected_gaps = smart_detector.compute_smart_gaps(all_terms, existing_notes_meta, collection)
+    detected_gaps = smart_detector.compute_smart_gaps_with_llm(p_files, existing_notes_meta, n_files, collection)
     
     await manager.broadcast({
         "type": "graph_update",
-        "total_terms_scanned": len(all_terms),
+        "total_terms_scanned": len(detected_gaps),
         "gaps_found": len(detected_gaps)
     })
     
     return {
         "status": "success",
-        "total_terms_scanned": len(all_terms),
+        "total_terms_scanned": len(detected_gaps),
         "gaps_found": len(detected_gaps),
         "report": detected_gaps,
         "notes_files": n_files
@@ -105,24 +101,19 @@ async def execute_workspace_scan(payload: ScanRequest):
         # Ephemerally index notes
         collection, existing_notes_meta = vector_store.index_notes_vault_in_memory(n_files)
         
-        # Scan code files
-        declared_deps = smart_detector.extract_dependencies_in_memory(p_files)
-        code_imports = smart_detector.scan_workspace_codebase_in_memory(p_files)
-        all_terms = declared_deps.union(code_imports)
-        
-        # Perform similarity safety checks and gap analysis
-        detected_gaps = smart_detector.compute_smart_gaps(all_terms, existing_notes_meta, collection)
+        # LLM concept and expertise gap analysis
+        detected_gaps = smart_detector.compute_smart_gaps_with_llm(p_files, existing_notes_meta, n_files, collection)
         
         # Broadcast graph updates via WebSockets
         await manager.broadcast({
             "type": "graph_update",
-            "total_terms_scanned": len(all_terms),
+            "total_terms_scanned": len(detected_gaps),
             "gaps_found": len(detected_gaps)
         })
         
         return {
             "status": "success",
-            "total_terms_scanned": len(all_terms),
+            "total_terms_scanned": len(detected_gaps),
             "gaps_found": len(detected_gaps),
             "report": detected_gaps
         }
