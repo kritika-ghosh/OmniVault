@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Scan,
@@ -161,31 +161,159 @@ ChromaDB is an embedding database for building AI applications with RAG.
   },
 };
 
-function GsapDottedArrow({ label }: { label?: string }) {
+function GridDistortionCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      mouse.targetX = e.clientX;
+      mouse.targetY = e.clientY;
+    };
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      initGrid();
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("resize", handleResize);
+
+    const spacing = 40;
+    interface Point {
+      x0: number;
+      y0: number;
+      x: number;
+      y: number;
+    }
+
+    let points: Point[][] = [];
+
+    const initGrid = () => {
+      points = [];
+      const cols = Math.ceil(width / spacing) + 2;
+      const rows = Math.ceil(height / spacing) + 2;
+
+      for (let r = 0; r < rows; r++) {
+        const row: Point[] = [];
+        for (let c = 0; c < cols; c++) {
+          const x0 = c * spacing - spacing / 2;
+          const y0 = r * spacing - spacing / 2;
+          row.push({ x0, y0, x: x0, y: y0 });
+        }
+        points.push(row);
+      }
+    };
+
+    initGrid();
+
+    let animId: number;
+    const radius = 180;
+    const maxDistortion = 45;
+
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      mouse.x += (mouse.targetX - mouse.x) * 0.15;
+      mouse.y += (mouse.targetY - mouse.y) * 0.15;
+
+      const rows = points.length;
+      const cols = points[0]?.length || 0;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const pt = points[r][c];
+          const dx = pt.x0 - mouse.x;
+          const dy = pt.y0 - mouse.y;
+          const dist = Math.hypot(dx, dy);
+
+          let targetX = pt.x0;
+          let targetY = pt.y0;
+
+          if (dist < radius && dist > 0) {
+            const force = (1 - dist / radius) * maxDistortion;
+            const angle = Math.atan2(dy, dx);
+            targetX = pt.x0 + Math.cos(angle) * force;
+            targetY = pt.y0 + Math.sin(angle) * force;
+          }
+
+          pt.x += (targetX - pt.x) * 0.12;
+          pt.y += (targetY - pt.y) * 0.12;
+        }
+      }
+
+      ctx.lineWidth = 1;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const pt = points[r][c];
+
+          if (c < cols - 1) {
+            const pRight = points[r][c + 1];
+            const distMouse = Math.hypot(pt.x - mouse.x, pt.y - mouse.y);
+            const isNear = distMouse < radius;
+
+            ctx.beginPath();
+            ctx.moveTo(pt.x, pt.y);
+            ctx.lineTo(pRight.x, pRight.y);
+            ctx.strokeStyle = isNear
+              ? `rgba(236, 72, 153, ${0.45 * (1 - distMouse / radius)})`
+              : "rgba(255, 255, 255, 0.05)";
+            ctx.stroke();
+          }
+
+          if (r < rows - 1) {
+            const pDown = points[r + 1][c];
+            const distMouse = Math.hypot(pt.x - mouse.x, pt.y - mouse.y);
+            const isNear = distMouse < radius;
+
+            ctx.beginPath();
+            ctx.moveTo(pt.x, pt.y);
+            ctx.lineTo(pDown.x, pDown.y);
+            ctx.strokeStyle = isNear
+              ? `rgba(56, 189, 248, ${0.45 * (1 - distMouse / radius)})`
+              : "rgba(255, 255, 255, 0.05)";
+            ctx.stroke();
+          }
+
+          const distMouse = Math.hypot(pt.x - mouse.x, pt.y - mouse.y);
+          if (distMouse < radius) {
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, 2, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(56, 189, 248, ${0.8 * (1 - distMouse / radius)})`;
+            ctx.fill();
+          }
+        }
+      }
+
+      animId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animId);
+    };
+  }, []);
+
   return (
-    <div className="w-full flex flex-col items-center justify-center my-6 relative z-20 pointer-events-none select-none">
-      {label && (
-        <span className="text-[10px] font-mono text-accent uppercase tracking-widest bg-card px-3 py-1 rounded-full border border-border mb-2 shadow-md font-bold">
-          {label}
-        </span>
-      )}
-      <svg width="100" height="60" viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="overflow-visible">
-        <defs>
-          <marker id="gsap-arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
-            <polygon points="0 0, 8 4, 0 8" fill="#af547b" />
-          </marker>
-        </defs>
-        <path
-          d="M50,0 C50,30 50,30 50,50"
-          stroke="#af547b"
-          strokeWidth="2.5"
-          strokeDasharray="6 6"
-          className="gsap-dotted-line"
-          markerEnd="url(#gsap-arrowhead)"
-        />
-        <circle cx="50" cy="50" r="3.5" fill="#38bdf8" className="animate-ping opacity-80" />
-      </svg>
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 pointer-events-none z-0 opacity-80"
+    />
   );
 }
 
@@ -257,20 +385,45 @@ export default function LandingPage() {
     setStreamedText("");
   }, [activeKey, concept]);
 
-  // GSAP Scroll Animation Effect for Dotted Arrows & Cards
+  // GSAP Animations Effect for Hero Elements & Scroll Cards
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const dottedLines = document.querySelectorAll(".gsap-dotted-line");
-    dottedLines.forEach((line) => {
-      gsap.to(line, {
-        strokeDashoffset: -120,
-        duration: 2.5,
-        repeat: -1,
-        ease: "none",
-      });
+    // 1. Hero Entrance Animations
+    gsap.fromTo(
+      ".gsap-hero-badge",
+      { opacity: 0, y: -20, scale: 0.9 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "back.out(1.7)" }
+    );
+
+    gsap.fromTo(
+      ".gsap-hero-title",
+      { opacity: 0, y: 30 },
+      { opacity: 1, y: 0, duration: 1, delay: 0.2, ease: "power3.out" }
+    );
+
+    gsap.fromTo(
+      ".gsap-hero-desc",
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.8, delay: 0.4, ease: "power2.out" }
+    );
+
+    gsap.fromTo(
+      ".gsap-hero-btn",
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.7, delay: 0.6, stagger: 0.15, ease: "power2.out" }
+    );
+
+    // 2. Floating animation for Mock IDE Preview
+    gsap.to(".gsap-mock-ide", {
+      y: -10,
+      repeat: -1,
+      yoyo: true,
+      duration: 3.5,
+      ease: "sine.inOut",
     });
 
+    // 3. Scroll Cards Entrance
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -278,18 +431,18 @@ export default function LandingPage() {
             gsap.to(entry.target, {
               opacity: 1,
               y: 0,
-              duration: 0.7,
+              duration: 0.6,
               ease: "power2.out",
             });
           }
         });
       },
-      { threshold: 0.1 }
+      { threshold: 0.05 }
     );
 
     const scrollCards = document.querySelectorAll(".gsap-scroll-card");
     scrollCards.forEach((card) => {
-      gsap.set(card, { opacity: 0, y: 35 });
+      gsap.set(card, { opacity: 0.4, y: 20 });
       observer.observe(card);
     });
 
@@ -376,7 +529,10 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-graph-paper text-foreground flex flex-col font-sans select-none overflow-x-hidden antialiased">
+    <div className="min-h-screen bg-graph-paper text-foreground flex flex-col font-sans select-none overflow-x-hidden antialiased relative">
+      {/* Interactive Canvas Grid Distortion on Cursor Movement */}
+      <GridDistortionCanvas />
+
       {/* TOP NAVIGATION BAR */}
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-15 flex items-center justify-between">
@@ -426,13 +582,13 @@ export default function LandingPage() {
       {/* HERO SECTION */}
       <section className="relative z-10 pt-20 pb-16 px-6 max-w-6xl mx-auto text-center flex flex-col items-center">
         {/* Notebook Title Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-card border border-border text-xs font-mono text-primary mb-8 shadow-lg">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-card border border-border text-xs font-mono text-primary mb-8 shadow-lg gsap-hero-badge">
           <BookOpen className="w-4 h-4 text-primary" />
           <span>Local-First Markdown Vault & AST Scanner</span>
         </div>
 
         {/* Hero Title */}
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-foreground leading-[1.2] mb-6 font-sans">
+        <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-foreground leading-[1.2] mb-6 font-sans gsap-hero-title">
           Bridge Codebase Dependencies with Personal{" "}
           <span className="font-handwriting text-accent notebook-underline text-5xl sm:text-7xl inline-block px-1 min-w-[320px]">
             {typedText}
@@ -441,13 +597,13 @@ export default function LandingPage() {
         </h1>
 
         {/* Description */}
-        <p className="text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed mb-10 font-sans">
+        <p className="text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed mb-10 font-sans gsap-hero-desc">
           OmniVault automatically parses python/JS import dependencies, identifies documentation gaps, synthesizes Markdown guides, and schedules context-aware active recall quizzes.
         </p>
 
         {/* Hero Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto mb-16">
-          <Link href="/workspace" className="w-full sm:w-auto">
+          <Link href="/workspace" className="w-full sm:w-auto gsap-hero-btn">
             <Button className="w-full sm:w-auto h-12 px-8 bg-accent hover:bg-accent/90 text-white font-bold text-sm rounded-lg shadow-xl shadow-accent/20 transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-2 font-mono">
               <Zap className="w-4 h-4 fill-current" />
               <span>Open Full Workspace IDE</span>
@@ -455,7 +611,7 @@ export default function LandingPage() {
             </Button>
           </Link>
 
-          <a href="#playground" className="w-full sm:w-auto">
+          <a href="#playground" className="w-full sm:w-auto gsap-hero-btn">
             <Button variant="outline" className="w-full sm:w-auto h-12 px-7 border-border bg-card hover:bg-muted text-foreground font-semibold text-sm rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 font-mono">
               <Play className="w-3.5 h-3.5 text-primary fill-primary/20" />
               <span>Explore Interactive Playground</span>
@@ -464,7 +620,7 @@ export default function LandingPage() {
         </div>
 
         {/* HERO MOCK IDE PREVIEW */}
-        <div className="w-full max-w-5xl rounded-2xl border border-border bg-graph-paper-dense shadow-2xl overflow-hidden text-left flex flex-col mb-12">
+        <div className="w-full max-w-5xl rounded-2xl border border-border bg-graph-paper-dense shadow-2xl overflow-hidden text-left flex flex-col mb-12 gsap-mock-ide">
           {/* Titlebar */}
           <div className="px-4 py-3 bg-muted border-b border-border flex items-center justify-between text-xs font-mono text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -539,9 +695,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* GSAP Dotted Arrow Connector: Hero -> Playground */}
-      <GsapDottedArrow label="Interactive Workflow" />
 
       {/* PLAYGROUND */}
       <section id="playground" className="relative z-10 py-16 px-6 max-w-7xl mx-auto w-full">
@@ -758,9 +911,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* GSAP Dotted Arrow Connector: Playground -> 3-Agent System */}
-      <GsapDottedArrow label="3-Agent Engine" />
-
       {/* 3-AGENT ARCHITECTURE SUMMARY */}
       <section id="architecture" className="relative z-10 py-16 px-6 max-w-7xl mx-auto w-full border-t border-border">
         <div className="text-center mb-12 space-y-2">
@@ -798,9 +948,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* GSAP Dotted Arrow Connector: 3-Agent System -> Features */}
-      <GsapDottedArrow label="Core Vault Features" />
 
       {/* FEATURE MATRIX GRID */}
       <section id="features" className="relative z-10 py-16 px-6 max-w-7xl mx-auto w-full border-t border-border">
