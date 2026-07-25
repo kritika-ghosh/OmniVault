@@ -27,6 +27,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import gsap from "gsap";
 
 // Unified technical concepts dataset for the playground
 const PLAYGROUND_DATA: Record<
@@ -160,6 +161,34 @@ ChromaDB is an embedding database for building AI applications with RAG.
   },
 };
 
+function GsapDottedArrow({ label }: { label?: string }) {
+  return (
+    <div className="w-full flex flex-col items-center justify-center my-6 relative z-20 pointer-events-none select-none">
+      {label && (
+        <span className="text-[10px] font-mono text-accent uppercase tracking-widest bg-card px-3 py-1 rounded-full border border-border mb-2 shadow-md font-bold">
+          {label}
+        </span>
+      )}
+      <svg width="100" height="60" viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="overflow-visible">
+        <defs>
+          <marker id="gsap-arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+            <polygon points="0 0, 8 4, 0 8" fill="#af547b" />
+          </marker>
+        </defs>
+        <path
+          d="M50,0 C50,30 50,30 50,50"
+          stroke="#af547b"
+          strokeWidth="2.5"
+          strokeDasharray="6 6"
+          className="gsap-dotted-line"
+          markerEnd="url(#gsap-arrowhead)"
+        />
+        <circle cx="50" cy="50" r="3.5" fill="#38bdf8" className="animate-ping opacity-80" />
+      </svg>
+    </div>
+  );
+}
+
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
@@ -227,6 +256,45 @@ export default function LandingPage() {
     setQuizResult(null);
     setStreamedText("");
   }, [activeKey, concept]);
+
+  // GSAP Scroll Animation Effect for Dotted Arrows & Cards
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const dottedLines = document.querySelectorAll(".gsap-dotted-line");
+    dottedLines.forEach((line) => {
+      gsap.to(line, {
+        strokeDashoffset: -120,
+        duration: 2.5,
+        repeat: -1,
+        ease: "none",
+      });
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            gsap.to(entry.target, {
+              opacity: 1,
+              y: 0,
+              duration: 0.7,
+              ease: "power2.out",
+            });
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    const scrollCards = document.querySelectorAll(".gsap-scroll-card");
+    scrollCards.forEach((card) => {
+      gsap.set(card, { opacity: 0, y: 35 });
+      observer.observe(card);
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Concept Chip Switcher
   const handleSelectConcept = (key: string) => {
@@ -472,6 +540,9 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* GSAP Dotted Arrow Connector: Hero -> Playground */}
+      <GsapDottedArrow label="Interactive Workflow" />
+
       {/* PLAYGROUND */}
       <section id="playground" className="relative z-10 py-16 px-6 max-w-7xl mx-auto w-full">
         <div className="text-center mb-10 space-y-2">
@@ -687,6 +758,9 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* GSAP Dotted Arrow Connector: Playground -> 3-Agent System */}
+      <GsapDottedArrow label="3-Agent Engine" />
+
       {/* 3-AGENT ARCHITECTURE SUMMARY */}
       <section id="architecture" className="relative z-10 py-16 px-6 max-w-7xl mx-auto w-full border-t border-border">
         <div className="text-center mb-12 space-y-2">
@@ -699,31 +773,34 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 rounded-2xl bg-card border border-border space-y-3">
+          <div className="p-6 rounded-2xl bg-card border border-border space-y-3 gsap-scroll-card">
             <Scan className="w-8 h-8 text-[#af547b]" />
-            <h3 className="text-lg font-bold text-foreground font-handwriting text-xl notebook-underline">Agent 1: AST Scanner</h3>
+            <h3 className="text-lg font-bold text-foreground font-handwriting text-xl notebook-underline">Agent 1: Codebase Scanner</h3>
             <p className="text-xs text-muted-foreground leading-relaxed font-sans">
-              Parses Python AST and JS package imports across your codebase directory. Diff-checks imports against local markdown vault notes.
+              Parses imports & dependencies across your codebase directory. Diff-checks imports against local markdown vault notes using LLM intelligence.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-card border border-border space-y-3">
+          <div className="p-6 rounded-2xl bg-card border border-border space-y-3 gsap-scroll-card">
             <Sparkles className="w-8 h-8 text-[#af547b]" />
             <h3 className="text-lg font-bold text-foreground font-handwriting text-xl notebook-underline">Agent 2: Synthesizer</h3>
             <p className="text-xs text-muted-foreground leading-relaxed font-sans">
-              Streams structured Markdown guides with code patterns and YAML frontmatter metadata directly to your browser session.
+              Streams structured Markdown guides with code patterns and YAML frontmatter metadata directly to your local Obsidian vault.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-card border border-border space-y-3">
+          <div className="p-6 rounded-2xl bg-card border border-border space-y-3 gsap-scroll-card">
             <GraduationCap className="w-8 h-8 text-[#af547b]" />
-            <h3 className="text-lg font-bold text-foreground font-handwriting text-xl notebook-underline">Agent 3: Quizzer</h3>
+            <h3 className="text-lg font-bold text-foreground font-handwriting text-xl notebook-underline">Agent 3: Mutated Quizzer</h3>
             <p className="text-xs text-muted-foreground leading-relaxed font-sans">
-              Generates context-aware coding challenges, evaluates submitted code solutions, and auto-patches Markdown note frontmatter metadata.
+              Generates context-aware coding challenges, evaluates submitted code solutions, and mutates syllabus tasks if gaps are detected.
             </p>
           </div>
         </div>
       </section>
+
+      {/* GSAP Dotted Arrow Connector: 3-Agent System -> Features */}
+      <GsapDottedArrow label="Core Vault Features" />
 
       {/* FEATURE MATRIX GRID */}
       <section id="features" className="relative z-10 py-16 px-6 max-w-7xl mx-auto w-full border-t border-border">
