@@ -54,8 +54,8 @@ export async function readFilesRecursively(
         console.error(`Failed to read file ${entryPath}:`, err);
       }
     } else if (entry.kind === "directory") {
-      // Exclude standard build/env folders to speed up processing
-      const excludedDirs = ["node_modules", ".git", "venv", ".venv", "env", ".env", ".next", "dist", "build", "__pycache__", "chroma_db", ".vercel", "testing", ".agents", "out", "target"];
+      // Exclude standard build/env folders & Obsidian metadata to speed up processing
+      const excludedDirs = [".obsidian", "node_modules", ".git", "venv", ".venv", "env", ".env", ".next", "dist", "build", "__pycache__", "chroma_db", ".vercel", "testing", ".agents", "out", "target"];
       if (!excludedDirs.includes(entry.name)) {
         files.push(...(await readFilesRecursively(entry, entryPath)));
       }
@@ -235,4 +235,60 @@ export function parseSourceImports(files: FilePayload[]): Set<string> {
   }
 
   return terms;
+}
+
+// Extracts implicit in-between architectural & networking concepts from code patterns
+export function parseImplicitInbetweenConcepts(files: FilePayload[]): Set<string> {
+  const concepts = new Set<string>();
+
+  for (const file of files) {
+    const content = file.content.toLowerCase();
+
+    // 1. CORS / Cross-Origin Resource Sharing
+    if (content.includes("cors") || content.includes("corsmiddleware") || content.includes("access-control-allow-origin")) {
+      concepts.add("CORS / Cross-Origin Sharing");
+    }
+
+    // 2. JWT / Bearer Authentication
+    if (content.includes("jwt") || content.includes("bearer") || content.includes("oauth2") || content.includes("passlib") || content.includes("bcrypt")) {
+      concepts.add("JWT Bearer Authentication");
+    }
+
+    // 3. Database Connection Pooling & ORM Session Lifecycle
+    if (content.includes("create_engine") || content.includes("sessionmaker") || content.includes("sessionlocal") || content.includes("pool_size") || content.includes("declarative_base")) {
+      concepts.add("Database Connection Pooling");
+    }
+
+    // 4. Asynchronous Event Loop & Non-Blocking I/O
+    if (content.includes("async def") || content.includes("asyncio") || content.includes("taskgroup") || content.includes("promise.all")) {
+      concepts.add("Asynchronous Non-Blocking Event Loop");
+    }
+
+    // 5. Pydantic Data Validation & Schema Serialization
+    if (content.includes("basemodel") || content.includes("field(") || content.includes("validator") || content.includes("model_validator")) {
+      concepts.add("Pydantic Data Serialization");
+    }
+
+    // 6. Vector Embedding Retrieval & Cosine Similarity
+    if (content.includes("chromadb") || content.includes("vector_store") || content.includes("embedding") || content.includes("cosine")) {
+      concepts.add("Vector Search & Embedding Retrieval");
+    }
+
+    // 7. REST Middleware & Exception Interception
+    if (content.includes("middleware") || content.includes("httpexception") || content.includes("exception_handler")) {
+      concepts.add("REST API Middleware Interception");
+    }
+
+    // 8. State Hydration & Session Storage
+    if (content.includes("sessionstorage") || content.includes("localstorage") || content.includes("usecontext") || content.includes("useworkspace")) {
+      concepts.add("State Hydration & Session Management");
+    }
+
+    // 9. Active Recall Memory Decay
+    if (content.includes("ebbinghaus") || content.includes("decay_score") || content.includes("confidence_level")) {
+      concepts.add("Spaced Repetition & Memory Decay");
+    }
+  }
+
+  return concepts;
 }

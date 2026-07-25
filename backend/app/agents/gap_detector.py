@@ -34,15 +34,24 @@ class SmartGapDetector:
         codebase_text = "\n---\n".join(file_summaries)
         
         system_prompt = (
-            "You are a Senior AI Tech Lead analyzing a codebase. "
-            "Based on the provided codebase files, dependencies, and imports, identify the core technical concepts, "
-            "libraries, frameworks, and architecture patterns that an engineer working on this codebase MUST have documentation notes on.\n\n"
+            "You are a Senior AI Tech Lead performing a comprehensive architectural scanning of a codebase.\n"
+            "Your task is to identify ALL explicit frameworks/libraries AND IMPLICIT IN-BETWEEN CONCEPTS "
+            "that are used, configured, or implied by the codebase patterns, even if they are NOT explicitly named as imports.\n\n"
+            "Examples of implicit in-between concepts to detect:\n"
+            "- 'CORS / Cross-Origin Resource Sharing' (if middleware, origin headers, or API CORS setup exists)\n"
+            "- 'JWT / Bearer Token Authentication' (if token headers, password hashing, or auth handlers exist)\n"
+            "- 'Database Connection Pooling' & 'ORM Unit of Work' (if database sessions/engines exist)\n"
+            "- 'Asynchronous Non-Blocking Event Loop' (if async/await, asyncio, or async handlers exist)\n"
+            "- 'Pydantic Data Serialization & Validation' (if models or request schemas exist)\n"
+            "- 'Vector Search & Embedding Retrieval' (if vector stores or embeddings exist)\n"
+            "- 'REST API Middleware & Exception Interception' (if HTTP exceptions or middleware handlers exist)\n"
+            "- 'Spaced Repetition & Ebbinghaus Memory Decay' (if decay or confidence scoring exists)\n\n"
             "Return a JSON array of objects with the following keys:\n"
-            "- \"term\": clean short concept name (e.g. \"FastAPI Dependency Injection\", \"Pydantic Models\", \"ChromaDB Vector Store\")\n"
-            "- \"classification\": category (e.g. \"framework\", \"library\", \"syntax\", \"architecture\", \"database\")\n"
-            "- \"required_expertise\": required level for this codebase (\"beginner\", \"intermediate\", \"advanced\")\n"
-            "- \"reason\": concise explanation of why this concept is essential for this codebase\n\n"
-            "Return ONLY valid JSON array. No conversational filler or markdown wrapping outside JSON."
+            "- \"term\": clean short concept name (e.g. \"CORS / Cross-Origin Sharing\", \"JWT Bearer Auth\", \"FastAPI Dependency Injection\")\n"
+            "- \"classification\": category (\"framework\", \"library\", \"syntax\", \"architecture\", \"security\", \"database\", \"networking\")\n"
+            "- \"required_expertise\": required expertise level (\"beginner\", \"intermediate\", \"advanced\")\n"
+            "- \"reason\": concise explanation of why this explicit or implicit concept is present in the codebase\n\n"
+            "Return ONLY a valid JSON array. No conversational filler or markdown wrapping outside JSON."
         )
 
         user_prompt = f"Codebase Context:\n{codebase_text[:6000]}"
@@ -273,7 +282,7 @@ class SmartGapDetector:
     def scan_workspace_codebase(self, project_path: Path) -> Set[str]:
         imported_terms = set()
         for file_path in project_path.rglob("*"):
-            if any(p in file_path.parts for p in ["node_modules", "venv", ".git", "__pycache__"]):
+            if any(p in file_path.parts for p in [".obsidian", "node_modules", "venv", ".git", "__pycache__"]):
                 continue
             if not file_path.is_file():
                 continue
@@ -338,7 +347,7 @@ class SmartGapDetector:
             rel_path = f.get("path", "")
             content = f.get("content", "")
             parts = rel_path.replace("\\", "/").split("/")
-            if any(p in parts for p in ["node_modules", "venv", ".git", "__pycache__"]):
+            if any(p in parts for p in [".obsidian", "node_modules", "venv", ".git", "__pycache__"]):
                 continue
             ext = "." + rel_path.split(".")[-1] if "." in rel_path else ""
             try:

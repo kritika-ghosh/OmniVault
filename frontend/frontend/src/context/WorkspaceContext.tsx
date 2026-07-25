@@ -7,6 +7,7 @@ import {
   readFilesRecursively,
   parseDependencies,
   parseSourceImports,
+  parseImplicitInbetweenConcepts,
   chunkFiles,
   FilePayload,
   ScanResponse,
@@ -493,11 +494,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setStatusMessage("Reading notes files recursively from local vault...");
         notes = await readFilesRecursively(activeNotesHandle);
   
-        setStatusMessage("Extracting dependencies and source code imports...");
+        setStatusMessage("Extracting dependencies, source imports, and implicit in-between concepts...");
         const depTerms = parseDependencies(projFiles);
         const importTerms = parseSourceImports(projFiles);
+        const implicitTerms = parseImplicitInbetweenConcepts(projFiles);
         
-        const combinedTerms = new Set([...depTerms, ...importTerms]);
+        const combinedTerms = new Set([...depTerms, ...importTerms, ...implicitTerms]);
         sorted = Array.from(combinedTerms).sort();
 
         const virtualReqsFile: FilePayload = {

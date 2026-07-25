@@ -27,8 +27,10 @@ function buildTree(
 ): TreeNode[] {
   const root: TreeNode[] = [];
 
-  // 1. Process existing files
-  notesFiles.forEach((file) => {
+  // 1. Process existing files (ignore .obsidian metadata folder)
+  notesFiles
+    .filter((file) => !file.path.startsWith(".obsidian") && !file.path.includes("/.obsidian"))
+    .forEach((file) => {
     const parts = file.path.split("/");
     let currentLevel = root;
 

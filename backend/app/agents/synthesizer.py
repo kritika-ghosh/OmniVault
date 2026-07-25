@@ -85,7 +85,7 @@ class ContentSynthesizer:
 
     async def generate_note_stream(self, term: str, project_context: str) -> AsyncGenerator[str, None]:
         """
-        Orchestrates background reference scraping, applies the target template, 
+        Orchestrates background reference scraping, applies the target template with Wikipedia & Wiki links,
         streams markdown content chunk-by-chunk, and appends code validation reports.
         """
         # Formulate query
@@ -93,26 +93,34 @@ class ContentSynthesizer:
         
         # Fetch grounding info
         web_reference = await self.fetch_web_context(search_query)
+
+        # Build clean Wikipedia reference URL slug
+        wiki_slug = re.sub(r"[^\w\s-]", "", term).strip().replace(" ", "_")
+        wiki_url = f"https://en.wikipedia.org/wiki/{wiki_slug}"
         
         system_prompt = (
             "You are an expert technical writer creating a highly structured, self-contained "
-            f"Markdown guide on '{term}' for an intermediate developer.\n"
-            "You must follow this exact structural template layout:\n"
-            "1. YAML Frontmatter block containing title, tags, status: draft, created, and updated dates.\n"
-            "2. # Concept Name\n"
-            "3. ## Overview\n"
-            "4. ## Core Syntax / API\n"
-            "5. ## Common Pitfalls\n"
+            f"Markdown guide on '{term}' for a developer.\n\n"
+            "MANDATORY STRUCTURAL TEMPLATE:\n"
+            "1. YAML Frontmatter block containing title, tags, status: draft, confidence_level: 0.5, created, and updated dates.\n"
+            f"2. # {term}\n"
+            "3. ## Overview & Architectural Role\n"
+            "4. ## Core Syntax & Implementation Patterns\n"
+            "5. ## Common Pitfalls & Edge Cases\n"
             "6. ## Related Concepts\n"
-            "Rules: Output pure Markdown only. Do not wrap the whole response in a code block. "
-            "Never hallucinate or invent unverified syntax parameters."
+            "7. ## External References & Wiki Links\n\n"
+            "CRITICAL WIKIPEDIA & REFERENCE LINK RULES:\n"
+            "- Throughout the body text, embed inline Markdown links to Wikipedia and official documentation for key technical terms (e.g. `[Wikipedia Overview](https://en.wikipedia.org/wiki/...)` and `[[Obsidian-Style-Wiki-Link]]`).\n"
+            f"- Under `## External References & Wiki Links`, you MUST list at least 3-4 authoritative reference links, including `[{term} on Wikipedia]({wiki_url})` and official documentation links (e.g. MDN, Python Docs, FastAPI Docs, React Docs, etc.).\n"
+            "- Output pure Markdown only. Do not wrap the whole document in top-level backticks."
         )
         
         user_prompt = (
             f"Target Concept: {term}\n"
-            f"Associated Environment Technologies: {project_context}\n"
-            f"Scraped Technical Reference: {web_reference}\n\n"
-            "Synthesize and stream the finalized document now."
+            f"Associated Tech Environment: {project_context}\n"
+            f"Scraped Technical Summary: {web_reference}\n"
+            f"Wikipedia Target Slug: {wiki_url}\n\n"
+            "Synthesize and stream the complete document now with Wikipedia and Wiki links."
         )
 
         full_content = ""
@@ -136,6 +144,15 @@ class ContentSynthesizer:
             full_content += err_msg
             yield err_msg
             return
+
+        # Ensure Wiki Links section exists if omitted
+        if "## External References" not in full_content and "Wikipedia" not in full_content:
+            wiki_appendix = (
+                "\n\n---\n\n## External References & Wiki Links\n"
+                f"- 🌐 [{term} - Wikipedia Article]({wiki_url})\n"
+                f"- 📚 [{term} Official Documentation Search](https://devdocs.io/#q={wiki_slug})\n"
+            )
+            yield wiki_appendix
 
         # Perform code block validation at the end of synthesis
         try:
