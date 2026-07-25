@@ -19,42 +19,40 @@ class SmartGapDetector:
 
     def analyze_project_concepts_with_llm(self, project_files: List[Dict[str, str]]) -> List[Dict]:
         """
-        Uses LLM to analyze the codebase structure, dependencies, and code files to generate
-        a list of required technical concepts along with required expertise levels.
+        Uses LLM as a Principal AI Software Architect to perform deep conceptual gap scanning.
+        Identifies high-level software engineering concepts, architectural paradigms, security patterns,
+        and domain logic topics instead of raw package imports or dependency names.
         """
-        # Prepare codebase summary for LLM context
+        # Prepare codebase summary for LLM context (up to 45 files with smarter previews)
         file_summaries = []
-        for f in project_files[:30]:  # Limit to top 30 files for token efficiency
+        for f in project_files[:45]:
             path = f.get("path", "")
             content = f.get("content", "")
-            # Truncate content preview
-            preview = content[:400] + "..." if len(content) > 400 else content
+            # Truncate content preview to capturing structural logic
+            preview = content[:650] + "\n..." if len(content) > 650 else content
             file_summaries.append(f"File: {path}\nContent Preview:\n{preview}\n")
             
         codebase_text = "\n---\n".join(file_summaries)
         
         system_prompt = (
-            "You are a Senior AI Tech Lead performing a comprehensive architectural scanning of a codebase.\n"
-            "Your task is to identify ALL explicit frameworks/libraries AND IMPLICIT IN-BETWEEN CONCEPTS "
-            "that are used, configured, or implied by the codebase patterns, even if they are NOT explicitly named as imports.\n\n"
-            "Examples of implicit in-between concepts to detect:\n"
-            "- 'CORS / Cross-Origin Resource Sharing' (if middleware, origin headers, or API CORS setup exists)\n"
-            "- 'JWT / Bearer Token Authentication' (if token headers, password hashing, or auth handlers exist)\n"
-            "- 'Database Connection Pooling' & 'ORM Unit of Work' (if database sessions/engines exist)\n"
-            "- 'Asynchronous Non-Blocking Event Loop' (if async/await, asyncio, or async handlers exist)\n"
-            "- 'Pydantic Data Serialization & Validation' (if models or request schemas exist)\n"
-            "- 'Vector Search & Embedding Retrieval' (if vector stores or embeddings exist)\n"
-            "- 'REST API Middleware & Exception Interception' (if HTTP exceptions or middleware handlers exist)\n"
-            "- 'Spaced Repetition & Ebbinghaus Memory Decay' (if decay or confidence scoring exists)\n\n"
-            "Return a JSON array of objects with the following keys:\n"
-            "- \"term\": clean short concept name (e.g. \"CORS / Cross-Origin Sharing\", \"JWT Bearer Auth\", \"FastAPI Dependency Injection\")\n"
-            "- \"classification\": category (\"framework\", \"library\", \"syntax\", \"architecture\", \"security\", \"database\", \"networking\")\n"
-            "- \"required_expertise\": required expertise level (\"beginner\", \"intermediate\", \"advanced\")\n"
-            "- \"reason\": concise explanation of why this explicit or implicit concept is present in the codebase\n\n"
-            "Return ONLY a valid JSON array. No conversational filler or markdown wrapping outside JSON."
+            "You are a Principal AI Software Architect & Curriculum Engineer.\n"
+            "Your objective is to identify CANONICAL CONCEPTUAL KNOWLEDGE TOPICS in the codebase.\n\n"
+            "CRITICAL CANONICAL TERM RULES FOR OBSIDIAN WIKILINKS [[Term]]:\n"
+            "1. 'term' MUST be a CONCISE, CANONICAL WIKI-LINKABLE TITLE (1 to 3 words max).\n"
+            "   Examples of ideal terms: \"CORS\", \"JWT Authentication\", \"Vector Search\", \"FastAPI\", \"Pydantic\", \"Async Event Loop\", \"Connection Pooling\", \"Spaced Repetition\", \"State Hydration\", \"OAuth2\", \"Cosine Similarity\", \"AST Parsing\".\n"
+            "2. DO NOT create long multi-word sentence titles (e.g. DO NOT output 'Decoupled Multi-Agent Orchestration & Communication'). Keep titles short (1-3 words) so developers can easily link them using [[Term]] in Markdown notes.\n"
+            "3. DO NOT output low-level sub-dependency micro-packages (e.g. DO NOT output 'urllib3', 'certifi', 'six', 'zipp', 'idna', 'attrs', 'tqdm', etc.).\n"
+            "4. 'aliases': provide 2-3 common synonyms or alternative wiki-link names (e.g. for \"CORS\", aliases: [\"Cross-Origin Resource Sharing\", \"CORS Middleware\"]).\n\n"
+            "Return a JSON array of objects with keys:\n"
+            "- \"term\": concise 1-3 word canonical wiki-link title (e.g. \"CORS\", \"JWT Authentication\", \"Vector Search\")\n"
+            "- \"aliases\": array of 2-3 alternative wiki-link synonyms (e.g. [\"Cross-Origin Resource Sharing\"])\n"
+            "- \"classification\": category (\"architecture\", \"security\", \"algorithm\", \"framework\", \"database\", \"networking\")\n"
+            "- \"required_expertise\": level (\"beginner\", \"intermediate\", \"advanced\")\n"
+            "- \"reason\": 1-sentence technical justification\n\n"
+            "Return ONLY a valid JSON array. No conversational text or markdown code fences outside JSON."
         )
 
-        user_prompt = f"Codebase Context:\n{codebase_text[:6000]}"
+        user_prompt = f"Codebase Context:\n{codebase_text[:10000]}"
 
         try:
             response = completion(

@@ -182,7 +182,11 @@ export function parseDependencies(files: FilePayload[]): Set<string> {
     }
   }
 
-  return terms;
+  const filtered = new Set<string>();
+  terms.forEach((t) => {
+    if (isHighValueConcept(t)) filtered.add(t);
+  });
+  return filtered;
 }
 
 // Extracts technical terms directly from code file import/require statements
@@ -234,7 +238,53 @@ export function parseSourceImports(files: FilePayload[]): Set<string> {
     }
   }
 
-  return terms;
+  // Filter out low-level noise terms before returning
+  const filtered = new Set<string>();
+  terms.forEach((t) => {
+    if (isHighValueConcept(t)) filtered.add(t);
+  });
+  return filtered;
+}
+
+const LOW_VALUE_NOISE_TERMS = new Set([
+  // Python Stdlib
+  "os", "sys", "re", "json", "ast", "typing", "uuid", "math", "time", "datetime", "pathlib", "hashlib",
+  "subprocess", "unittest", "logging", "shutil", "tempfile", "copy", "collections", "functools", "itertools",
+  "io", "base64", "struct", "socket", "select", "threading", "multiprocessing", "contextlib", "inspect",
+  "random", "string", "glob", "csv", "xml", "html", "http", "urllib", "ftplib", "email", "mimetypes",
+  "platform", "sysconfig", "builtins", "codecs", "errno", "gc", "signal", "traceback", "warnings", "weakref",
+  "zipfile", "tarfile", "gzip", "bz2", "lzma", "ctypes", "dataclasses", "enum", "typing_extensions",
+  "annotated_types", "types", "importlib", "pkg_resources", "site", "abc", "numbers", "decimal", "fractions",
+  // JS/Node Stdlib & Trivial Globals
+  "fs", "path", "url", "events", "util", "stream", "buffer", "crypto", "child_process", "cluster", "net",
+  "tls", "dns", "assert", "v8", "vm", "zlib", "console", "process", "window", "document", "global",
+  // Low-level Micro Transitive Dependencies
+  "six", "certifi", "idna", "urllib3", "charset_normalizer", "charset-normalizer", "zipp", "importlib_metadata",
+  "importlib-metadata", "importlib_resources", "importlib-resources", "attrs", "rpds_py", "rpds-py", "colorama",
+  "tqdm", "filelock", "h11", "sniffio", "fsspec", "pyasn1", "pycparser", "soupsieve", "backoff", "annotated-types",
+  "typing-extensions", "packaging", "platformdirs", "pyproject_hooks", "pyproject-hooks", "et_xmlfile",
+  "et-xmlfile", "httpcore", "httpx_sse", "httpx-sse", "aiosignal", "frozenlist", "yarl", "multidict", "proglog",
+  "distro", "pywin32", "wincertstore", "cffi", "pytz", "python_dateutil", "python-dateutil", "tenacity",
+  "watchfiles", "mdit_py_plugins", "mdit-py-plugins", "markdown_it_py", "markdown-it-py", "pygments", "jsonref",
+  "referencing", "jsonschema", "jsonschema_specifications", "jsonschema-specifications", "opentelemetry_proto",
+  "opentelemetry-proto", "opentelemetry_api", "opentelemetry-api", "opentelemetry_exporter_otlp_proto_http",
+  "opentelemetry-exporter-otlp-proto-http", "opentelemetry-exporter-otlp-proto-grpc", "grpcio_status",
+  "grpcio-status", "google_api_python_client", "google_api_core", "googleapis_common_protos", "google_auth_httplib2",
+  "google_auth", "google-auth", "google-auth-httplib2", "google-ai-generativelanguage", "openpyxl", "pdfminer_six",
+  "pdfminer.six", "pdfplumber", "pypdf", "tiktoken", "tokenizers", "huggingface_hub", "huggingface-hub", "safetensors",
+  "flatbuffers", "lance_namespace", "lance-namespace", "lance-namespace-urllib3-client", "appdirs", "alohappyeyeballs",
+  "aiofiles", "aiosqlite", "propcache", "pypika", "sniffio", "click", "build", "trash", "estimation", "preview",
+  "docstring_parser", "httplib2", "grpcio", "pyaes", "pyarrow", "async_timeout", "overrides", "wrapt", "annotated-doc"
+]);
+
+export function isHighValueConcept(term: string): boolean {
+  if (!term || term.trim().length < 3) return false;
+  const clean = term.toLowerCase().trim();
+  if (LOW_VALUE_NOISE_TERMS.has(clean)) return false;
+  if (clean.length <= 3 && !["css", "sql", "api", "git", "jwt", "orm", "aws", "gcp"].includes(clean)) {
+    return false;
+  }
+  return true;
 }
 
 // Extracts implicit in-between architectural & networking concepts from code patterns

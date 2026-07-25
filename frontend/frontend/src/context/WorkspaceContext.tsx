@@ -8,6 +8,7 @@ import {
   parseDependencies,
   parseSourceImports,
   parseImplicitInbetweenConcepts,
+  isHighValueConcept,
   chunkFiles,
   FilePayload,
   ScanResponse,
@@ -594,12 +595,22 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           };
         }
 
+        // Filter finalData report to keep only high-value core concepts
+        if (finalData && finalData.report) {
+          finalData.report = finalData.report.filter((r: any) => isHighValueConcept(r.term));
+          finalData.gaps_found = finalData.report.length;
+        }
+
+        const highValueSorted = (sorted.length > 0 ? sorted : (finalData?.report || []).map((r: any) => r.term))
+          .filter(isHighValueConcept)
+          .sort();
+
         const newSession: VaultSession = {
           notesPath: targetNotesPath,
           projectPath: targetProjectPath,
           scanResult: finalData,
           notesFiles: notes,
-          sortedTerms: sorted.length > 0 ? sorted : (finalData.report || []).map((r: any) => r.term).sort(),
+          sortedTerms: highValueSorted,
         };
 
         setVaultSessions((prev) => ({

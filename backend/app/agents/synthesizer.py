@@ -83,9 +83,10 @@ class ContentSynthesizer:
                     })
         return warnings
 
-    async def generate_note_stream(self, term: str, project_context: str) -> AsyncGenerator[str, None]:
+    async def generate_note_stream(self, term: str, project_context: str, existing_vault_terms: List[str] = None) -> AsyncGenerator[str, None]:
         """
         Orchestrates background reference scraping, applies the target template with Wikipedia & Wiki links,
+        embeds [[WikiLinks]] for existing vault terms to maintain graph interconnectivity,
         streams markdown content chunk-by-chunk, and appends code validation reports.
         """
         # Formulate query
@@ -97,6 +98,8 @@ class ContentSynthesizer:
         # Build clean Wikipedia reference URL slug
         wiki_slug = re.sub(r"[^\w\s-]", "", term).strip().replace(" ", "_")
         wiki_url = f"https://en.wikipedia.org/wiki/{wiki_slug}"
+
+        vault_terms_formatted = ", ".join([f"[[{t}]]" for t in (existing_vault_terms or []) if t.lower() != term.lower()][:35])
         
         system_prompt = (
             "You are an expert technical writer creating a highly structured, self-contained "
@@ -109,18 +112,21 @@ class ContentSynthesizer:
             "5. ## Common Pitfalls & Edge Cases\n"
             "6. ## Related Concepts\n"
             "7. ## External References & Wiki Links\n\n"
-            "CRITICAL WIKIPEDIA & REFERENCE LINK RULES:\n"
-            "- Throughout the body text, embed inline Markdown links to Wikipedia and official documentation for key technical terms (e.g. `[Wikipedia Overview](https://en.wikipedia.org/wiki/...)` and `[[Obsidian-Style-Wiki-Link]]`).\n"
-            f"- Under `## External References & Wiki Links`, you MUST list at least 3-4 authoritative reference links, including `[{term} on Wikipedia]({wiki_url})` and official documentation links (e.g. MDN, Python Docs, FastAPI Docs, React Docs, etc.).\n"
+            "CRITICAL WIKILINK INTERCONNECTIVITY RULES:\n"
+            "- You are provided with a list of Existing Vault Nodes currently in the user's Obsidian workspace.\n"
+            "- THROUGHOUT THE TEXT (especially in Overview, Core Syntax, and Related Concepts), WHENEVER any of these existing vault terms are mentioned or relevant, YOU MUST EMBED AN EXACT OBSIDIAN WIKILINK `[[Concept Name]]`.\n"
+            "- Under `## Related Concepts`, list at least 3-5 exact `[[WikiLinks]]` referencing existing vault nodes or core related architecture topics.\n"
+            "- Under `## External References & Wiki Links`, list at least 3-4 authoritative URLs including `[{term} on Wikipedia]({wiki_url})` and official documentation links.\n"
             "- Output pure Markdown only. Do not wrap the whole document in top-level backticks."
         )
         
         user_prompt = (
             f"Target Concept: {term}\n"
             f"Associated Tech Environment: {project_context}\n"
+            f"Existing Vault Nodes to Interlink with: {vault_terms_formatted if vault_terms_formatted else 'None provided'}\n"
             f"Scraped Technical Summary: {web_reference}\n"
             f"Wikipedia Target Slug: {wiki_url}\n\n"
-            "Synthesize and stream the complete document now with Wikipedia and Wiki links."
+            "Synthesize and stream the complete document now with [[WikiLinks]] interlinking to maintain Knowledge Graph interconnectivity."
         )
 
         full_content = ""

@@ -122,6 +122,13 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
     setIsGenerating(true);
     setActiveTab("edit");
     try {
+      const existingVaultTerms = Array.from(
+        new Set([
+          ...notesFiles.map((n) => (n.path.split("/").pop() || "").replace(/\.md$/i, "")),
+          ...(scanResult?.report || []).map((r: any) => r.term),
+        ])
+      ).filter(Boolean);
+
       const synthesizeUrl = `${apiHost}${API_PATHS.SYNTHESIZE}`;
       const response = await safeFetch(synthesizeUrl, {
         method: "POST",
@@ -131,6 +138,7 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
         body: JSON.stringify({
           term: noteName,
           project_context: "General Tech Stack Workspace",
+          existing_vault_terms: existingVaultTerms,
         }),
       });
 
