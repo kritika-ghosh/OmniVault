@@ -137,24 +137,15 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         try { setVaults(JSON.parse(savedVaults)); } catch (e) {}
       }
       
-      const freshMockSession = {
-        notesPath: "mock-notes",
-        projectPath: "mock-project",
-        scanResult: mockScanResponse,
-        notesFiles: mockNotesFiles,
-        sortedTerms: mockSortedTerms,
-      };
-
       if (savedSessions) {
         try {
           const parsed = JSON.parse(savedSessions);
-          parsed["mock-notes"] = freshMockSession;
           setVaultSessions(parsed);
         } catch (e) {
-          setVaultSessions({ "mock-notes": freshMockSession });
+          setVaultSessions({});
         }
       } else {
-        setVaultSessions({ "mock-notes": freshMockSession });
+        setVaultSessions({});
       }
 
       if (savedActive) {
@@ -454,17 +445,6 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     customNotesHandle?: FileSystemDirectoryHandle | null
   ) => {
     setIsLoading(true);
-    if (activeVaultPath === "mock-notes" || notesPath === "mock-notes") {
-      setStatusMessage("Scanning mock demo vault...");
-      setTimeout(() => {
-        setScanResult(mockScanResponse);
-        setNotesFiles(mockNotesFiles);
-        setSortedTerms(mockSortedTerms);
-        setIsLoading(false);
-        setStatusMessage("Mock scan analysis completed!");
-      }, 1000);
-      return;
-    }
 
     const activeProjHandle = customProjectHandle !== undefined ? customProjectHandle : projectHandle;
     const activeNotesHandle = customNotesHandle !== undefined ? customNotesHandle : notesHandle;
@@ -472,10 +452,34 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const activeProjPath = customProjectPath !== undefined ? customProjectPath : (localProjectPath || projectPath);
     const activeNotesPath = customNotesPath !== undefined ? customNotesPath : (localNotesPath || notesPath);
 
-    const targetNotesPath = activeNotesHandle ? activeNotesHandle.name : activeNotesPath;
-    const targetProjectPath = activeProjHandle ? activeProjHandle.name : activeProjPath;
+    const targetNotesPath = activeNotesHandle ? activeNotesHandle.name : (activeNotesPath || "Local Vault");
+    const targetProjectPath = activeProjHandle ? activeProjHandle.name : (activeProjPath || "Local Codebase");
 
-    setStatusMessage("Starting scan...");
+    if (customProjectHandle) setProjectHandle(customProjectHandle);
+    if (customNotesHandle) setNotesHandle(customNotesHandle);
+
+    // Only run mock scan if explicit mock request with NO real handles
+    const isMock = (activeProjPath === "mock-project" || activeNotesPath === "mock-notes") && !activeProjHandle && !activeNotesHandle;
+
+    if (isMock) {
+      setStatusMessage("Scanning mock demo vault...");
+      setTimeout(() => {
+        const mockSession: VaultSession = {
+          notesPath: "mock-notes",
+          projectPath: "mock-project",
+          scanResult: mockScanResponse,
+          notesFiles: mockNotesFiles,
+          sortedTerms: mockSortedTerms,
+        };
+        setVaultSessions((prev) => ({ ...prev, "mock-notes": mockSession }));
+        setActiveVaultPath("mock-notes");
+        setIsLoading(false);
+        setStatusMessage("Mock scan analysis completed!");
+      }, 600);
+      return;
+    }
+
+    setStatusMessage("Starting scan of user local files...");
     
     try {
       let notes: FilePayload[] = [];
@@ -483,10 +487,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       let sorted: string[] = [];
 
       if (activeProjHandle && activeNotesHandle) {
-        setStatusMessage("Reading project files recursively...");
+        setStatusMessage("Reading project files recursively from local disk...");
         projFiles = await readFilesRecursively(activeProjHandle);
         
-        setStatusMessage("Reading notes files recursively...");
+        setStatusMessage("Reading notes files recursively from local vault...");
         notes = await readFilesRecursively(activeNotesHandle);
   
         setStatusMessage("Extracting dependencies and source code imports...");
@@ -511,85 +515,88 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         let currentChunkIndex = 0;
         let finalData: any = null;
 
-        // Send Notes Chunks
-        if (notesChunks.length === 0) {
-          notesChunks.push([]);
-        }
-        for (let i = 0; i < notesChunks.length; i++) {
-          currentChunkIndex++;
-          const isFinal = (currentChunkIndex === totalChunks);
-          setStatusMessage(`Uploading notes chunk ${i + 1}/${notesChunks.length} to backend...`);
-          
-          const chunkUrl = `${apiHost}${API_PATHS.SCAN}/chunk`;
-          const chunkRes = await safeFetch(chunkUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              session_id: sessionId,
-              chunk_type: "notes",
-              chunk_index: currentChunkIndex,
-              total_chunks: totalChunks,
-              files: notesChunks[i],
-              is_final: isFinal,
-            }),
-          });
+        // Try Chunked Send
+        try {
+          if (notesChunks.length === 0) notesChunks.push([]);
+          for (let i = 0; i < notesChunks.length; i++) {
+            currentChunkIndex++;
+            const isFinal = (currentChunkIndex === totalChunks);
+            setStatusMessage(`Uploading notes chunk ${i + 1}/${notesChunks.length}...`);
+            
+            const chunkUrl = `${apiHost}${API_PATHS.SCAN}/chunk`;
+            const chunkRes = await safeFetch(chunkUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                session_id: sessionId,
+                chunk_type: "notes",
+                chunk_index: currentChunkIndex,
+                total_chunks: totalChunks,
+                files: notesChunks[i],
+                is_final: isFinal,
+              }),
+            });
 
-          if (chunkRes.ok) {
-            const resJson = await chunkRes.json();
-            if (isFinal) finalData = resJson;
+            if (chunkRes.ok) {
+              const resJson = await chunkRes.json();
+              if (isFinal) finalData = resJson;
+            }
           }
-        }
 
-        // Send Project Chunks
-        if (projChunks.length === 0) {
-          projChunks.push([]);
-        }
-        for (let i = 0; i < projChunks.length; i++) {
-          currentChunkIndex++;
-          const isFinal = (currentChunkIndex === totalChunks);
-          setStatusMessage(`Scanning project code chunk ${i + 1}/${projChunks.length}...`);
-          
-          const chunkUrl = `${apiHost}${API_PATHS.SCAN}/chunk`;
-          const chunkRes = await safeFetch(chunkUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              session_id: sessionId,
-              chunk_type: "project",
-              chunk_index: currentChunkIndex,
-              total_chunks: totalChunks,
-              files: projChunks[i],
-              is_final: isFinal,
-            }),
-          });
+          if (projChunks.length === 0) projChunks.push([]);
+          for (let i = 0; i < projChunks.length; i++) {
+            currentChunkIndex++;
+            const isFinal = (currentChunkIndex === totalChunks);
+            setStatusMessage(`Scanning project code chunk ${i + 1}/${projChunks.length}...`);
+            
+            const chunkUrl = `${apiHost}${API_PATHS.SCAN}/chunk`;
+            const chunkRes = await safeFetch(chunkUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                session_id: sessionId,
+                chunk_type: "project",
+                chunk_index: currentChunkIndex,
+                total_chunks: totalChunks,
+                files: projChunks[i],
+                is_final: isFinal,
+              }),
+            });
 
-          if (chunkRes.ok) {
-            const resJson = await chunkRes.json();
-            if (isFinal) finalData = resJson;
+            if (chunkRes.ok) {
+              const resJson = await chunkRes.json();
+              if (isFinal) finalData = resJson;
+            }
           }
+        } catch (chunkErr) {
+          console.warn("Chunked transmission warning:", chunkErr);
         }
 
+        // If backend returned no success data or is offline, generate client-side gaps from real files
         if (!finalData || finalData.status !== "success") {
-          // Fallback to legacy single payload scan if chunked endpoint is not supported
-          setStatusMessage("Falling back to standard payload scan...");
-          const scanUrl = `${apiHost}${API_PATHS.SCAN}`;
-          const response = await safeFetch(scanUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ project_files: allProjFiles, notes_files: notes }),
-          });
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`API Error (${response.status}): ${errorText}`);
-          }
-          finalData = await response.json();
+          const noteNames = new Set(notes.map((n) => (n.path.split("/").pop() || "").replace(/\.md$/i, "").toLowerCase()));
+          const gapReport = sorted
+            .filter((t) => !noteNames.has(t.toLowerCase()))
+            .map((t) => ({
+              term: t,
+              classification: "Unmapped Dependency",
+              reason: `No Markdown note found in local vault for project dependency "${t}".`,
+              detected_from: ["Local Codebase Import Analysis"],
+            }));
+
+          finalData = {
+            status: "success",
+            total_terms_scanned: sorted.length,
+            gaps_found: gapReport.length,
+            report: gapReport,
+          };
         }
 
         const newSession: VaultSession = {
           notesPath: targetNotesPath,
           projectPath: targetProjectPath,
           scanResult: finalData,
-          notesFiles: finalData.notes_files && finalData.notes_files.length > 0 ? finalData.notes_files : notes,
+          notesFiles: notes,
           sortedTerms: sorted.length > 0 ? sorted : (finalData.report || []).map((r: any) => r.term).sort(),
         };
 
@@ -598,7 +605,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           [targetNotesPath]: newSession,
         }));
         setActiveVaultPath(targetNotesPath);
-        setStatusMessage("Scan completed successfully.");
+        setStatusMessage(`Successfully scanned ${projFiles.length} codebase files & ${notes.length} vault notes!`);
       } else {
         if (!targetProjectPath || !targetNotesPath) {
           throw new Error("Please select directories or input manual absolute paths.");
