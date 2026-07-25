@@ -15,6 +15,15 @@ export interface ScanResponse {
   }>;
 }
 
+// Utility to chunk large file arrays into smaller batches (e.g. 20 files per chunk)
+export function chunkFiles(files: FilePayload[], chunkSize: number = 20): FilePayload[][] {
+  const chunks: FilePayload[][] = [];
+  for (let i = 0; i < files.length; i += chunkSize) {
+    chunks.push(files.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
 // Recursively reads files from a DirectoryHandle
 export async function readFilesRecursively(
   dirHandle: FileSystemDirectoryHandle,

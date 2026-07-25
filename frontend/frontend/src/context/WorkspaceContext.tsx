@@ -7,6 +7,7 @@ import {
   readFilesRecursively,
   parseDependencies,
   parseSourceImports,
+  chunkFiles,
   FilePayload,
   ScanResponse,
 } from "@/lib/file-directory";
@@ -76,6 +77,8 @@ interface WorkspaceContextProps {
   setQuizUserCode: (code: string) => void;
   quizEvaluation: any | null;
   setQuizEvaluation: (evalObj: any | null) => void;
+  assignedNoteTask: { topic: string; missingConcepts: string[]; reason: string } | null;
+  setAssignedNoteTask: (task: { topic: string; missingConcepts: string[]; reason: string } | null) => void;
   deleteNote: (filename: string) => Promise<void>;
   vaults: string[];
   setVaults: (vaults: string[]) => void;
@@ -98,6 +101,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   // Local picker inputs (for welcome screen when no active vault exists yet)
   const [localProjectPath, setLocalProjectPath] = useState("");
   const [localNotesPath, setLocalNotesPath] = useState("");
+
+  // State for assigned note tasks from quiz failures
+  const [assignedNoteTask, setAssignedNoteTask] = useState<{ topic: string; missingConcepts: string[]; reason: string } | null>(null);
 
   // Shared Quiz states
   const [quizSelectedNotePath, setQuizSelectedNotePath] = useState("");
@@ -467,7 +473,6 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setStatusMessage("Starting scan...");
     
     try {
-      let payload: any = {};
       let notes: FilePayload[] = [];
       let projFiles: FilePayload[] = [];
       let sorted: string[] = [];
@@ -491,52 +496,136 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           content: sorted.join("\n"),
         };
 
-        payload = {
-          project_files: [virtualReqsFile, ...projFiles],
-          notes_files: notes,
+        const allProjFiles = [virtualReqsFile, ...projFiles];
+        const notesChunks = chunkFiles(notes, 20);
+        const projChunks = chunkFiles(allProjFiles, 20);
+        const totalChunks = (notesChunks.length || 1) + (projChunks.length || 1);
+        const sessionId = `scan-session-${Date.now()}`;
+
+        setStatusMessage(`Initiating chunked payload transmission (${totalChunks} total batches)...`);
+        let currentChunkIndex = 0;
+        let finalData: any = null;
+
+        // Send Notes Chunks
+        if (notesChunks.length === 0) {
+          notesChunks.push([]);
+        }
+        for (let i = 0; i < notesChunks.length; i++) {
+          currentChunkIndex++;
+          const isFinal = (currentChunkIndex === totalChunks);
+          setStatusMessage(`Uploading notes chunk ${i + 1}/${notesChunks.length} to backend...`);
+          
+          const chunkUrl = `${apiHost}${API_PATHS.SCAN}/chunk`;
+          const chunkRes = await safeFetch(chunkUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              session_id: sessionId,
+              chunk_type: "notes",
+              chunk_index: currentChunkIndex,
+              total_chunks: totalChunks,
+              files: notesChunks[i],
+              is_final: isFinal,
+            }),
+          });
+
+          if (chunkRes.ok) {
+            const resJson = await chunkRes.json();
+            if (isFinal) finalData = resJson;
+          }
+        }
+
+        // Send Project Chunks
+        if (projChunks.length === 0) {
+          projChunks.push([]);
+        }
+        for (let i = 0; i < projChunks.length; i++) {
+          currentChunkIndex++;
+          const isFinal = (currentChunkIndex === totalChunks);
+          setStatusMessage(`Scanning project code chunk ${i + 1}/${projChunks.length}...`);
+          
+          const chunkUrl = `${apiHost}${API_PATHS.SCAN}/chunk`;
+          const chunkRes = await safeFetch(chunkUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              session_id: sessionId,
+              chunk_type: "project",
+              chunk_index: currentChunkIndex,
+              total_chunks: totalChunks,
+              files: projChunks[i],
+              is_final: isFinal,
+            }),
+          });
+
+          if (chunkRes.ok) {
+            const resJson = await chunkRes.json();
+            if (isFinal) finalData = resJson;
+          }
+        }
+
+        if (!finalData || finalData.status !== "success") {
+          // Fallback to legacy single payload scan if chunked endpoint is not supported
+          setStatusMessage("Falling back to standard payload scan...");
+          const scanUrl = `${apiHost}${API_PATHS.SCAN}`;
+          const response = await safeFetch(scanUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ project_files: allProjFiles, notes_files: notes }),
+          });
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API Error (${response.status}): ${errorText}`);
+          }
+          finalData = await response.json();
+        }
+
+        const newSession: VaultSession = {
+          notesPath: targetNotesPath,
+          projectPath: targetProjectPath,
+          scanResult: finalData,
+          notesFiles: finalData.notes_files && finalData.notes_files.length > 0 ? finalData.notes_files : notes,
+          sortedTerms: sorted.length > 0 ? sorted : (finalData.report || []).map((r: any) => r.term).sort(),
         };
+
+        setVaultSessions((prev) => ({
+          ...prev,
+          [targetNotesPath]: newSession,
+        }));
+        setActiveVaultPath(targetNotesPath);
+        setStatusMessage("Scan completed successfully.");
       } else {
         if (!targetProjectPath || !targetNotesPath) {
           throw new Error("Please select directories or input manual absolute paths.");
         }
         
-        payload = {
+        const payload = {
           project_path: targetProjectPath,
           notes_path: targetNotesPath,
         };
         setStatusMessage(`Sending absolute paths to local backend: ${targetProjectPath} and ${targetNotesPath}`);
+        const scanUrl = `${apiHost}${API_PATHS.SCAN}`;
+        const response = await safeFetch(scanUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`API Error (${response.status}): ${errorText}`);
+        }
+        const data = await response.json();
+        const newSession: VaultSession = {
+          notesPath: targetNotesPath,
+          projectPath: targetProjectPath,
+          scanResult: data,
+          notesFiles: data.notes_files && data.notes_files.length > 0 ? data.notes_files : notes,
+          sortedTerms: (data.report || []).map((r: any) => r.term).sort(),
+        };
+        setVaultSessions((prev) => ({ ...prev, [targetNotesPath]: newSession }));
+        setActiveVaultPath(targetNotesPath);
+        setStatusMessage("Scan completed successfully.");
       }
-
-      const scanUrl = `${apiHost}${API_PATHS.SCAN}`;
-      const response = await safeFetch(scanUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API Error (${response.status}): ${errorText}`);
-      }
-
-      const data = await response.json();
-      
-      const newSession: VaultSession = {
-        notesPath: targetNotesPath,
-        projectPath: targetProjectPath,
-        scanResult: data,
-        notesFiles: data.notes_files && data.notes_files.length > 0 ? data.notes_files : notes,
-        sortedTerms: sorted.length > 0 ? sorted : (data.report || []).map((r: any) => r.term).sort(),
-      };
-
-      setVaultSessions((prev) => ({
-        ...prev,
-        [targetNotesPath]: newSession,
-      }));
-      setActiveVaultPath(targetNotesPath);
-      setStatusMessage("Scan completed successfully.");
     } catch (err: any) {
       console.warn("Failed to execute scan:", err);
       setStatusMessage(`Scan failed: ${err.message}`);
@@ -584,6 +673,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setQuizUserCode,
         quizEvaluation,
         setQuizEvaluation,
+        assignedNoteTask,
+        setAssignedNoteTask,
         deleteNote,
         vaults,
         setVaults,

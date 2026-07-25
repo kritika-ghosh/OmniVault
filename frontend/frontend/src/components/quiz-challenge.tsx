@@ -112,6 +112,30 @@ export default function QuizChallenge({
             <p className="text-xs leading-relaxed text-foreground/95 font-sans">{evaluation.feedback_hint}</p>
           </div>
 
+          {/* Mutated Agent Note Assignment for Failed Quiz */}
+          {!evaluation.passed && (
+            <div className="p-4 rounded-2xl bg-[#241724] border border-accent/40 space-y-3 font-mono">
+              <div className="flex items-center gap-2 text-accent text-xs font-bold uppercase">
+                <AlertTriangle className="w-4 h-4 animate-pulse" />
+                <span>Mutated Agent Reinforcement Task Assigned</span>
+              </div>
+              <p className="text-xs text-foreground/90 font-sans leading-relaxed">
+                Knowledge gap detected! The Mutated Curriculum Agent asks you to create or update a note covering the missing concepts to unlock full topic mastery.
+              </p>
+              <Button
+                onClick={() => {
+                  const targetTopic = evaluation.missing_concepts?.[0] || "Quiz Concept";
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new CustomEvent("open-note", { detail: targetTopic }));
+                  }
+                }}
+                className="w-full bg-accent hover:bg-accent/90 text-white font-bold h-9 px-3 text-xs rounded-xl cursor-pointer flex items-center justify-center gap-2"
+              >
+                📝 Create / Edit Note on "{evaluation.missing_concepts?.[0] || "Missing Topic"}"
+              </Button>
+            </div>
+          )}
+
           {/* Missing Concepts */}
           {evaluation.missing_concepts && evaluation.missing_concepts.length > 0 && (
             <div className="space-y-1.5">

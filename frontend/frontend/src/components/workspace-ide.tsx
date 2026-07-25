@@ -11,6 +11,8 @@ import { DockviewReact, DockviewReadyEvent, DockviewApi, IDockviewPanelProps } f
 import "dockview-react/dist/styles/dockview.css";
 import { customTheme } from "@/lib/dockview";
 
+import ProjectAnalyzerModal from "@/components/project-analyzer-modal";
+
 const components = {
   scan: (props: IDockviewPanelProps<{ forceWelcome?: boolean; vaultPath?: string }>) => (
     <div className="w-full h-full overflow-y-auto">
@@ -50,13 +52,17 @@ const components = {
 
 export default function WorkspaceIDE() {
   const [api, setApi] = useState<DockviewApi | null>(null);
+  const [isProjectAnalyzerOpen, setIsProjectAnalyzerOpen] = useState(false);
 
   const onReady = useCallback((event: DockviewReadyEvent) => {
     setApi(event.api);
     event.api.addPanel({
-      id: "scan",
-      component: "scan",
-      title: "Scan Workspace",
+      id: "note-fastapi",
+      component: "note-editor",
+      title: "FastAPI Reference",
+      params: {
+        noteName: "FastAPI",
+      },
     });
   }, []);
 
@@ -176,17 +182,23 @@ export default function WorkspaceIDE() {
       }
     });
 
+    const handleOpenProjectAnalyzer = () => {
+      setIsProjectAnalyzerOpen(true);
+    };
+
     window.addEventListener("navigate-view", handleNavigate);
     window.addEventListener("open-note", handleOpenNote);
     window.addEventListener("open-quiz-editor", handleOpenQuizEditor);
     window.addEventListener("close-quiz-editor", handleCloseQuizEditor);
     window.addEventListener("open-scan-dashboard", handleOpenScanDashboard);
+    window.addEventListener("open-project-analyzer", handleOpenProjectAnalyzer);
     return () => {
       window.removeEventListener("navigate-view", handleNavigate);
       window.removeEventListener("open-note", handleOpenNote);
       window.removeEventListener("open-quiz-editor", handleOpenQuizEditor);
       window.removeEventListener("close-quiz-editor", handleCloseQuizEditor);
       window.removeEventListener("open-scan-dashboard", handleOpenScanDashboard);
+      window.removeEventListener("open-project-analyzer", handleOpenProjectAnalyzer);
       activePanelListener.dispose();
     };
   }, [api]);
@@ -198,6 +210,10 @@ export default function WorkspaceIDE() {
         onReady={onReady}
         theme={customTheme}
         className="absolute inset-0"
+      />
+      <ProjectAnalyzerModal
+        isOpen={isProjectAnalyzerOpen}
+        onClose={() => setIsProjectAnalyzerOpen(false)}
       />
     </div>
   );

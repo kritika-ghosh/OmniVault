@@ -23,6 +23,75 @@ class ScanRequest(BaseModel):
     project_files: Optional[List[FilePayload]] = None
     notes_files: Optional[List[FilePayload]] = None
 
+class ChunkScanRequest(BaseModel):
+    session_id: str
+    chunk_type: str  # "notes" or "project"
+    chunk_index: int
+    total_chunks: int
+    files: List[FilePayload]
+    is_final: bool = False
+
+# In-memory storage for active chunked scan sessions
+chunk_sessions: dict = {}
+
+@router.post("/chunk")
+async def execute_chunked_workspace_scan(payload: ChunkScanRequest):
+    sid = payload.session_id
+    if sid not in chunk_sessions:
+        chunk_sessions[sid] = {
+            "project_files": [],
+            "notes_files": [],
+            "received_chunks": 0,
+            "total_chunks": payload.total_chunks
+        }
+    
+    sess = chunk_sessions[sid]
+    sess["received_chunks"] += 1
+    
+    files_dict = [{"path": f.path, "content": f.content} for f in payload.files]
+    if payload.chunk_type == "notes":
+        sess["notes_files"].extend(files_dict)
+    else:
+        sess["project_files"].extend(files_dict)
+        
+    if not payload.is_final and sess["received_chunks"] < payload.total_chunks:
+        return {
+            "status": "chunk_received",
+            "session_id": sid,
+            "received_chunks": sess["received_chunks"],
+            "total_chunks": payload.total_chunks
+        }
+        
+    # Final chunk reached - Execute complete gap scan on accumulated files
+    p_files = sess["project_files"]
+    n_files = sess["notes_files"]
+    
+    # Clean up session memory
+    del chunk_sessions[sid]
+    
+    smart_detector.term_sources = {}
+    collection, existing_notes_meta = vector_store.index_notes_vault_in_memory(n_files)
+    
+    declared_deps = smart_detector.extract_dependencies_in_memory(p_files)
+    code_imports = smart_detector.scan_workspace_codebase_in_memory(p_files)
+    all_terms = declared_deps.union(code_imports)
+    
+    detected_gaps = smart_detector.compute_smart_gaps(all_terms, existing_notes_meta, collection)
+    
+    await manager.broadcast({
+        "type": "graph_update",
+        "total_terms_scanned": len(all_terms),
+        "gaps_found": len(detected_gaps)
+    })
+    
+    return {
+        "status": "success",
+        "total_terms_scanned": len(all_terms),
+        "gaps_found": len(detected_gaps),
+        "report": detected_gaps,
+        "notes_files": n_files
+    }
+
 @router.post("")
 async def execute_workspace_scan(payload: ScanRequest):
     # 1. Stateless In-Memory Mode

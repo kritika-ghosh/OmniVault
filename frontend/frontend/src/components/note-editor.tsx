@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { Button } from "./ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { API_PATHS } from "@/lib/api-paths";
-import { Save, Edit2, Eye, Check, Sparkles, Link2 } from "lucide-react";
+import { Save, Edit2, Eye, Check, Sparkles, Link2, HelpCircle } from "lucide-react";
 import { mockNotesFiles } from "@/lib/data";
 import { normalizeTerm } from "@/lib/utils";
 
@@ -71,7 +71,7 @@ interface NoteEditorProps {
 }
 
 export default function NoteEditor({ noteName }: NoteEditorProps) {
-  const { notesFiles, saveNote, statusMessage, apiHost, scanResult } = useWorkspace();
+  const { notesFiles, saveNote, statusMessage, apiHost, scanResult, setQuizSelectedNotePath } = useWorkspace();
   const [content, setContent] = useState("");
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const [isSaving, setIsSaving] = useState(false);
@@ -325,6 +325,20 @@ console.log("Initialized ${noteName}");
               <Check className="w-3.5 h-3.5" /> Saved locally
             </span>
           )}
+          <Button
+            onClick={() => {
+              const filename = noteName.endsWith(".md") ? noteName : `${noteName}.md`;
+              setQuizSelectedNotePath(filename);
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("navigate-view", { detail: "quiz" }));
+              }
+            }}
+            className="bg-card hover:bg-white/10 text-primary border border-primary/30 text-xs font-mono font-bold cursor-pointer h-8 px-3 flex items-center gap-1.5 shadow-md"
+            title="Quiz Me on this Note"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-primary" />
+            Quiz Me
+          </Button>
           <Button
             onClick={handleGenerate}
             disabled={isGenerating || isSaving}
