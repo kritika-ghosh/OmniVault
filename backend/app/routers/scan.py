@@ -144,8 +144,29 @@ async def execute_workspace_scan(payload: ScanRequest):
     proj_path = Path(payload.project_path)
     notes_path = Path(payload.notes_path)
 
+    # Workspace root resolution fallback (e.g. "testing folder/pomodoro-app" or "pomodoro-app")
+    workspace_root = Path(__file__).resolve().parent.parent.parent.parent
+    if not proj_path.exists():
+        alt_proj = workspace_root / payload.project_path
+        if alt_proj.exists():
+            proj_path = alt_proj
+        else:
+            # Check inside "testing folder"
+            alt_proj2 = workspace_root / "testing folder" / payload.project_path
+            if alt_proj2.exists():
+                proj_path = alt_proj2
+
+    if not notes_path.exists():
+        alt_notes = workspace_root / payload.notes_path
+        if alt_notes.exists():
+            notes_path = alt_notes
+        else:
+            alt_notes2 = workspace_root / "testing folder" / payload.notes_path
+            if alt_notes2.exists():
+                notes_path = alt_notes2
+
     if not proj_path.exists() or not notes_path.exists():
-        raise HTTPException(status_code=400, detail="Invalid directory paths supplied.")
+        raise HTTPException(status_code=400, detail=f"Invalid directory paths supplied. Searched: '{payload.project_path}' and '{payload.notes_path}'.")
 
     smart_detector.term_sources = {}
 

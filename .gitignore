@@ -9,3 +9,6 @@ __pycache__/
 
 # Local ChromaDB Persistence Directory
 chroma_db/
+
+# Local Testing Workspace Folder
+testing folder/

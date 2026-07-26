@@ -538,14 +538,20 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       let projFiles: FilePayload[] = [];
       let sorted: string[] = [];
 
-      if (activeNotesHandle) {
+      if (activeProjHandle || activeNotesHandle || (notesFiles && notesFiles.length > 0) || (activeSession && activeSession.notesFiles.length > 0)) {
         if (activeProjHandle) {
           setStatusMessage("Reading project files recursively from local disk...");
           projFiles = await readFilesRecursively(activeProjHandle);
         }
         
-        setStatusMessage("Reading notes files recursively from local vault...");
-        notes = await readFilesRecursively(activeNotesHandle);
+        if (activeNotesHandle) {
+          setStatusMessage("Reading notes files recursively from local vault...");
+          notes = await readFilesRecursively(activeNotesHandle);
+        } else if (notesFiles && notesFiles.length > 0) {
+          notes = notesFiles;
+        } else if (activeSession && activeSession.notesFiles.length > 0) {
+          notes = activeSession.notesFiles;
+        }
   
         setStatusMessage("Extracting dependencies, source imports, and implicit in-between concepts...");
         const depTerms = parseDependencies(projFiles);
