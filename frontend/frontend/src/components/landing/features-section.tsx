@@ -161,14 +161,14 @@ export function InteractivePlayground() {
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-bold font-handwriting text-foreground">Notebook Objectives</h3>
+                <h3 className="text-lg font-bold font-sans text-foreground">Notebook Objectives</h3>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/30">
                 STEP 01: SCAN
               </span>
             </div>
 
-            <div className="font-handwriting space-y-2">
+            <div className="font-sans space-y-2">
               <h4 className="text-base font-bold text-foreground notebook-underline">
                 {concept.term} Objectives :-
               </h4>
@@ -223,7 +223,7 @@ export function InteractivePlayground() {
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-bold font-handwriting text-foreground">Synthesized Note</h3>
+                <h3 className="text-lg font-bold font-sans text-foreground">Synthesized Note</h3>
               </div>
 
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/30">
@@ -268,14 +268,14 @@ export function InteractivePlayground() {
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
                 <GraduationCap className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-bold font-handwriting text-foreground">Quiz Exercise Sheet</h3>
+                <h3 className="text-lg font-bold font-sans text-foreground">Quiz Exercise Sheet</h3>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/30">
                 STEP 03: TEST
               </span>
             </div>
 
-            <div className="space-y-2 font-handwriting">
+            <div className="space-y-2 font-sans">
               <h4 className="text-base font-bold text-foreground notebook-underline">Question Activity :-</h4>
               <p className="text-base text-foreground/90">{concept.quizQuestion}</p>
             </div>
@@ -301,7 +301,7 @@ export function InteractivePlayground() {
                   <div className={quizResult.passed ? "text-primary font-bold" : "text-accent font-bold"}>
                     {quizResult.passed ? "✓ Quiz Solution Passed (Score: 95%)" : "⚠ Solution Review Recommended"}
                   </div>
-                  <p className="text-foreground/90 font-handwriting text-base mt-1">
+                  <p className="text-foreground/90 font-sans text-base mt-1">
                     {quizResult.feedback}
                   </p>
                 </div>

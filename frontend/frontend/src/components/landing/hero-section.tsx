@@ -51,7 +51,7 @@ export function HeroSection() {
       {/* Hero Title */}
       <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-foreground leading-[1.25] mb-6 font-sans gsap-hero-title">
         Bridge Codebase Dependencies with Personal
-        <span className="block mt-3 font-handwriting text-accent notebook-underline text-5xl sm:text-7xl min-h-[1.2em]">
+        <span className="block mt-3 font-sans text-accent notebook-underline text-5xl sm:text-7xl min-h-[1.2em]">
           {typedText}
           <span className="animate-pulse ml-0.5 select-none font-sans font-normal text-3xl sm:text-5xl text-accent">|</span>
         </span>
@@ -109,7 +109,7 @@ export function MockIDEPreview() {
           <div className="hidden md:block absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-border border-r border-dashed border-border/60 z-10 pointer-events-none" />
 
           {/* Left Page */}
-          <div className="p-8 space-y-6 bg-graph-paper font-handwriting text-foreground text-base leading-snug">
+          <div className="p-8 space-y-6 bg-graph-paper font-sans text-foreground text-base leading-snug">
             <div>
               <h2 className="text-xl font-bold text-foreground notebook-underline inline-block mb-3">
                 Learning objectives :-
@@ -139,7 +139,7 @@ export function MockIDEPreview() {
           </div>
 
           {/* Right Page */}
-          <div className="p-8 space-y-6 bg-graph-paper font-handwriting text-foreground text-base leading-snug">
+          <div className="p-8 space-y-6 bg-graph-paper font-sans text-foreground text-base leading-snug">
             <div>
               <h3 className="text-lg font-bold text-foreground notebook-underline inline-block mb-2">
                 Documented Vault Materials :-

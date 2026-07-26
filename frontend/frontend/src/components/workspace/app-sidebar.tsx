@@ -10,8 +10,9 @@ import {
 import { cn } from "@/lib/utils"
 import Link from "next/link";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { ChevronDown, ChevronRight, FileText, Folder, Play, Trash2, Sparkles, Layers, User, Search, FilePlus, X } from "lucide-react"
+import { ChevronDown, ChevronRight, FileText, Folder, Play, Trash2, Sparkles, Layers, User, Search, FilePlus, X, MoreHorizontal } from "lucide-react"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 
 interface TreeNode {
   name: string;
@@ -289,18 +290,29 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
                     </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm(`Remove vault "${notesDirName}" from workspace?`)) {
-                          deleteVaultSession(session.notesPath);
-                        }
-                      }}
-                      className="p-1 hover:bg-background border border-border/40 rounded-lg shrink-0 cursor-pointer text-muted-foreground hover:text-destructive transition-all"
-                      title="Remove Vault"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                        className="p-1 hover:bg-background border border-transparent hover:border-border/40 rounded-lg shrink-0 cursor-pointer text-muted-foreground hover:text-primary transition-all ml-1"
+                        title="More Options"
+                      >
+                        <MoreHorizontal className="w-3.5 h-3.5" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Remove vault "${notesDirName}" from workspace?`)) {
+                              deleteVaultSession(session.notesPath);
+                            }
+                          }}
+                          className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-2" />
+                          Remove Vault
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
                 <CollapsibleContent className="w-full pl-2 mt-0.5 space-y-0.5">
@@ -572,19 +584,30 @@ function RenderTreeNode({ node, level, sessionPath }: RenderTreeNodeProps) {
 
       {/* Delete Note Button (only for non-gap physical files) */}
       {!node.isGap && (
-        <button
-          onClick={async (e) => {
-            e.stopPropagation();
-            if (confirm(`Are you sure you want to delete note "${node.name}"?`)) {
-              setActiveVaultPath(sessionPath);
-              await deleteNote(node.path);
-            }
-          }}
-          className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-background border border-transparent hover:border-border/40 rounded-lg shrink-0 cursor-pointer text-muted-foreground hover:text-destructive transition-all ml-1"
-          title="Delete Note"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-background border border-transparent hover:border-border/40 rounded-lg shrink-0 cursor-pointer text-muted-foreground hover:text-primary transition-all ml-1"
+            title="More Options"
+          >
+            <MoreHorizontal className="w-3.5 h-3.5" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (confirm(`Are you sure you want to delete note "${node.name}"?`)) {
+                  setActiveVaultPath(sessionPath);
+                  await deleteNote(node.path);
+                }
+              }}
+              className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-2" />
+              Delete Note
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   );

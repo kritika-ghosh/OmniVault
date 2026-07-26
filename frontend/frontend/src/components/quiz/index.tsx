@@ -225,9 +225,9 @@ export default function Quiz(props: QuizProps) {
   return (
     <div className="w-full h-full flex flex-wrap bg-graph-paper text-foreground overflow-y-auto">
       {/* Left Pane - Challenge/Welcome */}
-      <div className="flex-1 min-w-[350px] p-6 border-r border-border/20 flex flex-col">
+      <div className="flex-1 min-w-87.5 p-6 border-r border-border/20 flex flex-col">
         {!currentQuiz && Object.keys(vaultSessions).length > 0 && (
-          <div className="flex items-center gap-1.5 bg-card px-2.5 py-1 rounded-xl border border-border w-52 mb-6 self-end">
+          <div className="flex items-center gap-1.5 bg-card px-2.5 py-1 rounded-xl border border-border w-52 mb-6 self-start">
             <span className="text-sm font-mono text-muted-foreground uppercase tracking-widest">Vault:</span>
             <select
               value={activeVaultPath}

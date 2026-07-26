@@ -214,7 +214,7 @@ export default function NodeGraph() {
   return (
     <div className="w-full h-full flex flex-col bg-graph-paper text-foreground overflow-hidden">
       {/* Graph Toolbar Controls */}
-      <div className="flex flex-row items-center justify-between gap-4 p-4 border-b border-border shrink-0 bg-muted/50 select-none">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 border-b border-border shrink-0 bg-muted/50 select-none">
         <div className="flex flex-col gap-0.5">
           <h2 className="font-bold flex items-center gap-2 text-foreground font-sans text-xl">
             <Compass className="w-4 h-4 text-accent" />
@@ -225,7 +225,7 @@ export default function NodeGraph() {
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {Object.keys(vaultSessions).length > 0 && (
             <div className="flex items-center gap-1.5 bg-card px-2.5 py-1 rounded-xl border border-border">
               <span className="text-sm font-mono text-muted-foreground uppercase tracking-widest">Vault:</span>

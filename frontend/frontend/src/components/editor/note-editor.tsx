@@ -480,7 +480,7 @@ console.log("Initialized ${noteName}");
   return (
     <div className="w-full h-full flex flex-col bg-graph-paper text-foreground overflow-hidden">
       {/* Editor Controls Bar */}
-      <div className="flex flex-row items-center justify-between gap-4 p-4 border-b border-white/15 shrink-0 bg-muted/50 select-none">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 border-b border-white/15 shrink-0 bg-muted/50 select-none">
         <div className="flex items-center p-1 rounded-xl border border-white/15 font-mono">
         <button
             onClick={() => setActiveTab("preview")}
@@ -507,7 +507,7 @@ console.log("Initialized ${noteName}");
           
         </div>
 
-        <div className="flex items-center gap-2 relative">
+        <div className="flex flex-wrap items-center gap-2 relative">
           {showSavedIndicator && (
             <span className="text-xs text-primary font-mono font-bold flex items-center gap-1 mr-2">
               <Check className="w-3.5 h-3.5" /> Saved locally

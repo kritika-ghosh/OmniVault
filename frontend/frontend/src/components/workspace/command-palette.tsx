@@ -117,6 +117,7 @@ export default function CommandPalette({ isOpen: externalIsOpen, onClose: extern
           path: n.path,
           type: "note",
           reason: n.content.slice(0, 100) + "...",
+          similarity: 100,
         };
       });
 
@@ -128,6 +129,7 @@ export default function CommandPalette({ isOpen: externalIsOpen, onClose: extern
         path: `${g.term}.md`,
         type: "gap",
         reason: g.reason || "Identified Knowledge Gap",
+        similarity: 100,
       }));
 
     return [...matchedNotes, ...matchedGaps];
@@ -135,15 +137,23 @@ export default function CommandPalette({ isOpen: externalIsOpen, onClose: extern
 
   // Combined search results
   const allResults = React.useMemo(() => {
-    if (ragResults.length > 0) {
-      return ragResults.map((r: any) => ({
-        term: r.term || r.path || r.id || "Vault Note",
-        type: r.type || "rag",
-        reason: r.snippet || r.reason || r.text || "Semantic vector store match",
-        similarity: r.similarity ? Math.round(r.similarity * 100) : 92,
-      }));
-    }
-    return localMatches;
+    const formattedRag = ragResults.map((r: any) => ({
+      term: r.id || r.term || r.path || "Vault Note",
+      type: "rag",
+      reason: (r.metadata && r.metadata.title) ? `Title: ${r.metadata.title}` : (r.snippet || r.reason || "Semantic vector store match"),
+      similarity: r.score !== undefined ? Math.max(0, Math.round((1 - r.score) * 100)) : (r.similarity ? Math.round(r.similarity * 100) : 92),
+    }));
+
+    // Deduplicate so local matches don't show up twice if RAG also found them
+    const ragTerms = new Set(formattedRag.map((r: any) => r.term.toLowerCase()));
+    const filteredLocal = localMatches.filter((l: any) => !ragTerms.has(l.term.toLowerCase()));
+
+    return [...filteredLocal, ...formattedRag].sort((a, b) => {
+      // Sort by similarity if available
+      const simA = a.similarity || 100; // local matches are exact, so 100
+      const simB = b.similarity || 100;
+      return simB - simA;
+    });
   }, [ragResults, localMatches]);
 
   const handleSelect = (item: any) => {

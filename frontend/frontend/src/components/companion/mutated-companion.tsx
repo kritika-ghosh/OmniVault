@@ -48,9 +48,6 @@ export default function MutatedCompanion() {
   const { notesPath, notesFiles } = useWorkspace();
 
   const getMutatedApiHost = () => {
-    if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
-      return "http://localhost:8000";
-    }
     return "https://mutated-backend.onrender.com";
   };
   const mutatedApiHost = getMutatedApiHost();
@@ -316,31 +313,31 @@ export default function MutatedCompanion() {
   // Renders the initial loading / ingestion screen
   if (!session && !isLoading) {
     return (
-      <div className="w-full h-full flex items-center justify-center p-8 bg-graph-paper select-none">
-        <div className="max-w-2xl w-full border border-border bg-card p-8 rounded-3xl shadow-2xl flex flex-col gap-6 font-sans">
+      <div className="w-full h-full flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto bg-graph-paper text-foreground select-none">
+        <div className="max-w-xl w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 bg-card p-6 rounded-2xl border border-border shadow-xl font-sans">
           <div className="space-y-2 text-center">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-mono mb-2">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-primary/60 text-xs font-mono text-primary shadow-md">
               <Sparkles className="w-3.5 h-3.5" />
-              Adaptive Study Planner & Decay Vault
+              <span>Adaptive Study Planner & Decay Vault</span>
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl font-handwriting notebook-underline">
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground font-sans mt-3">
               Stop Studying Static Notes
             </h1>
-            <p className="text-xs text-zinc-400 max-w-lg mx-auto">
+            <p className="text-md font-sans tracking-tight text-muted-foreground mt-2">
               mutatED uses localized RAG memory layers to dynamically re-engineer your study roadmap live as you learn.
             </p>
           </div>
 
           <form onSubmit={handleInitSession} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-bold text-foreground">Learning Path Goal</label>
+              <span className="font-sans text-foreground text-base underline underline-offset-4 tracking-tight block">Learning Path Goal</span>
               <input
                 type="text"
                 placeholder="e.g., Master Transformer Architectures or PyTorch Deep Learning"
                 value={goalInput}
                 onChange={(e) => setGoalInput(e.target.value)}
                 required
-                className="w-full h-11 px-4 rounded-xl border border-border bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                className="w-full text-base font-mono bg-background border border-border/40 rounded-lg h-10 px-3 focus:outline-none focus:ring-1 focus:ring-primary text-foreground select-text"
               />
             </div>
 
@@ -348,11 +345,11 @@ export default function MutatedCompanion() {
             <div className="space-y-3 p-4 rounded-2xl bg-muted/30 border border-border/40">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                     <FolderPlus className="w-4 h-4 text-primary" />
                     Reference Material Source
                   </h4>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     How should the planner ingest background text corpus?
                   </p>
                 </div>
@@ -362,14 +359,14 @@ export default function MutatedCompanion() {
                 <button
                   type="button"
                   onClick={() => setUseExistingFolder(true)}
-                  className={`p-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 ${
+                  className={`p-3 rounded-xl border text-sm font-bold transition-all flex flex-col items-center justify-center gap-1.5 ${
                     useExistingFolder 
                       ? "bg-primary/10 border-primary text-primary" 
                       : "bg-background/40 border-border/60 hover:bg-muted/40"
                   }`}
                 >
                   <span>Active Notes Folder</span>
-                  <span className="text-[9px] font-mono text-muted-foreground max-w-[200px] truncate">
+                  <span className="text-xs font-mono text-muted-foreground max-w-[200px] truncate">
                     {notesPath ? notesPath.split(/[/\\]/).pop() || notesPath : "No vault active"}
                   </span>
                 </button>
@@ -377,14 +374,14 @@ export default function MutatedCompanion() {
                 <button
                   type="button"
                   onClick={() => setUseExistingFolder(false)}
-                  className={`p-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 ${
+                  className={`p-3 rounded-xl border text-sm font-bold transition-all flex flex-col items-center justify-center gap-1.5 ${
                     !useExistingFolder 
                       ? "bg-primary/10 border-primary text-primary" 
                       : "bg-background/40 border-border/60 hover:bg-muted/40"
                   }`}
                 >
                   <span>Upload Documents</span>
-                  <span className="text-[9px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     Drag PDFs/MD notes
                   </span>
                 </button>
@@ -410,7 +407,7 @@ export default function MutatedCompanion() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg hover:bg-primary/90 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full h-11 text-xs font-bold tracking-wider uppercase bg-accent hover:bg-accent/90 text-white rounded-xl transition-all shadow-lg font-mono cursor-pointer flex items-center justify-center gap-2"
             >
               Generate Agentic Study Blueprint
               <ArrowRight className="w-4 h-4" />
@@ -438,7 +435,7 @@ export default function MutatedCompanion() {
             <h3 className="text-lg font-bold text-foreground">Assembling Adaptive Syllabus</h3>
             <p className="text-xs text-muted-foreground">Inference pipeline running via Groq LPU...</p>
           </div>
-          <div className="p-4 rounded-2xl bg-[#0a0f16] border border-border/40 font-mono text-[10px] text-accent/90 min-h-[50px] flex items-center justify-center text-center">
+          <div className="p-4 rounded-2xl bg-background border border-border/40 font-mono text-[10px] text-accent/90 min-h-[50px] flex items-center justify-center text-center">
             {loadingMessages[loadingStep]}
           </div>
         </div>
@@ -681,7 +678,7 @@ export default function MutatedCompanion() {
                                   className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-xs cursor-pointer transition-all ${
                                     isChecked 
                                       ? "bg-primary/5 border-primary font-semibold" 
-                                      : "bg-[#0a0f16]/50 border-border/60 hover:bg-muted/40"
+                                      : "bg-background/50 border-border/60 hover:bg-muted/40"
                                   }`}
                                 >
                                   <input
@@ -758,7 +755,7 @@ export default function MutatedCompanion() {
 
           {/* TAB C: Agent Autonomous Loop Log Terminal */}
           {activeTab === "logs" && (
-            <div className="w-full h-full p-4 flex flex-col overflow-hidden bg-[#0a0f16] text-accent font-mono text-xs leading-relaxed">
+            <div className="w-full h-full p-4 flex flex-col overflow-hidden bg-background text-accent font-mono text-xs leading-relaxed">
               <div className="border-b border-accent/25 pb-2 px-2 flex justify-between items-center text-[10px] tracking-wider text-accent/80 shrink-0">
                 <span>AUTONOMOUS PLANNER REASONING TERMINAL FEED</span>
                 <span className="animate-pulse">● LOGS ACTIVE</span>

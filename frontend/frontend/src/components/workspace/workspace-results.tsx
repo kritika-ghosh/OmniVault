@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { RefreshCw, RotateCcw, Search, Sparkles, CheckCircle2 } from "lucide-react";
+import { RefreshCw, RotateCcw, Search, Sparkles, CheckCircle2, PanelRightClose, PanelRightOpen } from "lucide-react";
 
 interface WorkspaceResultsProps {
   vaultPath?: string;
@@ -37,6 +37,7 @@ export default function WorkspaceResults({ vaultPath }: WorkspaceResultsProps) {
 
   const [activeTab, setActiveTab] = useState<"all" | "gaps" | "notes">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Parse notes file names into clean terms
   const existingNotes = useMemo(() => {
@@ -184,6 +185,14 @@ export default function WorkspaceResults({ vaultPath }: WorkspaceResultsProps) {
             className="border-border bg-card text-muted-foreground hover:text-foreground font-mono text-sm cursor-pointer h-9 px-4"
           >
             Reset
+          </Button>
+          <Button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            variant="outline"
+            className="border-border bg-card text-muted-foreground hover:text-foreground font-mono cursor-pointer h-9 px-3"
+            title="Toggle Scan Results Sidebar"
+          >
+            {isSidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
           </Button>
         </div>
       </div>
@@ -352,6 +361,7 @@ export default function WorkspaceResults({ vaultPath }: WorkspaceResultsProps) {
         </div>
 
         {/* Right Column: Scan Results Summary Card List */}
+        {isSidebarOpen && (
         <div className="w-72 shrink-0 bg-muted/40 p-5 overflow-y-auto space-y-4 font-mono select-none">
           <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border/80 pb-2 mb-3">
             Scan Results
@@ -421,6 +431,7 @@ export default function WorkspaceResults({ vaultPath }: WorkspaceResultsProps) {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

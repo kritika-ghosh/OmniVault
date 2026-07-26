@@ -217,15 +217,20 @@ export function Footer() {
     <footer className="relative z-10 border-t border-border py-8 px-6 bg-[#070b10] mt-auto">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-sm text-muted-foreground font-mono text-center sm:text-left">
         <div className="flex flex-col sm:flex-row items-center gap-2">
-          <span className="font-bold text-foreground font-sans text-base">OmniVault AI</span>
-          <span className="hidden sm:inline">— Dark Graph Paper Vault Workspace</span>
+          <span className="font-bold text-foreground font-sans text-base">OmniVault</span>
+          <span className="hidden sm:inline">— local first markdown vault & ast scanner</span>
         </div>
 
-        <div className="flex items-center gap-6">
-          <Link href="/workspace" className="hover:text-foreground">
-            Workspace IDE
-          </Link>
-          <span className="text-primary">API Operational</span>
+        <div className="flex flex-col items-center sm:items-end gap-1">
+          <div className="flex items-center gap-6">
+            <Link href="/workspace" className="hover:text-foreground">
+              Workspace IDE
+            </Link>
+            <span className="text-primary">API Operational</span>
+          </div>
+          <span className="text-xs mt-1">
+            made by <a href="https://github.com/kritika-ghosh/OmniVault" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline underline-offset-2">Kritika and Diya</a>
+          </span>
         </div>
       </div>
     </footer>
