@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils"
 import Link from "next/link";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { ChevronDown, ChevronRight, FileText, Folder, Play, Trash2, Sparkles, Layers, User, Search } from "lucide-react"
+import { ChevronDown, ChevronRight, FileText, Folder, Play, Trash2, Sparkles, Layers, User, Search, FilePlus, X } from "lucide-react"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 
 interface TreeNode {
@@ -100,6 +100,51 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
   const [isDragOverRoot, setIsDragOverRoot] = React.useState<string | null>(null);
 
   const [currentUser, setCurrentUser] = React.useState<{ name?: string; email?: string; avatar?: string } | null>(null);
+  const [isAddNoteModalOpen, setIsAddNoteModalOpen] = React.useState(false);
+  const [newNoteName, setNewNoteName] = React.useState("");
+  const [newNoteVault, setNewNoteVault] = React.useState("");
+  const [pendingNoteToCreate, setPendingNoteToCreate] = React.useState<{name: string, vault: string} | null>(null);
+
+  React.useEffect(() => {
+    if (isAddNoteModalOpen) {
+      setNewNoteVault(activeVaultPath || Object.keys(vaultSessions)[0] || "");
+      setNewNoteName("");
+    }
+  }, [isAddNoteModalOpen, activeVaultPath, vaultSessions]);
+
+  React.useEffect(() => {
+    const handleOpenAddNote = () => setIsAddNoteModalOpen(true);
+    window.addEventListener("open-add-note-modal", handleOpenAddNote);
+    return () => window.removeEventListener("open-add-note-modal", handleOpenAddNote);
+  }, []);
+
+  const handleCreateNote = () => {
+    if (newNoteName.trim() && newNoteVault) {
+      setActiveVaultPath(newNoteVault);
+      setPendingNoteToCreate({ name: newNoteName.trim(), vault: newNoteVault });
+      setIsAddNoteModalOpen(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (pendingNoteToCreate && activeVaultPath === pendingNoteToCreate.vault) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("show-toast", { detail: { id: "create-note", message: `Creating note "${pendingNoteToCreate.name}"...`, type: "loading" } }));
+      }
+      saveNote(pendingNoteToCreate.name, "").then(() => {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("show-toast", { detail: { id: "create-note", message: `Note "${pendingNoteToCreate.name}" created!`, type: "success" } }));
+          window.dispatchEvent(new CustomEvent("open-note", { detail: pendingNoteToCreate.name }));
+        }
+        setPendingNoteToCreate(null);
+      }).catch((err) => {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("show-toast", { detail: { id: "create-note", message: `Failed to create note: ${err.message || err}`, type: "error" } }));
+        }
+        setPendingNoteToCreate(null);
+      });
+    }
+  }, [pendingNoteToCreate, activeVaultPath, saveNote]);
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -152,77 +197,55 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
   };
 
   return (
-    <Sidebar className={cn("border-r border-border bg-[#070b10]", className)} {...props}>
-      <SidebarHeader className="px-3 py-3 border-b border-border shrink-0 bg-[#0c1117] space-y-2 font-mono">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-            <Folder className="w-4 h-4 text-primary" /> Local Obsidian Vault
-          </span>
-          <button
-            onClick={() => {
-              const noteName = prompt("Enter new note title:");
-              if (noteName && noteName.trim()) {
-                if (typeof window !== "undefined") {
-                  window.dispatchEvent(new CustomEvent("open-note", { detail: noteName.trim() }));
-                }
-              }
-            }}
-            className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg cursor-pointer transition-all shadow-xs"
-            title="Create New Markdown Note"
-          >
-            <span>+ Note</span>
-          </button>
-        </div>
-
-        {/* Global RAG Command Palette Search Trigger */}
+    <Sidebar className={cn("border-r border-border",className)} {...props}>
+      <SidebarHeader className="px-3 py-3 border-b border-border shrink-0 space-y-1 font-sans">
         <button
           onClick={() => {
             if (typeof window !== "undefined") {
               window.dispatchEvent(new CustomEvent("open-command-palette"));
             }
           }}
-          className="w-full flex items-center justify-between px-2.5 py-1.5 bg-[#1b1f26] hover:bg-[#232832] border border-white/10 rounded-xl text-xs text-muted-foreground transition-all cursor-pointer shadow-xs group"
+          className="w-full flex items-center justify-between px-2 py-1.5 bg-muted/50 text-xs text-muted-foreground transition-all cursor-pointer"
           title="Search Vault & Codebase (Cmd+K / Ctrl+K)"
         >
-          <span className="flex items-center gap-2 text-foreground/80 group-hover:text-foreground text-[11px]">
-            <Search className="w-3.5 h-3.5 text-accent" />
+          <span className="flex items-center gap-2 text-foreground/80 group-hover:text-foreground text-xs">
+            <Search className="w-3.5 h-3.5" />
             Search Vault & RAG...
           </span>
           <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border">
             ⌘K
           </span>
         </button>
+        
 
-        {/* Quick Tools Bar */}
-        <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-          <button
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent("open-project-analyzer"));
-              }
-            }}
-            className="flex items-center justify-center gap-1 px-2 py-1.5 bg-card hover:bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold text-foreground transition-all cursor-pointer"
-            title="Project Codebase Analyzer"
-          >
-            <Layers className="w-3 h-3 text-accent" />
-            <span>Code Analyzer</span>
-          </button>
-          <button
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent("navigate-view", { detail: "mutated-companion" }));
-              }
-            }}
-            className="flex items-center justify-center gap-1 px-2 py-1.5 bg-card hover:bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold text-primary transition-all cursor-pointer"
-            title="Mutated Study Planner"
-          >
-            <Sparkles className="w-3 h-3 text-primary animate-pulse" />
-            <span>Study Hub</span>
-          </button>
-        </div>
+        {/* Global RAG Command Palette Search Trigger */}
+        
+
+        {/* Code Analyzer Trigger */}
+        <button
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("open-project-analyzer"));
+            }
+          }}
+          className="w-full flex items-center justify-between px-2 py-1.5 bg-accent/10 border border-accent/50 hover:border-accent/40 text-xs text-accent transition-all cursor-pointer shadow-xs group"
+          title="Connect Project Codebase"
+        >
+          <span className="flex items-center gap-2 text-accent font-bold">
+            <Layers className="w-3.5 h-3.5" />
+            Codebase Analyzer
+          </span>
+          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/30">
+            AST
+          </span>
+        </button>
+
       </SidebarHeader>
 
       <SidebarContent className="p-2 overflow-y-auto overflow-x-hidden select-none space-y-2">
+        <h1 className="text-foreground/60 text-xs font-semibold tracking-tight underline underline-offset-4 px-2">
+          Notes Vaults
+        </h1>
 
         {Object.keys(vaultSessions).length === 0 ? (
           <div className="text-xs text-muted-foreground/50 italic p-4 text-center">
@@ -237,7 +260,7 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
             return (
               <Collapsible key={session.notesPath} defaultOpen={true} className="w-full">
                 <div className={cn(
-                  "flex items-center justify-between w-full hover:bg-muted/40 rounded-xl px-1.5 py-1 transition-all border border-transparent mb-1",
+                  "flex items-center justify-between w-full hover:bg-muted/40  px-1.5 py-1 transition-all mb-1",
                   isActive && "bg-primary/10 border-primary/25 shadow-xs",
                   isDragOverRoot === session.notesPath && "bg-primary/15 border-dashed border-primary"
                 )}>
@@ -245,9 +268,9 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
                     onDragOver={(e) => handleDragOverRoot(e, session.notesPath)}
                     onDragLeave={handleDragLeaveRoot}
                     onDrop={(e) => handleDropRoot(e, session.notesPath)}
-                    className="flex items-center gap-1.5 min-w-0 flex-1 text-sm text-foreground hover:text-foreground font-bold text-left cursor-pointer"
+                    className="group flex items-center gap-1.5 min-w-0 flex-1 text-base text-foreground hover:text-foreground font-mono text-left cursor-pointer"
                   >
-                    <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-90" />
                     <Folder className={cn("w-4 h-4 shrink-0", isActive ? "text-primary" : "text-muted-foreground/70")} />
                     <span className={cn("truncate", isActive && "text-primary font-black")}>{notesDirName}</span>
                   </CollapsibleTrigger>
@@ -302,16 +325,16 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-2 border-t border-border/30 bg-muted/10 shrink-0 font-mono">
+      <SidebarFooter className="p-2 border-t border-border bg-muted/10 shrink-0 font-sans">
         {currentUser ? (
-          <div className="flex items-center justify-between p-2 rounded-xl bg-card border border-border">
+          <div className="flex items-center justify-between p-2 rounded-xl">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary text-[10px] font-bold shrink-0">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-primary bg-primary/30 p-1 text-[10px] font-bold shrink-0">
                 {currentUser.avatar || currentUser.name?.charAt(0).toUpperCase() || <User className="w-3.5 h-3.5" />}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-[11px] font-bold text-foreground truncate">{currentUser.name || "Vault Architect"}</span>
-                <span className="text-[9px] text-muted-foreground truncate">{currentUser.email || "session auth"}</span>
+                <span className="text-xs font-bold text-foreground truncate">{currentUser.name || "Vault Architect"}</span>
+                <span className="text-xs text-muted-foreground truncate">{currentUser.email || "session auth"}</span>
               </div>
             </div>
             <button
@@ -343,6 +366,91 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
           </Link>
         )}
       </SidebarFooter>
+      
+      {isAddNoteModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 font-sans select-none animate-in fade-in duration-200">
+          <div className="bg-[#0f141c] border border-white/15 rounded-2xl max-w-md w-full p-6 shadow-2xl flex flex-col gap-5 max-h-[90vh] overflow-hidden text-foreground animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-primary/20 text-primary border border-primary/30">
+                  <FilePlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold font-sans text-foreground flex items-center gap-2">
+                    Create New Note
+                  </h2>
+                  <p className="text-xs font-sans tracking-tight text-muted-foreground">
+                    Enter a title and select the destination vault
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAddNoteModalOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="space-y-4 shrink-0">
+              {/* Note Title Input */}
+              <div className="space-y-2 px-4">
+                <span className="text-base font-bold text-foreground flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-primary" /> Note Title:
+                </span>
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="e.g. System Architecture"
+                  value={newNoteName}
+                  onChange={(e) => setNewNoteName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleCreateNote()}
+                  className="w-full h-10 bg-muted border border-white/30 rounded-xl px-3 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all select-text"
+                />
+              </div>
+
+              {/* Vault Destination Dropdown */}
+              <div className="space-y-2 px-4">
+                <span className="text-base font-bold text-foreground flex items-center gap-1.5">
+                  <Folder className="w-4 h-4 text-primary" /> Destination Vault:
+                </span>
+                <select
+                  value={newNoteVault}
+                  onChange={(e) => setNewNoteVault(e.target.value)}
+                  className="w-full h-10 bg-muted border border-white/30 rounded-xl px-3 py-2 text-sm text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-primary transition-all cursor-pointer"
+                >
+                  {Object.keys(vaultSessions).map((vp) => (
+                    <option key={vp} value={vp}>
+                      {vp}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center gap-2 pt-2 px-4 border-t border-white/5 font-sans">
+              <button
+                onClick={handleCreateNote}
+                disabled={!newNoteName.trim() || !newNoteVault}
+                className="flex-1 h-9 text-xs font-bold uppercase tracking-wider bg-primary hover:bg-primary/95 text-primary-foreground rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Create Note
+              </button>
+
+              <button
+                onClick={() => setIsAddNoteModalOpen(false)}
+                className="h-9 px-4 text-xs font-bold bg-card hover:bg-white/5 border border-border text-foreground rounded-lg cursor-pointer flex items-center gap-1.5"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Sidebar>
   );
 }
@@ -404,16 +512,12 @@ function RenderTreeNode({ node, level, sessionPath }: RenderTreeNodeProps) {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={cn(
-            "flex items-center gap-1.5 w-full py-0.5 hover:bg-muted/40 rounded text-sm text-foreground/80 hover:text-foreground font-semibold text-left cursor-pointer transition-colors border border-transparent",
+            "group flex items-center gap-1.5 w-full py-0.5 hover:bg-muted/40 rounded text-sm text-foreground/80 hover:text-foreground font-semibold text-left cursor-pointer transition-colors border border-transparent font-mono",
             isDragOver && "bg-primary/10 border-dashed border-primary"
           )}
           style={{ paddingLeft: `${level * 12 + 6}px` }}
         >
-          {isOpen ? (
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          ) : (
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          )}
+          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-90" />
           <Folder className="w-3.5 h-3.5 text-primary/80 shrink-0" />
           <span className="truncate">{node.name}</span>
         </CollapsibleTrigger>
@@ -447,7 +551,7 @@ function RenderTreeNode({ node, level, sessionPath }: RenderTreeNodeProps) {
           }
         }}
         className={cn(
-          "flex items-center gap-1.5 flex-1 py-0.5 text-left cursor-pointer transition-colors font-medium border border-transparent active:opacity-60 min-w-0",
+          "flex items-center gap-1.5 flex-1 py-0.5 text-sm font-mono text-left cursor-pointer transition-colors font-medium border border-transparent active:opacity-60 min-w-0",
           node.isGap
             ? "text-accent hover:text-accent/80"
             : "text-muted-foreground hover:text-foreground"

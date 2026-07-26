@@ -7,8 +7,10 @@ import '@/app/globals.css'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/workspace/app-sidebar'
 import { WorkspaceProvider } from "@/context/WorkspaceContext";
-import { Scan, FilePlus, Network, GraduationCap, Sun, Moon, Sparkles, Home, ChevronLeft } from "lucide-react";
+import { Scan, FilePlus, Network, GraduationCap, Settings, Sparkles, Home, ChevronLeft } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import SettingsModal from "@/components/workspace/settings-modal";
+import ToastContainer from "@/components/ui/toast-container";
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -44,6 +46,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     };
   }, []);
 
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenSettings = () => setIsSettingsOpen(true);
+    window.addEventListener("open-settings-modal", handleOpenSettings);
+    return () => window.removeEventListener("open-settings-modal", handleOpenSettings);
+  }, []);
+
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
@@ -57,9 +67,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   };
 
   const handleCreateNote = () => {
-    const name = window.prompt("Enter note name:");
-    if (name && name.trim()) {
-      window.dispatchEvent(new CustomEvent("open-note", { detail: name.trim() }));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("open-add-note-modal"));
     }
   };
 
@@ -184,12 +193,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                       <div className="flex flex-col items-center gap-3 w-full px-2">
                         <Tooltip>
                           <TooltipTrigger
-                            onClick={toggleTheme}
+                            onClick={() => setIsSettingsOpen(true)}
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all border border-border/50 cursor-pointer"
                           >
-                            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-slate-700" />}
+                            <Settings className="w-4 h-4" />
                           </TooltipTrigger>
-                          <TooltipContent side="right">Toggle Theme</TooltipContent>
+                          <TooltipContent side="right">Settings</TooltipContent>
                         </Tooltip>
                       </div>
                     </header>
@@ -200,6 +209,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                       <main className="flex-1 h-full w-full relative overflow-hidden">
                         {children}
                       </main>
+                      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+                      <ToastContainer />
                     </div>
                   </SidebarProvider>
                 </ContextMenuTrigger>

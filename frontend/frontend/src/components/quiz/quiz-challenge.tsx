@@ -4,6 +4,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, CheckCircle2, AlertTriangle, Terminal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { div } from "framer-motion/client";
 
 interface QuizChallengeData {
   question_text: string;
@@ -53,22 +54,22 @@ export default function QuizChallenge({
       <div className="flex items-center justify-between border-b border-border pb-3">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer font-mono font-semibold"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground cursor-pointer font-mono font-semibold"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to Topics
         </button>
-        <span className="text-[10px] font-mono font-bold tracking-wider px-2.5 py-0.5 bg-primary/20 text-primary rounded-lg uppercase border border-primary/30">
+        <span className="text-sm font-mono font-bold tracking-wider px-2.5 py-0.5 bg-secondary/10 text-secondary rounded-lg uppercase border border-secondary/60">
           {detectedLanguage}
         </span>
       </div>
 
       {/* Question Text Card - Dark Graph Paper Style */}
       <div className="p-5 rounded-2xl bg-card border border-border space-y-2">
-        <span className="text-xs font-mono text-accent font-bold uppercase tracking-wider block flex items-center gap-1">
+        <span className="text-xs font-mono text-accent font-bold uppercase tracking-wider flex items-center gap-1">
           <span className="text-accent">↳</span> Active Challenge Exercise :-
         </span>
-        <p className="text-base font-handwriting font-bold leading-relaxed text-foreground select-text notebook-underline inline-block">
+        <p className="text-base font-sans leading-relaxed text-foreground select-text inline-block">
           {currentQuiz.question_text}
         </p>
       </div>
@@ -77,21 +78,22 @@ export default function QuizChallenge({
       <Button
         onClick={onSubmit}
         disabled={isEvaluating}
-        className="w-full bg-accent hover:bg-accent/90 text-white font-bold font-mono h-10 px-4 flex items-center justify-center gap-2 cursor-pointer text-xs rounded-xl shadow-lg"
+        className="w-full bg-accent hover:bg-accent/90 text-white font-bold font-mono h-10 px-4 flex items-center justify-center gap-2 cursor-pointer text-sm rounded-xl shadow-lg"
       >
         <Send className="w-4 h-4" />
         {isEvaluating ? "Evaluating answer..." : "Evaluate Solution & Sync Frontmatter"}
       </Button>
 
+      <div className="h-px w-full bg-foreground/30"></div>
       {/* Evaluation Results */}
       {evaluation && (
-        <div className="space-y-4 pt-2 animate-fade-in font-mono">
+        <div className="space-y-4 pt-2 animate-fade-in  font-mono">
           {/* Result header banner */}
           <div className={cn(
             "p-4 rounded-2xl border flex items-center gap-3",
             evaluation.passed
-              ? "bg-primary/10 border-primary/30 text-primary"
-              : "bg-accent/10 border-accent/30 text-accent"
+              ? "bg-green-500/10 border-green-500/30 text-green-500"
+              : "bg-amber-500/10 border-amber-500/30 text-amber-500"
           )}>
             {evaluation.passed ? (
               <CheckCircle2 className="w-5 h-5 shrink-0" />
@@ -99,10 +101,10 @@ export default function QuizChallenge({
               <AlertTriangle className="w-5 h-5 shrink-0" />
             )}
             <div className="flex-1">
-              <h4 className="text-xs font-bold uppercase tracking-wide">
-                {evaluation.passed ? "Challenge Mastered! 🎉" : "Review Suggested ⚠️"}
+              <h4 className="text-base font-bold uppercase tracking-wide">
+                {evaluation.passed ? "Challenge Mastered! " : "Review Suggested "}
               </h4>
-              <span className="text-xs opacity-90 block mt-0.5 font-mono">
+              <span className="text-sm opacity-90 block mt-0.5 font-mono">
                 Similarity Score: <span className="font-bold">{(evaluation.similarity_score * 100).toFixed(0)}%</span>
               </span>
             </div>
@@ -110,8 +112,8 @@ export default function QuizChallenge({
 
           {/* Feedback */}
           <div className="p-4 rounded-2xl bg-card border border-border space-y-1.5 select-text">
-            <span className="text-[10px] font-mono text-accent uppercase tracking-wider block">Feedback Hint :-</span>
-            <p className="text-xs leading-relaxed text-foreground/95 font-sans">{evaluation.feedback_hint}</p>
+            <span className="text-sm font-mono text-accent uppercase tracking-wider block">Feedback Hint :-</span>
+            <p className="text-sm leading-relaxed text-foreground/90 font-sans">{evaluation.feedback_hint}</p>
           </div>
 
           {/* Mutated Agent Note Assignment for Failed Quiz */}
@@ -121,7 +123,7 @@ export default function QuizChallenge({
                 <AlertTriangle className="w-4 h-4 animate-pulse" />
                 <span>Mutated Agent Reinforcement Task Assigned</span>
               </div>
-              <p className="text-xs text-foreground/90 font-sans leading-relaxed">
+              <p className="text-xs text-accent/90 font-sans leading-relaxed">
                 Knowledge gap detected! The Mutated Curriculum Agent asks you to create or update a note covering the missing concepts to unlock full topic mastery.
               </p>
               <Button
@@ -131,9 +133,9 @@ export default function QuizChallenge({
                     window.dispatchEvent(new CustomEvent("open-note", { detail: targetTopic }));
                   }
                 }}
-                className="w-full bg-accent hover:bg-accent/90 text-white font-bold h-9 px-3 text-xs rounded-xl cursor-pointer flex items-center justify-center gap-2"
+                className="w-full bg-accent/80 hover:bg-accent/90 text-foreground font-bold h-9 px-3 text-xs rounded-xl cursor-pointer flex items-center justify-center gap-2"
               >
-                📝 Create / Edit Note on "{evaluation.missing_concepts?.[0] || "Missing Topic"}"
+                Create / Edit Note on "{evaluation.missing_concepts?.[0] || "Missing Topic"}"
               </Button>
             </div>
           )}

@@ -35,13 +35,17 @@ export default function WorkspaceWelcome() {
     }
   };
 
-  const handleOpenVault = () => {
-    openVault(localNotesPath, localNotesHandle);
+  const handleOpenVault = async () => {
+    await openVault(localNotesPath, localNotesHandle);
+    const targetNotesPath = localNotesHandle ? localNotesHandle.name : (localNotesPath || "Local Vault");
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("open-scan-dashboard", { detail: targetNotesPath }));
+    }
   };
 
   return (
     <div className="w-full flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto bg-graph-paper text-foreground select-none">
-      <div className="max-w-xl w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="max-w-xl w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         {/* Header - Dark Graph Paper Vault Style */}
         <div className="space-y-3 text-center">
@@ -50,19 +54,19 @@ export default function WorkspaceWelcome() {
             <span>Obsidian-Style Markdown Vault</span>
           </div>
 
-          <h1 className="text-4xl font-extrabold tracking-tight text-foreground font-handwriting">
+          <h1 className="text-4xl font-extrabold tracking-tight text-foreground font-sans">
             OmniVault Notebook
           </h1>
-          <p className="text-xs font-mono text-muted-foreground">
+          <p className="text-md font-sans tracking-tight text-muted-foreground">
             Open your Obsidian Notes Vault to start taking and organizing markdown notes.
           </p>
         </div>
 
         {/* Directory Pickers */}
-        <div className="space-y-4 bg-card p-6 rounded-2xl border border-border shadow-xl">
+        <div className="space-y-4 bg-card px-6 py-4 rounded-2xl border border-border shadow-xl">
           <div className="flex flex-col gap-3">
-            <span className="text-xs font-handwriting text-foreground text-base notebook-underline block">
-              Notes Vault Selection :-
+            <span className="font-sans text-foreground text-base underline underline-offset-4 tracking-tight block">
+              Notes Vault Selection
             </span>
             
             <div className="space-y-3">
@@ -70,14 +74,14 @@ export default function WorkspaceWelcome() {
               <div className="flex flex-col gap-2 p-3.5 rounded-xl bg-muted border border-border">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex flex-col min-w-0 pr-4">
-                    <span className="text-xs font-bold text-foreground font-mono flex items-center gap-1.5">
+                    <span className="text-sm font-bold text-foreground font-mono flex items-center gap-1.5">
                       <span className="text-primary">↳</span> Obsidian Notes Directory
                     </span>
                   </div>
                   <Button 
                     onClick={handleSelectNotesDir}
                     disabled={isLoading}
-                    className="text-xs bg-card hover:bg-muted text-foreground border border-border shrink-0 cursor-pointer h-8 px-3 font-semibold font-mono"
+                    className="text-xs bg-card hover:bg-muted text-foreground border border-border shrink-0 cursor-pointer h-6 px-3 font-semibold font-mono"
                   >
                     <Folder className="w-3.5 h-3.5 mr-1.5 text-primary" />
                     Choose Folder
@@ -91,12 +95,12 @@ export default function WorkspaceWelcome() {
                     setLocalNotesPath(e.target.value);
                     setLocalNotesHandle(null);
                   }}
-                  className="w-full text-xs font-mono bg-background border border-border/40 rounded-lg h-9 px-3 focus:outline-none focus:ring-1 focus:ring-primary text-foreground select-text"
+                  className="w-full text-base font-mono bg-background border border-border/40 rounded-lg h-9 px-3 focus:outline-none focus:ring-1 focus:ring-primary text-foreground select-text"
                 />
               </div>
 
               {/* Informational Callout */}
-              <div className="p-3 rounded-xl bg-accent/10 border border-accent/25 text-[11px] font-mono text-accent flex items-start gap-2">
+              <div className="p-3 rounded-xl bg-accent/10 border border-accent/25 text-xs font-sans text-accent flex items-start gap-2">
                 <Sparkles className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>AI AST Gap Scanning and Codebase Synthesis awaken after connecting your project repository via the <strong>Code Analyzer</strong> button in the sidebar.</span>
               </div>
@@ -104,7 +108,7 @@ export default function WorkspaceWelcome() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button
               onClick={handleOpenVault}
               disabled={isLoading || (!localNotesPath && !localNotesHandle)}
@@ -118,7 +122,7 @@ export default function WorkspaceWelcome() {
               ) : (
                 <>
                   <Play className="w-3.5 h-3.5 fill-current" />
-                  Open Vault & Take Notes 📝
+                  Open Vault & Take Notes
                 </>
               )}
             </Button>
@@ -126,7 +130,7 @@ export default function WorkspaceWelcome() {
             <Button
               onClick={loadMockData}
               disabled={isLoading}
-              className="h-11 px-5 text-xs font-bold font-mono bg-card hover:bg-[#6e346b]/10 text-accent border border-accent/30 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="h-11 px-5 text-xs font-bold font-mono bg-card hover:bg-[#6e346b]/10 text-accent border-2 border-accent/30 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <Sparkles className="w-3.5 h-3.5" />
               Load Demo Notes Vault
@@ -137,9 +141,9 @@ export default function WorkspaceWelcome() {
         {/* Vault History List */}
         {vaults && vaults.length > 0 && (
           <div className="space-y-2 bg-card p-4 rounded-2xl border border-border">
-            <span className="text-xs font-handwriting text-foreground text-base notebook-underline block flex items-center gap-1.5">
+            <span className="text-sm font-sans text-foreground underline underline-offset-4 tracking-tight flex items-center gap-1.5">
               <History className="w-4 h-4 text-primary" />
-              Recent Vault Directories :-
+              Recent Vault Directories
             </span>
             <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto pr-1">
               {vaults.map((vaultPath) => (

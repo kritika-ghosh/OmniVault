@@ -95,7 +95,7 @@
   --popover-foreground: #eaeef5;
   --primary: #9eb0d2;
   --primary-foreground: #0a0f16;
-  --secondary: #6e346b;
+  --secondary: rgb(110, 52, 107);
   --secondary-foreground: #eaeef5;
   --muted: #131d2b;
   --muted-foreground: #94a3b8;
@@ -198,8 +198,8 @@
 
 /* Dockview theme override */
 .dockview-theme-custom {
-  --dv-drag-over-background-color: var(--primary) !important;
-  --dv-floating-group-dragging-opacity: 0.15 !important;
+  --dv-drag-over-background-color: rgb(110, 52, 107, 0.5) !important;
+  --dv-floating-group-dragging-opacity: 0.25 !important;
   --dv-spacing-padding: 0px !important;
   --dv-tabs-and-actions-container-height: 32px !important;
   --dv-tabs-and-actions-container-font-size: 12px !important;
@@ -208,20 +208,20 @@
   --dv-sash-border-radius: 6px !important;
   --dv-font-family: "JetBrains Mono", monospace !important;
   
-  --dv-group-view-background-color: var(--card) !important;
-  --dv-tabs-and-actions-container-background-color: var(--background) !important;
-  --dv-separator-border: rgba(234, 238, 245, 0.12) !important;
+  --dv-group-view-background-color: var(--sidebar) !important;
+  --dv-tabs-and-actions-container-background-color: var(--sidebar) !important;
+  --dv-separator-border: var(--muted) !important;
   --dv-tab-divider-color: var(--accent) !important;
   
-  --dv-activegroup-visiblepanel-tab-background-color: var(--card) !important;
-  --dv-activegroup-visiblepanel-tab-foreground-color: var(--foreground) !important;
-  --dv-activegroup-hiddenpanel-tab-background-color: transparent !important;
-  --dv-activegroup-hiddenpanel-tab-foreground-color: var(--muted-foreground) !important;
+  --dv-activegroup-visiblepanel-tab-background-color: var(--muted) !important;
+  --dv-activegroup-visiblepanel-tab-foreground-color: var(--muted) !important;
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--card) !important;
+  --dv-activegroup-hiddenpanel-tab-foreground-color: var(--card) !important;
   
-  --dv-inactivegroup-visiblepanel-tab-background-color: var(--card) !important;
-  --dv-inactivegroup-visiblepanel-tab-foreground-color: var(--muted-foreground) !important;
-  --dv-inactivegroup-hiddenpanel-tab-background-color: transparent !important;
-  --dv-inactivegroup-hiddenpanel-tab-foreground-color: var(--muted-foreground) !important;
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--muted) !important;
+  --dv-inactivegroup-visiblepanel-tab-foreground-color: var(--muted) !important;
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--card) !important;
+  --dv-inactivegroup-hiddenpanel-tab-foreground-color: var(--card) !important;
   
   --dv-active-tab-selected-border-color: var(--accent) !important;
   --dv-inactive-tab-selected-border-color: transparent !important;
@@ -232,9 +232,35 @@
   border-top-left-radius: 8px !important;
   border-top-right-radius: 8px !important;
   margin-top: 4px;
-  border-bottom: none;
+  border: 0.5px solid rgba(158, 176, 210, 0.15);
 }
 
-.dockview-theme-custom .dv-tabs-and-actions-container {
-  padding-left: 4px !important
+/* Global Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(158, 176, 210, 0.2);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(158, 176, 210, 0.5);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Firefox compatibility */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(158, 176, 210, 0.2) transparent;
+}
+

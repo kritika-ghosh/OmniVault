@@ -77,21 +77,24 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen bg-graph-paper text-foreground flex flex-col items-center justify-center p-6 select-none font-sans relative">
       {/* Top Header Navigation */}
-      <div className="absolute top-6 left-6 right-6 flex items-center justify-between max-w-6xl mx-auto">
+      <div className="absolute top-6 left-6 right-6 flex items-center justify-between max-w-7xl mx-auto">
         <Link href="/" className="flex items-center gap-2 group">
           <div className="w-8 h-8 rounded-lg bg-accent/20 border border-accent/30 flex items-center justify-center text-accent font-mono font-bold text-xs group-hover:scale-105 transition-transform">
             OV
           </div>
-          <span className="font-extrabold text-sm tracking-tight text-foreground flex items-center gap-1.5 font-handwriting text-lg">
+          <span className="font-bold  tracking-tight text-foreground flex items-center gap-1.5 font-sans text-lg">
             OmniVault <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-muted text-accent border border-accent/30">Vault 1.0</span>
           </span>
         </Link>
 
-        <Link href="/workspace">
-          <Button variant="outline" className="text-xs font-mono h-8 px-3 border-border hover:bg-muted cursor-pointer">
-            Skip to Workspace
+        <Button
+            type="button"
+            onClick={handleDemoLogin}
+            className="bg-muted hover:bg-muted/80 text-accent font-bold text-xs h-9 rounded-xl border border-accent/30 cursor-pointer flex items-center justify-center gap-2"
+          >
+            <Zap className="w-3.5 h-3.5 fill-current" />
+            <span>1-Click Quick Demo Login</span>
           </Button>
-        </Link>
       </div>
 
       {/* Main Authentication Card */}
@@ -241,14 +244,6 @@ export default function AuthPage() {
             </Button>
           </div>
 
-          <Button
-            type="button"
-            onClick={handleDemoLogin}
-            className="w-full bg-muted hover:bg-muted/80 text-accent font-bold text-xs h-9 rounded-xl border border-accent/30 cursor-pointer flex items-center justify-center gap-2"
-          >
-            <Zap className="w-3.5 h-3.5 fill-current" />
-            <span>⚡ 1-Click Quick Demo Login</span>
-          </Button>
         </div>
       </div>
     </div>

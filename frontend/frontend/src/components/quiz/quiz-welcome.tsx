@@ -32,25 +32,25 @@ export default function QuizWelcome({
   }, [notesFiles]);
 
   return (
-    <div className="flex flex-col h-full justify-center max-w-md mx-auto space-y-6 py-8 select-none font-sans">
+    <div className="flex flex-col h-full justify-center max-w-lg mx-auto space-y-6 py-8 select-none font-sans">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/30 flex items-center justify-center text-accent">
-          <GraduationCap className="w-5 h-5 text-accent" />
+        <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/60 flex items-center justify-center text-accent">
+          <GraduationCap className="w-6 h-6 text-accent" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold font-handwriting text-foreground notebook-underline">Active Recall Quiz Sheet</h1>
-          <p className="text-xs font-mono text-muted-foreground">Select a note topic from your vault to generate a challenge</p>
+          <h1 className="text-2xl font-bold font-sans text-foreground">Active Recall Quiz Sheet</h1>
+          <p className="text-sm font-sans tracking-tight text-muted-foreground">Select a note topic from your vault to generate a challenge</p>
         </div>
       </div>
 
       <div className="space-y-3 bg-card p-5 rounded-2xl border border-border">
-        <label className="text-xs font-handwriting text-foreground text-base notebook-underline block">
+        <label className="font-sans text-foreground text-base underline underline-offset-4 block">
           Select Vault Topic :-
         </label>
         <select
           value={selectedNotePath}
           onChange={(e) => setSelectedNotePath(e.target.value)}
-          className="w-full h-10 px-3 rounded-xl border border-border bg-muted text-xs font-mono text-foreground focus:outline-none focus:border-primary cursor-pointer"
+          className="w-full h-10 px-3 rounded-xl border border-border bg-muted text-sm font-mono text-foreground focus:outline-none focus:border-primary cursor-pointer"
         >
           <option value="" className="bg-card text-foreground">-- Select a Topic --</option>
           {uniqueNotesFiles.map((file) => {
@@ -68,23 +68,23 @@ export default function QuizWelcome({
           <Button
             onClick={onStart}
             disabled={isGenerating || !selectedNotePath}
-            className="bg-accent hover:bg-accent/90 text-white font-mono font-bold text-xs h-10 px-4 flex items-center justify-center gap-2 cursor-pointer w-full rounded-xl shadow-lg"
+            className="bg-accent hover:bg-accent/90 text-white font-mono font-bold text-sm h-10 px-4 flex items-center justify-center gap-2 cursor-pointer w-full rounded-xl shadow-lg"
           >
             <Sparkles className="w-4 h-4" />
             {isGenerating ? "Generating challenge..." : "Generate Quiz Exercise Sheet"}
           </Button>
 
           <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t border-border/60"></div>
-            <span className="flex-shrink mx-2 text-[10px] font-mono text-muted-foreground uppercase">or</span>
-            <div className="flex-grow border-t border-border/60"></div>
+            <div className="grow border-t border-border/60"></div>
+            <span className="shrink mx-2 text-[10px] font-mono text-muted-foreground uppercase">or</span>
+            <div className="grow border-t border-border/60"></div>
           </div>
 
           <Button
             onClick={onDemo}
             disabled={isGenerating}
             variant="outline"
-            className="w-full border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary font-mono font-bold text-xs h-10 px-4 flex items-center justify-center gap-2 cursor-pointer rounded-xl transition-all"
+            className="w-full border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary font-mono font-bold text-sm h-10 px-4 flex items-center justify-center gap-2 cursor-pointer rounded-xl transition-all"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             Try Demo Challenge (Mock Response)

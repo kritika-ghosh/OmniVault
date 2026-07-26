@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { API_PATHS } from "@/lib/api-paths";
-import { Save, Edit2, Eye, Check, Sparkles, Link2, HelpCircle } from "lucide-react";
+import { Save, Edit2, Eye, Check, Sparkles, Link2, HelpCircle, ChevronDown, Settings, LucideAtom } from "lucide-react";
 import { mockNotesFiles } from "@/lib/data";
 import { normalizeTerm } from "@/lib/utils";
 
@@ -68,15 +68,78 @@ function preprocessWikiLinks(text: string): string {
   return processed;
 }
 
+function getCaretCoordinates(element: HTMLTextAreaElement, position: number) {
+  if (typeof window === "undefined") return { top: 0, left: 0 };
+  const style = window.getComputedStyle(element);
+
+  const div = document.createElement("div");
+  document.body.appendChild(div);
+
+  const styleProperties = [
+    "direction",
+    "boxSizing",
+    "width",
+    "height",
+    "overflowX",
+    "overflowY",
+    "borderWidth",
+    "borderStyle",
+    "paddingTop",
+    "paddingRight",
+    "paddingBottom",
+    "paddingLeft",
+    "fontStyle",
+    "fontVariant",
+    "fontWeight",
+    "fontStretch",
+    "fontSize",
+    "fontSizeAdjust",
+    "lineHeight",
+    "fontFamily",
+    "textAlign",
+    "textTransform",
+    "textIndent",
+    "textDecoration",
+    "letterSpacing",
+    "wordSpacing",
+    "tabSize",
+    "MozTabSize"
+  ];
+
+  styleProperties.forEach((prop) => {
+    // @ts-ignore
+    div.style[prop] = style[prop];
+  });
+
+  div.style.position = "absolute";
+  div.style.visibility = "hidden";
+  div.style.whiteSpace = "pre-wrap";
+  div.style.wordBreak = "break-word";
+
+  const content = element.value.substring(0, position);
+  div.textContent = content;
+
+  const span = document.createElement("span");
+  span.textContent = ".";
+  div.appendChild(span);
+
+  const left = span.offsetLeft - element.scrollLeft;
+  const top = span.offsetTop - element.scrollTop;
+
+  document.body.removeChild(div);
+
+  return { top, left };
+}
+
 interface NoteEditorProps {
   noteName: string;
   autoSynthesize?: boolean;
 }
 
 export default function NoteEditor({ noteName, autoSynthesize }: NoteEditorProps) {
-  const { notesFiles, saveNote, statusMessage, apiHost, scanResult, projectContext, projectHandle, setQuizSelectedNotePath } = useWorkspace();
+  const { notesFiles, saveNote, statusMessage, apiHost, scanResult, projectContext, projectHandle, editorFontStyle, editorFontSize } = useWorkspace();
   const [content, setContent] = useState("");
-  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
+  const [activeTab, setActiveTab] = useState<"edit" | "preview">("preview");
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSavedIndicator, setShowSavedIndicator] = useState(false);
@@ -85,11 +148,13 @@ export default function NoteEditor({ noteName, autoSynthesize }: NoteEditorProps
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestionQuery, setSuggestionQuery] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [suggestionCoords, setSuggestionCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   // RAG Connections Sidebar States
   const [showRagPanel, setShowRagPanel] = useState(false);
   const [ragMatches, setRagMatches] = useState<any[]>([]);
   const [isLoadingRag, setIsLoadingRag] = useState(false);
+  const [isAiMenuOpen, setIsAiMenuOpen] = useState(false);
 
   const filename = noteName.endsWith(".md") ? noteName : `${noteName}.md`;
 
@@ -163,22 +228,39 @@ export default function NoteEditor({ noteName, autoSynthesize }: NoteEditorProps
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Find the correct filename/path if the file already exists (e.g. to preserve folders/slugs)
-    const cleanTarget = normalizeTerm(noteName);
-    const existingFile = notesFiles.find((file) => {
-      const fileBase = file.path.split("/").pop() || "";
-      return normalizeTerm(fileBase.replace(/\.md$/i, "")) === cleanTarget;
-    });
-    const targetFilename = existingFile ? existingFile.path : (noteName.endsWith(".md") ? noteName : `${noteName}.md`);
-    await saveNote(targetFilename, content);
-    setIsSaving(false);
-    setShowSavedIndicator(true);
-    setTimeout(() => setShowSavedIndicator(false), 2000);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("show-toast", { detail: { id: "save-note", message: "Saving note to vault...", type: "loading" } }));
+    }
+    
+    try {
+      const cleanTarget = normalizeTerm(noteName);
+      const existingFile = notesFiles.find((file) => {
+        const fileBase = file.path.split("/").pop() || "";
+        return normalizeTerm(fileBase.replace(/\.md$/i, "")) === cleanTarget;
+      });
+      const targetFilename = existingFile ? existingFile.path : (noteName.endsWith(".md") ? noteName : `${noteName}.md`);
+      await saveNote(targetFilename, content);
+      setIsSaving(false);
+      setShowSavedIndicator(true);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("show-toast", { detail: { id: "save-note", message: `Note "${noteName}" saved successfully!`, type: "success" } }));
+      }
+      setTimeout(() => setShowSavedIndicator(false), 2000);
+    } catch (err: any) {
+      setIsSaving(false);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("show-toast", { detail: { id: "save-note", message: `Failed to save note: ${err.message || err}`, type: "error" } }));
+      }
+    }
   };
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     setActiveTab("edit");
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("show-toast", { detail: { id: "synthesis", message: `AI Synthesizing content for "${noteName}"...`, type: "loading" } }));
+    }
+    
     try {
       const existingVaultTerms = Array.from(
         new Set([
@@ -244,8 +326,14 @@ export default function NoteEditor({ noteName, autoSynthesize }: NoteEditorProps
         }
       }
       setIsGenerating(false);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("show-toast", { detail: { id: "synthesis", message: `AI Synthesis for "${noteName}" completed!`, type: "success" } }));
+      }
     } catch (err: any) {
       console.warn("FastAPI server offline. Falling back to local offline note generation.", err);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("show-toast", { detail: { id: "synthesis", message: `Server offline. Using local synthesis fallback...`, type: "loading" } }));
+      }
       // Seamless Offline local fallback simulation
       setContent("");
       
@@ -289,6 +377,9 @@ console.log("Initialized ${noteName}");
           setContent(fallbackNote);
           clearInterval(interval);
           setIsGenerating(false);
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("show-toast", { detail: { id: "synthesis", message: `Local synthesis fallback completed!`, type: "success" } }));
+          }
         }
       }, 15);
     }
@@ -330,10 +421,30 @@ console.log("Initialized ${noteName}");
       if (!query.includes("]]") && !query.includes("\n")) {
         setSuggestionQuery(query);
         setShowSuggestions(true);
+
+        const textarea = e.target;
+        setTimeout(() => {
+          const coords = getCaretCoordinates(textarea, pos);
+          setSuggestionCoords({
+            top: coords.top + 24, // below the text line
+            left: coords.left
+          });
+        }, 0);
         return;
       }
     }
     setShowSuggestions(false);
+  };
+
+  const handleTextareaScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    if (showSuggestions) {
+      const textarea = e.currentTarget;
+      const coords = getCaretCoordinates(textarea, cursorPosition);
+      setSuggestionCoords({
+        top: coords.top + 24,
+        left: coords.left
+      });
+    }
   };
 
   const insertSuggestion = (term: string) => {
@@ -369,8 +480,19 @@ console.log("Initialized ${noteName}");
   return (
     <div className="w-full h-full flex flex-col bg-graph-paper text-foreground overflow-hidden">
       {/* Editor Controls Bar */}
-      <div className="flex flex-row items-center justify-between gap-4 p-4 border-b border-white/15 shrink-0 bg-[#161619]/90 select-none">
-        <div className="flex items-center bg-[#222226] p-1 rounded-xl border border-white/15 font-mono">
+      <div className="flex flex-row items-center justify-between gap-4 p-4 border-b border-white/15 shrink-0 bg-muted/50 select-none">
+        <div className="flex items-center p-1 rounded-xl border border-white/15 font-mono">
+        <button
+            onClick={() => setActiveTab("preview")}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === "preview"
+                ? "bg-[#6e346b] text-white font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            Preview
+          </button>
           <button
             onClick={() => setActiveTab("edit")}
             className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -382,66 +504,106 @@ console.log("Initialized ${noteName}");
             <Edit2 className="w-3.5 h-3.5" />
             Edit
           </button>
-          <button
-            onClick={() => setActiveTab("preview")}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === "preview"
-                ? "bg-[#6e346b] text-white font-bold"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Eye className="w-3.5 h-3.5" />
-            Preview
-          </button>
+          
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative">
           {showSavedIndicator && (
-            <span className="text-xs text-primary font-mono font-bold flex items-center gap-1">
+            <span className="text-xs text-primary font-mono font-bold flex items-center gap-1 mr-2">
               <Check className="w-3.5 h-3.5" /> Saved locally
             </span>
           )}
-          <Button
-            onClick={() => setShowRagPanel(!showRagPanel)}
-            className={`text-xs font-mono font-bold cursor-pointer h-8 px-3 flex items-center gap-1.5 shadow-md border ${
-              showRagPanel 
-                ? "bg-accent/20 text-accent border-accent/40" 
-                : "bg-card hover:bg-white/10 text-muted-foreground border-white/15"
-            }`}
-            title="Toggle Live RAG Vector Connections"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-accent" />
-            RAG Connections
-          </Button>
+
+          {/* Settings Trigger Button */}
           <Button
             onClick={() => {
-              const filename = noteName.endsWith(".md") ? noteName : `${noteName}.md`;
-              setQuizSelectedNotePath(filename);
               if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent("navigate-view", { detail: "quiz" }));
+                window.dispatchEvent(new CustomEvent("open-settings-modal"));
               }
             }}
-            className="bg-card hover:bg-white/10 text-primary border border-primary/30 text-xs font-mono font-bold cursor-pointer h-8 px-3 flex items-center gap-1.5 shadow-md"
-            title="Quiz Me on this Note"
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground bg-card border border-white/15 hover:bg-white/10 rounded-lg cursor-pointer flex items-center justify-center"
+            title="Open Editor Typography Settings"
           >
-            <HelpCircle className="w-3.5 h-3.5 text-primary" />
-            Quiz Me
+            <Settings className="w-4 h-4" />
           </Button>
-          <Button
-            onClick={handleGenerate}
-            disabled={isGenerating || isSaving}
-            className="bg-accent hover:bg-accent/90 disabled:bg-muted text-white text-xs font-mono font-bold cursor-pointer h-8 px-3.5 flex items-center gap-1.5 shadow-md"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            {isGenerating ? "Synthesizing..." : "AI Synthesize"}
-          </Button>
+
+          {/* AI Tools Dropdown Menu */}
+          <div className="relative">
+            <Button
+              onClick={() => setIsAiMenuOpen(!isAiMenuOpen)}
+              className={`text-xs font-mono font-bold cursor-pointer h-8 px-3 flex items-center gap-1.5 shadow-md border ${
+                isAiMenuOpen || showRagPanel
+                  ? "bg-accent/20 text-accent border-accent/40"
+                  : "bg-card hover:bg-white/10 text-muted-foreground border-white/15"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-accent" />
+              <span>AI Tools</span>
+              <ChevronDown className="w-3 h-3 text-muted-foreground" />
+            </Button>
+
+            {isAiMenuOpen && (
+              <>
+                {/* Backdrop overlay to close when clicking outside */}
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setIsAiMenuOpen(false)}
+                />
+                
+                <div className="absolute right-0 mt-1.5 w-52 bg-card border border-border shadow-2xl rounded-xl py-1.5 z-20 flex flex-col font-mono text-sm animate-in fade-in slide-in-from-top-2 duration-150">
+                  <button
+                    onClick={() => {
+                      handleGenerate();
+                      setIsAiMenuOpen(false);
+                    }}
+                    disabled={isGenerating || isSaving}
+                    className="w-full px-3 py-2 text-left hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-accent shrink-0" />
+                    <span>{isGenerating ? "Synthesizing..." : "AI Synthesize"}</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      setShowRagPanel(!showRagPanel);
+                      setIsAiMenuOpen(false);
+                    }}
+                    className={`w-full px-3 py-2 text-left hover:bg-muted transition-colors flex items-center gap-2 cursor-pointer ${
+                      showRagPanel ? "text-accent font-bold" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <LucideAtom className="w-3.5 h-3.5 text-accent shrink-0" />
+                    <span>RAG Connections</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const filename = noteName.endsWith(".md") ? noteName : `${noteName}.md`;
+                      if (typeof window !== "undefined") {
+                        window.dispatchEvent(new CustomEvent("open-new-quiz", { detail: filename }));
+                      }
+                      setIsAiMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-2 text-left hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 cursor-pointer"
+                  >
+                    <HelpCircle className="w-3.5 h-3.5 text-accent shrink-0" />
+                    <span>Quiz Me</span>
+                  </button>
+
+                  
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Primary Action Button: Save */}
           <Button
             onClick={handleSave}
             disabled={isSaving || isGenerating}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-mono font-bold cursor-pointer h-8 px-3.5 flex items-center gap-1.5 shadow-md"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-mono font-bold cursor-pointer h-8 px-3.5 flex items-center gap-1.5 shadow-md shrink-0"
           >
             <Save className="w-3.5 h-3.5" />
-            {isSaving ? "Saving..." : "Save Note"}
+            <span>{isSaving ? "Saving..." : "Save"}</span>
           </Button>
         </div>
       </div>
@@ -457,12 +619,19 @@ console.log("Initialized ${noteName}");
                 value={content}
                 onChange={handleTextareaChange}
                 onKeyDown={handleKeyDown}
-                className="w-full h-full p-6 bg-graph-paper text-zinc-100 font-handwriting text-xl focus:outline-none resize-none leading-relaxed overflow-y-auto"
+                onScroll={handleTextareaScroll}
+                className={`w-full h-full p-6 bg-graph-paper text-foreground focus:outline-none resize-none leading-relaxed overflow-y-auto ${editorFontStyle} ${editorFontSize}`}
                 placeholder="Type your markdown here... Use [[ to link concepts."
               />
               {/* Auto-complete suggestions */}
               {showSuggestions && filteredSuggestions.length > 0 && (
-                <div className="absolute left-6 bottom-6 max-h-48 w-64 overflow-y-auto bg-card text-foreground border border-border rounded-xl shadow-2xl z-50 flex flex-col p-2 font-mono">
+                <div 
+                  style={{
+                    left: `${typeof window !== "undefined" ? Math.max(16, Math.min(suggestionCoords.left, (document.getElementById("note-textarea")?.clientWidth || 800) - 270)) : suggestionCoords.left}px`,
+                    top: `${suggestionCoords.top}px`
+                  }}
+                  className="absolute max-h-48 w-64 overflow-y-auto bg-card text-foreground border border-border rounded-xl shadow-2xl z-50 flex flex-col p-2 font-mono"
+                >
                   <span className="text-[10px] font-bold text-primary uppercase px-2 py-1 tracking-wider border-b border-border mb-1">
                     Link Suggestions
                   </span>
@@ -482,31 +651,38 @@ console.log("Initialized ${noteName}");
             <div className="flex-1 p-8 overflow-y-auto bg-graph-paper">
               {(() => {
                 const { metadata, markdownContent } = parseMarkdown(content);
+                const displayMetadata = metadata || {
+                  title: noteName,
+                  tags: "documented, general",
+                  status: "documented",
+                  confidence_level: "1.00",
+                  created: new Date().toISOString().split("T")[0]
+                };
 
                 return (
-                  <div className="max-w-4xl mx-auto space-y-6">
+                  <div className="max-w-4xl mx-auto space-y-4">
                     {/* Render YAML Frontmatter as a stylized Obsidian card */}
-                    {metadata && (
-                      <div className="p-4 rounded-2xl bg-card/80 border border-white/15 font-mono text-xs space-y-2 shadow-inner select-text">
-                        <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
-                          <span className="text-primary font-bold uppercase tracking-wider">Note Metadata</span>
-                          {metadata.status && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] uppercase font-bold bg-primary/20 text-primary border border-primary/30">
-                              {metadata.status}
+                    {displayMetadata && (
+                      <div className="px-4 py-2 rounded-2xl bg-card/80 border border-white/15 font-mono text-base space-y-1.5 shadow-inner select-text">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1.5">
+                          <span className="text-primary font-bold uppercase tracking-wider text-base">Note Metadata</span>
+                          {displayMetadata.status && (
+                            <span className="px-2 py-0.5 rounded-full text-xs uppercase font-bold bg-primary/20 text-primary border border-primary/30">
+                              {displayMetadata.status}
                             </span>
                           )}
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-muted-foreground">
-                          {metadata.tags && <div><span className="text-foreground/75">Tags:</span> {metadata.tags}</div>}
-                          {metadata.confidence_level && <div><span className="text-foreground/75">Confidence:</span> {(parseFloat(metadata.confidence_level) * 100).toFixed(0)}%</div>}
-                          {metadata.created && <div><span className="text-foreground/75">Created:</span> {metadata.created}</div>}
-                          {metadata.last_reviewed && <div><span className="text-foreground/75">Last Reviewed:</span> {metadata.last_reviewed}</div>}
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-muted-foreground text-base">
+                          {displayMetadata.tags && <div><span className="text-foreground/75 font-semibold">Tags:</span> {displayMetadata.tags}</div>}
+                          {displayMetadata.confidence_level && <div><span className="text-foreground/75 font-semibold">Confidence:</span> {(parseFloat(displayMetadata.confidence_level) * 100).toFixed(0)}%</div>}
+                          {displayMetadata.created && <div><span className="text-foreground/75 font-semibold">Created:</span> {displayMetadata.created}</div>}
+                          {displayMetadata.last_reviewed && <div><span className="text-foreground/75 font-semibold">Last Reviewed:</span> {displayMetadata.last_reviewed}</div>}
                         </div>
                       </div>
                     )}
 
                     {/* Markdown Body */}
-                    <div className="prose prose-invert max-w-none prose-headings:font-mono prose-headings:text-foreground prose-p:font-sans prose-p:text-foreground/90 prose-pre:bg-muted prose-pre:border prose-pre:border-border select-text">
+                    <div className={`prose prose-invert max-w-none prose-headings:font-mono prose-headings:text-foreground prose-p:text-foreground/90 prose-pre:bg-muted prose-pre:border prose-pre:border-border select-text`}>
                       <ReactMarkdown
                         components={{
                           a: ({ href, children, ...props }) => {
@@ -525,8 +701,34 @@ console.log("Initialized ${noteName}");
                                   href="#"
                                   onClick={async (e) => {
                                     e.preventDefault();
-                                    await handleSave();
-                                    window.dispatchEvent(new CustomEvent("open-note", { detail: target }));
+                                    if (noteExists) {
+                                      window.dispatchEvent(new CustomEvent("open-note", { detail: target }));
+                                    } else {
+                                      const filename = target.endsWith(".md") ? target : `${target}.md`;
+                                      const defaultContent = `---\ntitle: ${target}\ntags: [tech, gap]\ncreated: ${new Date().toISOString().split("T")[0]}\nconfidence_level: 0.20\n---\n\n# ${target} :-\n\nThis note was synthesized for the knowledge gap **${target}**.\n\n## Overview :-\nAdd overview notes here...\n\n## Code Example :-\n\`\`\`javascript\n// Reference code...\n\`\`\`\n`;
+                                      
+                                      if (typeof window !== "undefined") {
+                                        window.dispatchEvent(new CustomEvent("show-toast", { 
+                                          detail: { id: `create-${targetNormalized}`, message: `Creating note "${target}"...`, type: "loading" } 
+                                        }));
+                                      }
+                                      
+                                      try {
+                                        await saveNote(filename, defaultContent);
+                                        if (typeof window !== "undefined") {
+                                          window.dispatchEvent(new CustomEvent("show-toast", { 
+                                            detail: { id: `create-${targetNormalized}`, message: `Note "${target}" created!`, type: "success" } 
+                                          }));
+                                          window.dispatchEvent(new CustomEvent("open-note", { detail: target }));
+                                        }
+                                      } catch (err: any) {
+                                        if (typeof window !== "undefined") {
+                                          window.dispatchEvent(new CustomEvent("show-toast", { 
+                                            detail: { id: `create-${targetNormalized}`, message: `Failed to create note: ${err.message || err}`, type: "error" } 
+                                          }));
+                                        }
+                                      }
+                                    }
                                   }}
                                   className={
                                     noteExists

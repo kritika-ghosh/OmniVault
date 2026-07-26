@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { Compass, Layers, Zap } from "lucide-react";
+import { Compass, Layers, Zap, ZoomIn, ZoomOut } from "lucide-react";
 import { isHighValueConcept } from "@/lib/file-directory";
 
 // Dynamically import force graphs to prevent Next.js SSR WebGL/Three.js crashes
@@ -184,16 +184,43 @@ export default function NodeGraph() {
     return () => clearTimeout(timer);
   }, [is3D, graphData]);
 
+  // Initial zoom on load
+  useEffect(() => {
+    if (graphData.nodes.length > 0) {
+      setTimeout(() => {
+        if (!is3D && fgRef2D.current) {
+          fgRef2D.current.zoomToFit(800, 100);
+        } else if (is3D && fgRef3D.current) {
+          fgRef3D.current.cameraPosition({ z: 150 }, null, 800);
+        }
+      }, 500);
+    }
+  }, [graphData, is3D]);
+
+  const handleZoomIn = () => {
+    if (!is3D && fgRef2D.current) {
+      const currentZoom = fgRef2D.current.zoom();
+      fgRef2D.current.zoom(currentZoom * 1.5, 400);
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (!is3D && fgRef2D.current) {
+      const currentZoom = fgRef2D.current.zoom();
+      fgRef2D.current.zoom(currentZoom / 1.5, 400);
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col bg-graph-paper text-foreground overflow-hidden">
       {/* Graph Toolbar Controls */}
-      <div className="flex flex-row items-center justify-between gap-4 p-4 border-b border-border shrink-0 bg-muted/95 select-none">
+      <div className="flex flex-row items-center justify-between gap-4 p-4 border-b border-border shrink-0 bg-muted/50 select-none">
         <div className="flex flex-col gap-0.5">
-          <h2 className="text-base font-bold flex items-center gap-2 text-foreground font-handwriting text-lg notebook-underline">
+          <h2 className="font-bold flex items-center gap-2 text-foreground font-sans text-xl">
             <Compass className="w-4 h-4 text-accent" />
-            Knowledge Graph Explorer :-
+            Knowledge Graph Explorer
           </h2>
-          <span className="text-[10px] font-mono text-muted-foreground">
+          <span className="text-xs font-mono text-muted-foreground">
             {graphData.nodes.length} nodes · {graphData.links.length} relationships
           </span>
         </div>
@@ -201,11 +228,11 @@ export default function NodeGraph() {
         <div className="flex items-center gap-3">
           {Object.keys(vaultSessions).length > 0 && (
             <div className="flex items-center gap-1.5 bg-card px-2.5 py-1 rounded-xl border border-border">
-              <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Vault:</span>
+              <span className="text-sm font-mono text-muted-foreground uppercase tracking-widest">Vault:</span>
               <select
                 value={activeVaultPath}
                 onChange={(e) => setActiveVaultPath(e.target.value)}
-                className="bg-transparent text-xs font-mono text-foreground focus:outline-none cursor-pointer"
+                className="bg-transparent text-sm font-mono text-foreground focus:outline-none cursor-pointer"
               >
                 {Object.keys(vaultSessions).map((path) => {
                   const label = path.split(/[/\\]/).pop() || path;
@@ -243,6 +270,23 @@ export default function NodeGraph() {
               3D Graph
             </button>
           </div>
+          <div className="flex items-center bg-card p-1 rounded-xl border border-border font-mono">
+            <button
+              onClick={handleZoomIn}
+              title="Zoom In"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            <div className="w-[1px] h-4 bg-border mx-1" />
+            <button
+              onClick={handleZoomOut}
+              title="Zoom Out"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -270,7 +314,7 @@ export default function NodeGraph() {
             nodeLabel={(node: any) => `${node.name} (${node.isGap ? "Gap Warning" : "Documented"})`}
             linkWidth={1.5}
             linkColor={() => "rgba(158, 176, 210, 0.4)"}
-            linkDirectionalParticles={3}
+            linkDirectionalParticles={0}
             linkDirectionalParticleWidth={2}
             linkDirectionalParticleSpeed={0.006}
           />
@@ -283,9 +327,9 @@ export default function NodeGraph() {
             backgroundColor="rgba(0,0,0,0)"
             linkWidth={1.5}
             linkColor={() => "rgba(158, 176, 210, 0.4)"}
-            linkDirectionalParticles={2}
+            linkDirectionalParticles={1}
             linkDirectionalParticleWidth={1.5}
-            linkDirectionalParticleSpeed={0.005}
+            linkDirectionalParticleSpeed={1}
             nodeCanvasObject={(node: any, ctx: any, globalScale: number) => {
               const label = node.name;
               const fontSize = Math.max(3, 11 / globalScale);

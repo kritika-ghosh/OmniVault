@@ -71,18 +71,7 @@ interface WorkspaceContextProps {
   resetWorkspace: () => void;
   loadMockData: () => void;
   saveNote: (filename: string, content: string) => Promise<void>;
-  quizSelectedNotePath: string;
-  setQuizSelectedNotePath: (path: string) => void;
-  currentQuiz: any | null;
-  setCurrentQuiz: (quiz: any | null) => void;
-  isGeneratingQuiz: boolean;
-  setIsGeneratingQuiz: (g: boolean) => void;
-  isEvaluatingQuiz: boolean;
-  setIsEvaluatingQuiz: (e: boolean) => void;
-  quizUserCode: string;
-  setQuizUserCode: (code: string) => void;
-  quizEvaluation: any | null;
-  setQuizEvaluation: (evalObj: any | null) => void;
+
   assignedNoteTask: { topic: string; missingConcepts: string[]; reason: string } | null;
   setAssignedNoteTask: (task: { topic: string; missingConcepts: string[]; reason: string } | null) => void;
   deleteNote: (filename: string) => Promise<void>;
@@ -93,6 +82,10 @@ interface WorkspaceContextProps {
   activeVaultPath: string;
   setActiveVaultPath: (path: string) => void;
   deleteVaultSession: (path: string) => void;
+  editorFontStyle: string;
+  setEditorFontStyle: (style: string) => void;
+  editorFontSize: string;
+  setEditorFontSize: (size: string) => void;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextProps | undefined>(undefined);
@@ -111,13 +104,6 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   // State for assigned note tasks from quiz failures
   const [assignedNoteTask, setAssignedNoteTask] = useState<{ topic: string; missingConcepts: string[]; reason: string } | null>(null);
 
-  // Shared Quiz states
-  const [quizSelectedNotePath, setQuizSelectedNotePath] = useState("");
-  const [currentQuiz, setCurrentQuiz] = useState<any | null>(null);
-  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
-  const [isEvaluatingQuiz, setIsEvaluatingQuiz] = useState(false);
-  const [quizUserCode, setQuizUserCode] = useState("");
-  const [quizEvaluation, setQuizEvaluation] = useState<any | null>(null);
 
   // Vaults history list
   const [vaults, setVaults] = useState<string[]>([]);
@@ -126,6 +112,28 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [activeVaultPath, setActiveVaultPath] = useState<string>("");
 
   const isHydrated = useRef(false);
+
+  const [editorFontStyle, setEditorFontStyle] = useState("font-handwriting");
+  const [editorFontSize, setEditorFontSize] = useState("text-lg");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedStyle = localStorage.getItem("omnivault_editor_font_style");
+      const savedSize = localStorage.getItem("omnivault_editor_font_size");
+      if (savedStyle) setEditorFontStyle(savedStyle);
+      if (savedSize) setEditorFontSize(savedSize);
+    }
+  }, []);
+
+  const changeEditorFontStyle = (style: string) => {
+    setEditorFontStyle(style);
+    localStorage.setItem("omnivault_editor_font_style", style);
+  };
+
+  const changeEditorFontSize = (size: string) => {
+    setEditorFontSize(size);
+    localStorage.setItem("omnivault_editor_font_size", size);
+  };
 
   // Hydrate state from sessionStorage (Session-only: closing tab/browser forgets connected vaults)
   useEffect(() => {
@@ -768,18 +776,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         resetWorkspace,
         loadMockData,
         saveNote,
-        quizSelectedNotePath,
-        setQuizSelectedNotePath,
-        currentQuiz,
-        setCurrentQuiz,
-        isGeneratingQuiz,
-        setIsGeneratingQuiz,
-        isEvaluatingQuiz,
-        setIsEvaluatingQuiz,
-        quizUserCode,
-        setQuizUserCode,
-        quizEvaluation,
-        setQuizEvaluation,
+
         assignedNoteTask,
         setAssignedNoteTask,
         deleteNote,
@@ -790,6 +787,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         activeVaultPath,
         setActiveVaultPath,
         deleteVaultSession,
+        editorFontStyle,
+        setEditorFontStyle: changeEditorFontStyle,
+        editorFontSize,
+        setEditorFontSize: changeEditorFontSize,
       }}
     >
       {children}

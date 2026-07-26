@@ -4,7 +4,6 @@ import NewPage from "@/components/workspace/new-page";
 import NodeGraph from "@/components/graph/node-graph";
 import Quiz from "@/components/quiz";
 import NoteEditor from "@/components/editor/note-editor";
-import QuizEditor from "@/components/quiz/quiz-editor";
 import MutatedCompanion from "@/components/companion/mutated-companion";
 import { useEffect, useState, useCallback } from "react";
 import { DockviewReact, DockviewReadyEvent, DockviewApi, IDockviewPanelProps } from "dockview-react";
@@ -29,14 +28,9 @@ const components = {
       <NodeGraph />
     </div>
   ),
-  quiz: (props: IDockviewPanelProps) => (
+  quiz: (props: IDockviewPanelProps<{ targetNotePath?: string }>) => (
     <div className="w-full h-full overflow-y-auto font-sans">
-      <Quiz />
-    </div>
-  ),
-  "quiz-editor": (props: IDockviewPanelProps) => (
-    <div className="w-full h-full overflow-y-auto">
-      <QuizEditor />
+      <Quiz params={props.params} />
     </div>
   ),
   "note-editor": (props: IDockviewPanelProps<{ noteName: string; autoSynthesize?: boolean }>) => (
@@ -136,29 +130,21 @@ export default function WorkspaceIDE() {
       window.dispatchEvent(new CustomEvent("active-view-changed", { detail: panelId }));
     };
 
-    const handleOpenQuizEditor = () => {
-      const panelId = "quiz-editor";
-      const existingPanel = api.getPanel(panelId);
-      if (existingPanel) {
-        existingPanel.focus();
-      } else {
-        api.addPanel({
-          id: panelId,
-          component: "quiz-editor",
-          title: "Quiz Answer Terminal",
-          position: {
-            referencePanel: "quiz",
-            direction: "right",
-          },
-        });
-      }
-    };
+    const handleOpenNewQuiz = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const targetNotePath = typeof detail === "string" ? detail : detail?.path;
+      const noteName = targetNotePath ? targetNotePath.split(/[/\\]/).pop()?.replace(/\.md$/i, "") : "New";
 
-    const handleCloseQuizEditor = () => {
-      const panel = api.getPanel("quiz-editor");
-      if (panel) {
-        api.removePanel(panel);
-      }
+      const panelId = `quiz-${Date.now()}`;
+      api.addPanel({
+        id: panelId,
+        component: "quiz",
+        title: `Quiz: ${noteName}`,
+        params: {
+          targetNotePath,
+        },
+      });
+      window.dispatchEvent(new CustomEvent("active-view-changed", { detail: panelId }));
     };
 
     const handleOpenScanDashboard = (e: Event) => {
@@ -197,15 +183,13 @@ export default function WorkspaceIDE() {
 
     window.addEventListener("navigate-view", handleNavigate);
     window.addEventListener("open-note", handleOpenNote);
-    window.addEventListener("open-quiz-editor", handleOpenQuizEditor);
-    window.addEventListener("close-quiz-editor", handleCloseQuizEditor);
+    window.addEventListener("open-new-quiz", handleOpenNewQuiz);
     window.addEventListener("open-scan-dashboard", handleOpenScanDashboard);
     window.addEventListener("open-project-analyzer", handleOpenProjectAnalyzer);
     return () => {
       window.removeEventListener("navigate-view", handleNavigate);
       window.removeEventListener("open-note", handleOpenNote);
-      window.removeEventListener("open-quiz-editor", handleOpenQuizEditor);
-      window.removeEventListener("close-quiz-editor", handleCloseQuizEditor);
+      window.removeEventListener("open-new-quiz", handleOpenNewQuiz);
       window.removeEventListener("open-scan-dashboard", handleOpenScanDashboard);
       window.removeEventListener("open-project-analyzer", handleOpenProjectAnalyzer);
       activePanelListener.dispose();
