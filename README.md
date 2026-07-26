@@ -105,32 +105,25 @@ OmniVault is driven by three specialized AI agents working together:
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    actor User as Developer
-    participant AG1 as Agent 1 (SmartGapDetector)
-    participant AG2 as Agent 2 (Synthesizer & Crawler)
-    participant AG3 as Agent 3 (ActiveRecallJudge)
-    participant Chroma as ChromaDB Vector Store
-    participant SandboxRuntime as Execution Sandbox
+    actor Dev as Developer
+    participant AG1 as Agent 1 (Gap Detector)
+    participant AG2 as Agent 2 (Synthesizer)
+    participant AG3 as Agent 3 (Recall Judge)
+    participant VectorStore as Vector Store (ChromaDB)
+    participant Sandbox as Execution Sandbox
 
-    User->>AG1: Initiate Workspace Scan
-    AG1->>AG1: Parse AST Imports & Dependencies
-    AG1->>Chroma: Query Existing Vault Embeddings
-    AG1-->>User: Return Knowledge Gaps Report
+    Dev->>AG1: 1. Initiate Workspace Scan
+    AG1->>VectorStore: 2. Query Notes Vault Embeddings
+    AG1-->>Dev: 3. Return Knowledge Gaps Report
 
-    User->>AG2: Click Fill Gap or Open Note
-    AG2->>AG2: Crawl Codebase for Symbol Context
-    AG2->>Chroma: Fetch Semantic RAG Context
-    AG2-->>User: Stream SSE Synthesis Chunk by Chunk
+    Dev->>AG2: 4. Click Fill Gap or Open Note
+    AG2->>VectorStore: 5. Fetch RAG Context & Crawl Code
+    AG2-->>Dev: 6. Stream SSE Synthesis Token Stream
 
-    User->>AG3: Submit Quiz Code Solution
-    AG3->>SandboxRuntime: Execute User Code
-    alt Execution Missing Package
-        SandboxRuntime-->>AG3: Missing Module Exception
-        AG3->>AG3: Flag is_missing_module = True
-    end
-    AG3->>AG3: Evaluate Socratic Logic & Align Test Cases
-    AG3-->>User: Return Score, Feedback Hint & Sandbox Results
+    Dev->>AG3: 7. Submit Quiz Code Solution
+    AG3->>Sandbox: 8. Execute Code Subprocess
+    Sandbox-->>AG3: 9. Execution Output / Missing Module
+    AG3-->>Dev: 10. Return Socratic Feedback & Score
 ```
 
 ### 1. Agent 1: SmartGapDetector (AST & Import Analysis)
