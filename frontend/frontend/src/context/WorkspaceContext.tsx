@@ -61,6 +61,7 @@ interface WorkspaceContextProps {
   setSortedTerms: (terms: string[]) => void;
   notesFiles: FilePayload[];
   setNotesFiles: (files: FilePayload[]) => void;
+  openVault: (customNotesPath?: string, customNotesHandle?: FileSystemDirectoryHandle | null) => Promise<void>;
   executeScan: (
     projectPath?: string,
     notesPath?: string,
@@ -326,6 +327,51 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setActiveVaultPath("mock-notes");
     setStatusMessage("Loaded UI testing mock data.");
   }, []);
+
+  const openVault = useCallback(async (customNotesPath?: string, customNotesHandle?: FileSystemDirectoryHandle | null) => {
+    setIsLoading(true);
+    const activeNotesHandle = customNotesHandle !== undefined ? customNotesHandle : notesHandle;
+    const activeNotesPath = customNotesPath !== undefined ? customNotesPath : (localNotesPath || notesPath || "Local Vault");
+    const targetNotesPath = activeNotesHandle ? activeNotesHandle.name : activeNotesPath;
+
+    if (customNotesHandle) setNotesHandle(customNotesHandle);
+
+    if (targetNotesPath === "mock-notes") {
+      loadMockData();
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      let notes: FilePayload[] = [];
+      if (activeNotesHandle) {
+        setStatusMessage("Reading notes files recursively from local vault...");
+        notes = await readFilesRecursively(activeNotesHandle);
+      } else if (targetNotesPath) {
+        notes = mockNotesFiles;
+      }
+
+      const newSession: VaultSession = {
+        notesPath: targetNotesPath,
+        projectPath: "",
+        scanResult: null,
+        notesFiles: notes,
+        sortedTerms: [],
+      };
+
+      setVaultSessions((prev) => ({
+        ...prev,
+        [targetNotesPath]: newSession,
+      }));
+      setActiveVaultPath(targetNotesPath);
+      setStatusMessage(`Opened notes vault "${targetNotesPath}" (${notes.length} notes loaded). Connect codebase via Code Analyzer to run AI AST Scan.`);
+    } catch (err: any) {
+      console.warn("Failed to open vault:", err);
+      setStatusMessage(`Failed to open vault: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [notesHandle, localNotesPath, notesPath, loadMockData]);
 
   const saveNote = useCallback(async (filename: string, content: string) => {
     const cleanTarget = normalizeTerm(filename.replace(/\.md$/i, ""));
@@ -711,6 +757,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setSortedTerms,
         notesFiles,
         setNotesFiles,
+        openVault,
         executeScan,
         resetWorkspace,
         loadMockData,

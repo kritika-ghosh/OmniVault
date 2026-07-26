@@ -25,6 +25,9 @@ export default function WorkspaceResults({ vaultPath }: WorkspaceResultsProps) {
   const sortedTerms = activeSession ? activeSession.sortedTerms : [];
   const notesFiles = activeSession ? activeSession.notesFiles : [];
 
+  const currentVaultPath = resolvedVaultPath || "Local Vault";
+  const dirName = currentVaultPath.split(/[/\\]/).pop() || currentVaultPath;
+
   const handleReScan = () => {
     if (activeSession) {
       executeScan(activeSession.projectPath, activeSession.notesPath);
@@ -129,30 +132,27 @@ export default function WorkspaceResults({ vaultPath }: WorkspaceResultsProps) {
 
   return (
     <div className="w-full h-full flex flex-col bg-graph-paper text-foreground overflow-hidden">
-      {/* Top action header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b border-border shrink-0 bg-muted/90 backdrop-blur-md">
-        <div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-foreground font-handwriting flex items-center gap-2">
-            Workspace Debt Analysis :-
-          </h2>
-          <p className="text-xs font-mono text-muted-foreground mt-0.5">
-            AST import parsing & documentation gap coverage report
+      {/* Header Bar */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0 bg-[#0c1117] font-mono">
+        <div className="space-y-0.5">
+          <h1 className="text-xl font-bold text-foreground tracking-tight font-handwriting text-2xl">
+            {dirName} Notes Dashboard
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            {scanResult ? `Scanned Vault: ${currentVaultPath}` : `Obsidian Notes Vault: ${currentVaultPath}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
-            onClick={handleReScan}
-            disabled={isLoading}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("open-project-analyzer"));
+              }
+            }}
             className="bg-accent hover:bg-accent/90 text-white font-mono font-bold text-xs cursor-pointer h-9 px-4 flex items-center gap-1.5 shadow-md"
           >
-            {isLoading ? (
-              <>
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                Scanning...
-              </>
-            ) : (
-              "Re-scan Vault"
-            )}
+            <Sparkles className="w-3.5 h-3.5" />
+            {scanResult ? "Re-scan Codebase" : "Connect Project Codebase"}
           </Button>
           <Button
             onClick={resetWorkspace}
@@ -165,18 +165,41 @@ export default function WorkspaceResults({ vaultPath }: WorkspaceResultsProps) {
         </div>
       </div>
 
+      {/* Pure Note-Taking Banner if codebase is not yet scanned */}
+      {!scanResult && (
+        <div className="mx-6 mt-4 p-3.5 rounded-xl bg-primary/10 border border-primary/30 text-xs font-mono text-foreground flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="text-base">📝</span>
+            <div>
+              <span className="font-bold text-primary">Pure Note-Taking Mode Active</span>
+              <p className="text-[11px] text-muted-foreground">Your notes vault is connected. Open any note from the sidebar tree to edit or create notes. Click <strong>Connect Project Codebase</strong> to run AI AST Gap Detection!</p>
+            </div>
+          </div>
+          <Button
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("open-project-analyzer"));
+              }
+            }}
+            className="bg-card hover:bg-muted text-primary border border-primary/40 text-[11px] font-mono font-bold h-8 px-3 shrink-0 cursor-pointer"
+          >
+            Connect Codebase
+          </Button>
+        </div>
+      )}
+
       {/* Stats counter grid - Dark Notebook Cards */}
       <div className="grid grid-cols-3 gap-4 px-6 py-4 border-b border-border shrink-0 bg-[#0d1420]/50">
         <div className="bg-card border border-border p-3.5 rounded-xl text-center">
-          <div className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">Scanned Items</div>
+          <div className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">Vault Markdown Notes</div>
           <div className="text-2xl font-bold text-foreground mt-0.5 font-mono">
-            {scanResult?.total_terms_scanned || items.length}
+            {existingNotes.length}
           </div>
         </div>
-        <div className="bg-accent/10 border border-accent/30 p-3.5 rounded-xl text-center animate-pulse">
+        <div className="bg-accent/10 border border-accent/30 p-3.5 rounded-xl text-center">
           <div className="text-[10px] uppercase font-mono tracking-wider text-accent font-semibold">Gaps Found</div>
           <div className="text-2xl font-bold text-accent mt-0.5 font-mono">
-            {scanResult?.gaps_found || gaps.length}
+            {scanResult ? (scanResult.gaps_found || gaps.length) : "Pending Code Connection"}
           </div>
         </div>
         <div className="bg-primary/10 border border-primary/30 p-3.5 rounded-xl text-center">

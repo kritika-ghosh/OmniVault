@@ -11,31 +11,13 @@ export default function WorkspaceWelcome() {
     isLoading,
     statusMessage,
     setStatusMessage,
-    executeScan,
+    openVault,
     loadMockData,
     vaults,
   } = useWorkspace();
 
-  const [localProjPath, setLocalProjPath] = useState("");
   const [localNotesPath, setLocalNotesPath] = useState("");
-  const [localProjHandle, setLocalProjHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [localNotesHandle, setLocalNotesHandle] = useState<FileSystemDirectoryHandle | null>(null);
-
-  const handleSelectProjectDir = async () => {
-    try {
-      const handle = await window.showDirectoryPicker();
-      setLocalProjHandle(handle);
-      setLocalProjPath(handle.name);
-      setStatusMessage(`Selected project folder: ${handle.name}`);
-    } catch (err: any) {
-      if (err.name === "AbortError") {
-        setStatusMessage("Project folder selection cancelled.");
-      } else {
-        console.error(err);
-        setStatusMessage(`Failed to select project directory: ${err.message}`);
-      }
-    }
-  };
 
   const handleSelectNotesDir = async () => {
     try {
@@ -53,8 +35,8 @@ export default function WorkspaceWelcome() {
     }
   };
 
-  const handleExecuteScan = () => {
-    executeScan(localProjPath, localNotesPath, localProjHandle, localNotesHandle);
+  const handleOpenVault = () => {
+    openVault(localNotesPath, localNotesHandle);
   };
 
   return (
@@ -65,14 +47,14 @@ export default function WorkspaceWelcome() {
         <div className="space-y-3 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-card border border-border text-xs font-mono text-primary shadow-md">
             <BookOpen className="w-3.5 h-3.5" />
-            <span>Graph Paper Vault Notebook</span>
+            <span>Obsidian-Style Markdown Vault</span>
           </div>
 
           <h1 className="text-4xl font-extrabold tracking-tight text-foreground font-handwriting">
-            OmniVault Workspace
+            OmniVault Notebook
           </h1>
           <p className="text-xs font-mono text-muted-foreground">
-            Select your codebase & notes directories to analyze documentation coverage
+            Open your Obsidian Notes Vault to start taking and organizing markdown notes.
           </p>
         </div>
 
@@ -80,7 +62,7 @@ export default function WorkspaceWelcome() {
         <div className="space-y-4 bg-card p-6 rounded-2xl border border-border shadow-xl">
           <div className="flex flex-col gap-3">
             <span className="text-xs font-handwriting text-foreground text-base notebook-underline block">
-              Vault Scan Configuration :-
+              Notes Vault Selection :-
             </span>
             
             <div className="space-y-3">
@@ -89,7 +71,7 @@ export default function WorkspaceWelcome() {
                 <div className="flex items-center justify-between w-full">
                   <div className="flex flex-col min-w-0 pr-4">
                     <span className="text-xs font-bold text-foreground font-mono flex items-center gap-1.5">
-                      <span className="text-primary">↳</span> Notes Vault Directory <span className="text-[10px] text-primary uppercase font-bold">(Required)</span>
+                      <span className="text-primary">↳</span> Obsidian Notes Directory
                     </span>
                   </div>
                   <Button 
@@ -113,33 +95,10 @@ export default function WorkspaceWelcome() {
                 />
               </div>
 
-              {/* Project path row - OPTIONAL */}
-              <div className="flex flex-col gap-2 p-3.5 rounded-xl bg-muted/60 border border-border/60">
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex flex-col min-w-0 pr-4">
-                    <span className="text-xs font-bold text-muted-foreground font-mono flex items-center gap-1.5">
-                      <span className="text-muted-foreground">↳</span> Project Codebase Directory <span className="text-[10px] text-muted-foreground/75 font-normal">(Optional — connect later via Code Analyzer)</span>
-                    </span>
-                  </div>
-                  <Button 
-                    onClick={handleSelectProjectDir}
-                    disabled={isLoading}
-                    className="text-xs bg-card hover:bg-muted text-foreground border border-border shrink-0 cursor-pointer h-8 px-3 font-semibold font-mono"
-                  >
-                    <Folder className="w-3.5 h-3.5 mr-1.5 text-accent" />
-                    Choose Folder
-                  </Button>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Optional: paste absolute project path (e.g. C:\Dev\project)"
-                  value={localProjPath}
-                  onChange={(e) => {
-                    setLocalProjPath(e.target.value);
-                    setLocalProjHandle(null);
-                  }}
-                  className="w-full text-xs font-mono bg-background border border-border/40 rounded-lg h-9 px-3 focus:outline-none focus:ring-1 focus:ring-primary text-foreground select-text"
-                />
+              {/* Informational Callout */}
+              <div className="p-3 rounded-xl bg-accent/10 border border-accent/25 text-[11px] font-mono text-accent flex items-start gap-2">
+                <Sparkles className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>AI AST Gap Scanning and Codebase Synthesis awaken after connecting your project repository via the <strong>Code Analyzer</strong> button in the sidebar.</span>
               </div>
             </div>
           </div>
@@ -147,19 +106,19 @@ export default function WorkspaceWelcome() {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button
-              onClick={handleExecuteScan}
+              onClick={handleOpenVault}
               disabled={isLoading || (!localNotesPath && !localNotesHandle)}
               className="flex-1 h-11 text-xs font-bold tracking-wider uppercase bg-accent hover:bg-accent/90 text-white disabled:bg-muted disabled:text-muted-foreground rounded-xl transition-all shadow-lg font-mono cursor-pointer flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Scanning Vault...
+                  Opening Vault...
                 </>
               ) : (
                 <>
                   <Play className="w-3.5 h-3.5 fill-current" />
-                  Execute Scan
+                  Open Vault & Take Notes 📝
                 </>
               )}
             </Button>
@@ -170,7 +129,7 @@ export default function WorkspaceWelcome() {
               className="h-11 px-5 text-xs font-bold font-mono bg-card hover:bg-[#6e346b]/10 text-accent border border-accent/30 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              Load Mock Demo Data
+              Load Demo Notes Vault
             </Button>
           </div>
         </div>
