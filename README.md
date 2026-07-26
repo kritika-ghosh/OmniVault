@@ -1,147 +1,383 @@
-# OmniVault AI 3-Agent Decoupled Workspace
+<div align="center">
 
-OmniVault is a local-first, self-healing technical workspace backend that bridges the gap between developers' codebases and personal Markdown documentation vaults. It automatically parses codebase dependencies/imports, identifies conceptual gaps, synthesizes documentation guides, and schedules context-aware active recall quizzes.
+# 🌌 OmniVault AI
 
-This repository is structured to separate concerns, making it easy to deploy the backend to Render, host the frontend on Vercel, and use local testing workspaces.
+### *Autonomous Codebase Knowledge Vault & Socratic Spaced-Repetition Engine*
+
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18.2.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector_Store-FF6B6B?style=for-the-badge&logo=databricks&logoColor=white)](https://www.trychroma.com/)
+[![LiteLLM](https://img.shields.io/badge/LiteLLM-Multi_Provider-8A2BE2?style=for-the-badge)](https://github.com/BerriAI/litellm)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
 ---
 
-## Repository Structure
+**OmniVault** is an AI-powered documentation coverage, knowledge gap detection, and Socratic learning environment. It bridges local **Obsidian Markdown Note Vaults** with real-world **Codebases** using AST parsing, ChromaDB semantic vector embeddings, a 3-agent orchestration system, and isolated code execution sandboxes.
 
-The workspace is organized as follows:
+</div>
 
-```text
-OmniVault/
-├── backend/                  # FastAPI backend engine
-│   ├── app/                  # FastAPI app routers, services, and agents
-│   ├── main.py               # Uvicorn entrypoint (FastAPI + Gradio UI)
-│   ├── Dockerfile            # Container deployment specification
-│   ├── requirements.txt      # Python dependencies list
-│   └── testing/              # Testing sandbox directories (packaged inside container)
-│       ├── project_code/     # Mock codebase importing Pandas, requests, numpy, etc.
-│       └── markdown_notes/   # Mock notes vault covering FastAPI, pandas, requests, etc.
-├── frontend/                 # Frontend client workspace
-│   └── index.html            # Unstyled HTML testing client (replaces test_client.html)
-├── README.md                 # Project documentation
-└── .gitignore                # Git ignore files
+---
+
+## 📑 Table of Contents
+
+- [✨ Key Features](#-key-features)
+- [🏗️ System Architecture](#️-system-architecture)
+- [🤖 3-Agent System Architecture](#-3-agent-system-architecture)
+  - [1. Agent 1: SmartGapDetector (AST & Import Analysis)](#1-agent-1-smartgapdetector-ast--import-analysis)
+  - [2. Agent 2: CodebaseCrawler & ContentSynthesizer (Code-Aware RAG Synthesis)](#2-agent-2-codebasecrawler--contentsynthesizer-code-aware-rag-synthesis)
+  - [3. Agent 3: ActiveRecallJudge (Socratic Quiz & Sandbox Judge)](#3-agent-3-activerecalljudge-socratic-quiz--sandbox-judge)
+- [🔬 Exhaustive Backend Concepts Breakdown](#-exhaustive-backend-concepts-breakdown)
+  - [⚡ FastAPI Async Core & Streaming Architecture](#-fastapi-async-core--streaming-architecture)
+  - [🧠 ChromaDB Semantic Vector Store & RAG Engine](#-chromadb-semantic-vector-store--rag-engine)
+  - [📦 Non-Blocking Sandbox Execution & Fallback Engine](#-non-blocking-sandbox-execution--fallback-engine)
+  - [🛠️ Smart Function Driver Harness](#️-smart-function-driver-harness)
+- [🖥️ User Interface & Interactive Workflows](#️-user-interface--interactive-workflows)
+- [🚦 Quickstart & Local Setup](#-quickstart--local-setup)
+- [🧪 Sample Testing Workspace](#-sample-testing-workspace)
+
+---
+
+## ✨ Key Features
+
+- 📝 **Pure Markdown Note-Taking App Mode**: Operates as a full-featured Obsidian-style Markdown notebook with note tree navigation, live preview, `[[WikiLinks]]`, backlinks, and visual node graphs.
+- ⚡ **1-Click AI Synthesis & Auto-Streaming**: Automatically streams detailed technical documentation generated from real codebase symbols using Server-Sent Events (SSE).
+- 🔍 **Global `Cmd+K` / `Ctrl+K` RAG Command Palette**: Instant debounced semantic vector search across notes, knowledge gaps, and codebase references.
+- 🔗 **Live RAG Connections Panel**: Real-time sidebar inside the note editor displaying ChromaDB vector similarity matches with percentage scores and incoming `[[WikiLinks]]` backlinks.
+- 🎓 **Socratic Quiz & Execution Sandbox**: Interactive technical quizzes with code execution sandboxes for Python and JavaScript, powered by an LLM Socratic Judge.
+- 🛡️ **Non-Blocking Missing Package Fallback**: Evaluates user code logic conceptually when third-party libraries (e.g., `sklearn`, `pandas`, `torch`) are not pre-installed in the execution runtime.
+
+---
+
+## 🏗️ System Architecture
+
+OmniVault adopts a decoupled 3-tier architecture: a modern Next.js/React frontend with Dockview workspace management, an asynchronous FastAPI backend service, and an embedded ChromaDB vector store.
+
+```mermaid
+graph TD
+    subgraph Frontend ["Frontend (Next.js / React 18 / Dockview)"]
+        UI[Workspace IDE / Note Editor]
+        CP[Cmd+K Command Palette]
+        RC[Live RAG Connections Panel]
+        QZ[Socratic Quiz Terminal]
+    end
+
+    subgraph Backend ["Backend (FastAPI Async Core)"]
+        RouterScan["/v1/scan Endpoint"]
+        RouterSynth["/v1/synthesize/stream SSE"]
+        RouterSearch["/v1/scan/search Endpoint"]
+        RouterQuiz["/v1/quiz Endpoints"]
+        
+        AG1["Agent 1: SmartGapDetector"]
+        AG2["Agent 2: CodebaseCrawler & ContentSynthesizer"]
+        AG3["Agent 3: ActiveRecallJudge"]
+    end
+
+    subgraph Storage ["Storage & Execution"]
+        ChromaDB[("ChromaDB Vector Store (Cosine Similarity)")]
+        LiteLLM["LiteLLM Gateway (Gemini / OpenAI)"]
+        Sandbox["Subprocess Code Execution Runtime"]
+    end
+
+    UI -->|JSON / SSE| RouterScan
+    UI -->|SSE Stream| RouterSynth
+    CP & RC -->|HTTP POST| RouterSearch
+    QZ -->|JSON POST| RouterQuiz
+
+    RouterScan --> AG1
+    RouterSynth --> AG2
+    RouterSearch --> ChromaDB
+    RouterQuiz --> AG3
+
+    AG1 --> ChromaDB
+    AG2 --> LiteLLM
+    AG3 --> Sandbox
+    AG3 --> LiteLLM
 ```
 
 ---
 
-## Render Deployment Settings (Docker)
+## 🤖 3-Agent System Architecture
 
-To deploy the backend to **Render.com** under the decoupled layout:
+OmniVault is driven by three specialized AI agents working together:
 
-1. Create a new **Web Service** on Render and connect your GitHub repository.
-2. Configure the following settings in your dashboard:
-   - **Runtime:** `Docker`
-   - **Root Directory:** `backend` (Setting this ensures frontend updates do not trigger backend rebuilds!)
-   - **Dockerfile Path:** `Dockerfile` (Relative to the `backend` folder)
-3. Add the following **Environment Variable** (under the Environment tab):
-   - `GROQ_API_KEY`: *Your Groq Platform API key*
-4. Render will compile your container using the `backend/` build context, isolating it from frontend changes, and expose your public API URL (e.g., `https://omnivault.onrender.com`).
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Developer / User
+    participant AG1 as Agent 1: SmartGapDetector
+    participant AG2 as Agent 2: Synthesizer & Crawler
+    participant AG3 as Agent 3: ActiveRecallJudge
+    participant Chroma as ChromaDB Vector Store
+    participant Box as Execution Sandbox
+
+    User->>AG1: Initiate Workspace Scan
+    AG1->>AG1: Parse AST Imports & Dependencies
+    AG1->>Chroma: Query Existing Vault Embeddings
+    AG1-->>User: Return Knowledge Gaps Report
+
+    User->>AG2: Click "Fill Gap" / Open Note
+    AG2->>AG2: Crawl Codebase for Symbol Context (def, class, router)
+    AG2->>Chroma: Fetch Semantic RAG Context
+    AG2-->>User: Stream SSE Synthesis Chunk by Chunk
+
+    User->>AG3: Submit Quiz Code Solution
+    AG3->>Box: Execute User Code (python/node)
+    alt Execution Missing Package
+        Box-->>AG3: ModuleNotFoundError (e.g. sklearn)
+        AG3->>AG3: Flag is_missing_module = True
+    end
+    AG3->>AG3: Evaluate Socratic Logic & Align Test Cases
+    AG3-->>User: Return Score, Feedback Hint & Sandbox Results
+```
+
+### 1. Agent 1: SmartGapDetector (AST & Import Analysis)
+- **Primary Class**: `app.agents.gap_detector.SmartGapDetector`
+- **Responsibilities**:
+  - Parses Python files using Python's native `ast` module (`ast.parse`) to extract top-level imports (`Import`, `ImportFrom`) and function signatures.
+  - Parses JavaScript/TypeScript source files using regex pattern matching (`re`) to capture ES6 `import` statements and `require(...)` calls.
+  - Extracts declared dependencies from `package.json` and `requirements.txt`.
+  - Compares extracted technical concepts against the existing markdown note vault (indexed in ChromaDB) to pinpoint **unmapped technical debt and missing documentation gaps**.
+
+### 2. Agent 2: CodebaseCrawler & ContentSynthesizer (Code-Aware RAG Synthesis)
+- **Primary Classes**: `app.agents.codebase_crawler.CodebaseCrawler` & `app.agents.synthesizer.ContentSynthesizer`
+- **Responsibilities**:
+  - **Codebase Crawler**: Performs regex scans across connected workspace code files to locate actual function definitions (`def`, `async def`, `function`), classes, decorators (`@app.get`, `@router.post`), and surrounding 5-line implementation snippets.
+  - **Content Synthesizer**: Injects real code snippets and ChromaDB semantic context into LiteLLM prompts, streaming structured markdown documentation back to the user via Server-Sent Events (SSE).
+
+### 3. Agent 3: ActiveRecallJudge (Socratic Quiz & Sandbox Judge)
+- **Primary Class**: `app.agents.recall_judge.ActiveRecallJudge`
+- **Responsibilities**:
+  - Generates technical recall quiz challenges based on vault note contents.
+  - Evaluates user-submitted code by running it inside an isolated subprocess (`_run_python_code` / `_run_javascript_code`).
+  - Implements a **Smart Function Driver Harness** that automatically invokes user-defined functions with test inputs.
+  - Enforces a **Non-Blocking Missing Package Fallback**: if code fails due to missing host libraries (e.g., `sklearn` or `pandas`), the agent evaluates the code conceptually and marks it as passed if the logic is correct.
 
 ---
 
-## Local Development & Testing
+## 🔬 Exhaustive Backend Concepts Breakdown
 
-### 1. Run the Backend locally
-Navigate to the `backend/` directory, activate your python virtual environment, and run:
+### ⚡ FastAPI Async Core & Streaming Architecture
+
+OmniVault's backend is built on **FastAPI** using asynchronous endpoints (`async def`) and non-blocking I/O.
+
+#### Server-Sent Events (SSE) Streaming (`/v1/synthesize/stream`)
+Traditional HTTP request-response cycles wait for the entire LLM completion before responding. OmniVault uses `EventSourceResponse` from `sse_starlette.sse` to stream markdown synthesis to the frontend token-by-token:
+
+```python
+@router.post("/stream")
+async def stream_synthesize_note(payload: SynthesizeRequest):
+    async def event_generator():
+        # Iterate asynchronously over LiteLLM streaming tokens
+        for chunk in synthesizer.generate_note_stream(
+            topic=payload.topic,
+            notes_files=payload.notes_files,
+            project_files=payload.project_files
+        ):
+            yield {"event": "message", "data": json.dumps({"content": chunk})}
+        yield {"event": "done", "data": json.dumps({"status": "completed"})}
+
+    return EventSourceResponse(event_generator())
+```
+
+#### Real-Time WebSockets Graph Manager (`/ws`)
+OmniVault maintains a global `ConnectionManager` that broadcasts graph updates and debt metrics to connected workspace clients whenever a scan or note update occurs:
+
+```python
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+
+    async def broadcast(self, message: dict):
+        for connection in self.active_connections:
+            await connection.send_json(message)
+```
+
+---
+
+### 🧠 ChromaDB Semantic Vector Store & RAG Engine
+
+The vector store service (`app.services.vector_store.VectorStoreService`) manages document embeddings and semantic search using **ChromaDB**.
+
+```mermaid
+graph LR
+    Notes[Markdown Notes Vault] -->|Chunking & Metadata| Embedder[ChromaDB Default Embedding Function]
+    Embedder -->|Cosine Vector Math| Collection[(ChromaDB Vector Collection)]
+    Query[User Query / Cmd+K] -->|Query Embedding| Collection
+    Collection -->|Top-K Matches| Results[Semantic RAG Connections & Backlinks]
+```
+
+#### Dual-Mode Indexing Mechanics
+1. **Stateless In-Memory Mode (`index_notes_vault_in_memory`)**:
+   - Used when files are uploaded ephemerally via directory handles in the browser.
+   - Instantiates an in-memory `EphemeralClient()` and generates vector collections on-the-fly.
+2. **Persistent Disk Mode (`index_notes_vault`)**:
+   - Used for local directory paths. Persists vector indexes to `./chroma_db/`.
+
+#### Cosine Similarity Search
+Queries are matched using cosine distance:
+
+$$\text{Cosine Similarity} = \frac{\mathbf{A} \cdot \mathbf{B}}{\|\mathbf{A}\| \|\mathbf{B}\|}$$
+
+Distance values returned by ChromaDB are converted to user-facing similarity percentages:
+
+$$\text{Similarity \%} = \max(0, (1 - \text{distance})) \times 100$$
+
+---
+
+### 📦 Non-Blocking Sandbox Execution & Fallback Engine
+
+When a user submits code to the Socratic Quiz Judge, OmniVault executes the code in an isolated subprocess (`subprocess.run`) with a 10.0-second timeout limit.
+
+```mermaid
+flowchart TD
+    Start[User Submits Quiz Code] --> Exec[Run Code via subprocess.run]
+    Exec --> CheckReturn{Exit Code == 0?}
+    
+    CheckReturn -->|Yes| OutputCheck{stdout Has Output?}
+    OutputCheck -->|Yes| Compare[Compare stdout vs expected_output]
+    OutputCheck -->|No & 'def' in code| Harness[Attach Smart Function Harness & Re-Run]
+    Harness --> Compare
+
+    CheckReturn -->|No (Error)| DetectErr{Error matches ModuleNotFoundError / ImportError?}
+    DetectErr -->|Yes| FlagMissing[Set is_missing_module = True & Extract Package Name]
+    DetectErr -->|No| FailTest[Mark Test Case Failed]
+
+    FlagMissing --> LLMJudge[LLM-as-a-Judge Socratic Evaluation]
+    Compare --> LLMJudge
+    
+    LLMJudge --> JudgeVerdict{AI Judge Verdict == Passed?}
+    JudgeVerdict -->|Yes & No Output| Align[Align Test Case: Passed Conceptually Verified]
+    JudgeVerdict -->|Final Response| Return[Return JSON Payload to Client]
+```
+
+#### Missing Module Detection Logic
+If code execution fails due to uninstalled server libraries (e.g. `ModuleNotFoundError: No module named 'sklearn'`), the runner catches the `stderr` pattern:
+
+```python
+match = re.search(
+    r"(?:ModuleNotFoundError|ImportError):\s*(?:No module named ['\"]([^'\"]+)['\"]|cannot import name ['\"]([^'\"]+)['\"])", 
+    stderr
+)
+if match:
+    is_missing_module = True
+    missing_module_name = match.group(1) or match.group(2)
+```
+
+The system prompt instructs the AI Judge:
+> *"If sandbox execution logs contain `is_missing_module: true`, THIS IS A SERVER HOST ENVIRONMENT LIMITATION. DO NOT FAIL THE USER FOR A MISSING SERVER PACKAGE! Evaluate the user's code conceptually based on syntax, structure, API usage, data flow, and problem-solving logic. If their code correctly implements the requested functionality, MARK IT AS PASSED (`passed: true`)."*
+
+---
+
+### 🛠️ Smart Function Driver Harness
+
+When developers write function-based quiz solutions (e.g. `def predict_next_number(previous_numbers): return ...`), they don't include top-level `print()` statements. Without a harness, execution produces empty stdout (`No output`).
+
+OmniVault automatically appends a smart invocation harness when a function definition is detected:
+
+```python
+# --- OmniVault Smart Test Harness Driver ---
+if __name__ == '__main__':
+    import sys, json, ast
+    raw_in = sys.stdin.read().strip()
+    if raw_in:
+        _funcs = [
+            obj for name, obj in list(locals().items()) 
+            if callable(obj) and getattr(obj, '__module__', None) == '__main__' and not name.startswith('_')
+        ]
+        if _funcs:
+            _target = _funcs[-1]
+            try:
+                try:
+                    _val = json.loads(raw_in)
+                except Exception:
+                    _val = ast.literal_eval(raw_in)
+                _res = _target(*_val) if isinstance(_val, tuple) else _target(_val)
+                if _res is not None:
+                    print(_res)
+            except Exception:
+                pass
+```
+
+---
+
+## 🖥️ User Interface & Interactive Workflows
+
+| View Component | Description |
+| :--- | :--- |
+| **Markdown Note-Taking App** | Full obsidian-style markdown editor with note tree navigation, `[[WikiLinks]]`, and node graphs. |
+| **`Cmd+K` Command Palette** | Debounced semantic RAG search across notes, debt gaps, and codebase references. |
+| **RAG Connections Sidebar** | Live sidebar inside note editor showing vector matches (% similarity) & incoming backlinks. |
+| **Socratic Quiz Terminal** | Interactive terminal for code execution, test cases, and Socratic AI feedback hints. |
+| **Code Analyzer Modal** | Workspace dialog to connect local codebase folders and trigger AI AST gap analysis. |
+
+---
+
+## 🚦 Quickstart & Local Setup
+
+### Prerequisites
+- **Python**: `3.10` or higher
+- **Node.js**: `v18.0.0` or higher
+- **API Key**: Gemini API Key or OpenAI API Key
+
+### 1. Backend Setup
+
 ```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-```
-Your local FastAPI instance will be available at `http://localhost:8000`.
+# Clone repository
+git clone https://github.com/kritika-ghosh/OmniVault.git
+cd OmniVault/backend
 
-### 2. Run the Client
-Open [frontend/index.html](file:///d:/Desktop/projects/OmniVault/frontend/index.html) in any web browser:
-1. Paste your backend URL (e.g. `https://omnivault.onrender.com` or `http://localhost:8000`) into the **API Base Host** input field.
-2. Click **Set Base URL**.
-3. Under **Scan Workspace**, input the project path and notes path (these can be the mock `/workspace/testing/project_code` inside Docker, or your local folder paths like `D:/Desktop/projects/OmniVault/backend/testing/project_code`).
-4. Click **Execute Scan** to inspect the detected conceptual gaps.
+# Create virtual environment
+python -m venv venv
+# On Windows:
+venv\Scripts\activate
+# On Linux/macOS:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set Environment Variables
+export GEMINI_API_KEY="your-gemini-api-key"
+# On Windows PowerShell:
+# $env:GEMINI_API_KEY="your-gemini-api-key"
+
+# Launch Backend Server
+uvicorn app.main:app --reload --port 8000
+```
+
+### 2. Frontend Setup
+
+```bash
+# Navigate to frontend directory
+cd ../frontend/frontend
+
+# Install Node modules
+npm install
+
+# Start Next.js Development Server
+npm run dev
+```
+
+Open `http://localhost:3000` in your browser to launch OmniVault!
 
 ---
 
-## 👩‍💻 Notes for Diya (Frontend Integration)
+## 🧪 Sample Testing Workspace
 
-Hi Diya! Since the production backend runs in the cloud (Render) and cannot access local drive paths directly, you should build the Vercel frontend to manage local file handles in the browser using the **File System Access API**. The backend has been made fully stateless to support this.
+OmniVault includes a pre-configured sample testing workspace inside `testing folder/`:
 
-Here is how you should handle the files on the frontend:
+- **Codebase Path**: [`testing folder/pomodoro-app`](file:///d:/Desktop/projects/OmniVault/testing%20folder/pomodoro-app) (React, Zustand, Framer Motion, Recharts, Howler, Web Workers, Web Audio API).
+- **Notes Vault Path**: [`testing folder/frontend-notes`](file:///d:/Desktop/projects/OmniVault/testing%20folder/frontend-notes) (4 basic markdown notes).
 
-### 1. Let the User Select Local Folders
-Use `showDirectoryPicker()` to get directory handles for the codebase folder and notes folder:
-```javascript
-const projectHandle = await window.showDirectoryPicker();
-const notesHandle = await window.showDirectoryPicker();
-```
+> [!TIP]
+> Open `testing folder/frontend-notes` in OmniVault, then click **Code Analyzer** and select `testing folder/pomodoro-app` to instantly discover **20+ technical knowledge gaps**!
 
-### 2. Read Files Recursively into JSON
-Write a recursive utility in your frontend code to read all files in those directories into an array of `{ path, content }` objects:
-```javascript
-async function readFilesRecursively(dirHandle, relativePath = "") {
-    let files = [];
-    for await (const entry of dirHandle.values()) {
-        const entryPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
-        if (entry.kind === "file") {
-            const file = await entry.getFile();
-            const content = await file.text();
-            files.push({ path: entryPath, content });
-        } else if (entry.kind === "directory") {
-            files.push(...(await readFilesRecursively(entry, entryPath)));
-        }
-    }
-    return files;
-}
+---
 
-// Example usage:
-const codebaseFiles = await readFilesRecursively(projectHandle);
-const notesFiles = await readFilesRecursively(notesHandle);
-```
+<div align="center">
 
-### 3. Send Stateless Payloads to the API
+**Built with ❤️ for Google Antigravity & Hackathons**
 
-#### A. `/v1/scan` (POST)
-Instead of sending paths, send the compiled file arrays in the JSON request body:
-```json
-{
-  "project_files": [
-    { "path": "main.py", "content": "import pandas..." },
-    { "path": "package.json", "content": "{...}" }
-  ],
-  "notes_files": [
-    { "path": "pandas.md", "content": "# Pandas overview..." }
-  ]
-}
-```
-
-#### B. `/v1/synthesize/save` (POST)
-To save a note, call `/save` with `notes_path` set to `"in-memory"` (or omitted). The API will validate syntax and return the note content:
-```json
-{
-  "notes_path": "in-memory",
-  "filename": "numpy.md",
-  "content": "--- \n title: Numpy... \n--- \n # Numpy Guide..."
-}
-```
-**Writing back to disk:** When the API returns success, write the content to the user's local disk directly using your local notes directory handle:
-```javascript
-const fileHandle = await notesHandle.getFileHandle("numpy.md", { create: true });
-const writable = await fileHandle.createWritable();
-await writable.write(response.content);
-await writable.close();
-```
-
-#### C. `/v1/quiz/generate` (POST) & `/v1/quiz/evaluate` (POST)
-Pass the raw markdown note string under `note_content` to generate/evaluate statelessly:
-- **Generate:** `{"note_content": "Raw markdown note body..."}`
-- **Evaluate:**
-  ```json
-  {
-    "note_content": "Raw markdown note body...",
-    "question": "Explain X",
-    "expected_concepts": ["concept1"],
-    "user_answer": "My explanation..."
-  }
-  ```
-  The API will evaluate the solution and return `"updated_frontmatter"`. You can then replace the frontmatter block of the local note and write the updated note back to the user's disk!
+</div>
