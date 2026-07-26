@@ -111,7 +111,7 @@ sequenceDiagram
     participant AG2 as Agent 2 (Synthesizer & Crawler)
     participant AG3 as Agent 3 (ActiveRecallJudge)
     participant Chroma as ChromaDB Vector Store
-    participant Box as Execution Sandbox
+    participant SandboxRuntime as Execution Sandbox
 
     User->>AG1: Initiate Workspace Scan
     AG1->>AG1: Parse AST Imports & Dependencies
@@ -124,9 +124,9 @@ sequenceDiagram
     AG2-->>User: Stream SSE Synthesis Chunk by Chunk
 
     User->>AG3: Submit Quiz Code Solution
-    AG3->>Box: Execute User Code
+    AG3->>SandboxRuntime: Execute User Code
     alt Execution Missing Package
-        Box-->>AG3: Missing Module Exception
+        SandboxRuntime-->>AG3: Missing Module Exception
         AG3->>AG3: Flag is_missing_module = True
     end
     AG3->>AG3: Evaluate Socratic Logic & Align Test Cases
