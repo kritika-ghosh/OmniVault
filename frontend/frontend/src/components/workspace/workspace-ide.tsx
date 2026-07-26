@@ -58,11 +58,11 @@ export default function WorkspaceIDE() {
   const onReady = useCallback((event: DockviewReadyEvent) => {
     setApi(event.api);
     event.api.addPanel({
-      id: "note-fastapi",
-      component: "note-editor",
-      title: "FastAPI Reference",
+      id: "scan-main",
+      component: "scan",
+      title: "Scan Dashboard",
       params: {
-        noteName: "FastAPI",
+        forceWelcome: true,
       },
     });
   }, []);

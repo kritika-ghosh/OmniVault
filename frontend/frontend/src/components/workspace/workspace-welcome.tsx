@@ -80,45 +80,16 @@ export default function WorkspaceWelcome() {
         <div className="space-y-4 bg-card p-6 rounded-2xl border border-border shadow-xl">
           <div className="flex flex-col gap-3">
             <span className="text-xs font-handwriting text-foreground text-base notebook-underline block">
-              Workspace Configuration :-
+              Vault Scan Configuration :-
             </span>
             
             <div className="space-y-3">
-              {/* Project path row */}
+              {/* Notes path row - PRIMARY */}
               <div className="flex flex-col gap-2 p-3.5 rounded-xl bg-muted border border-border">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex flex-col min-w-0 pr-4">
                     <span className="text-xs font-bold text-foreground font-mono flex items-center gap-1.5">
-                      <span className="text-primary">↳</span> Project Directory
-                    </span>
-                  </div>
-                  <Button 
-                    onClick={handleSelectProjectDir}
-                    disabled={isLoading}
-                    className="text-xs bg-card hover:bg-muted text-foreground border border-border shrink-0 cursor-pointer h-8 px-3 font-semibold font-mono"
-                  >
-                    <Folder className="w-3.5 h-3.5 mr-1.5 text-primary" />
-                    Choose Folder
-                  </Button>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Or paste absolute project path (e.g. C:\Dev\project)"
-                  value={localProjPath}
-                  onChange={(e) => {
-                    setLocalProjPath(e.target.value);
-                    setLocalProjHandle(null);
-                  }}
-                  className="w-full text-xs font-mono bg-background border border-border/40 rounded-lg h-9 px-3 focus:outline-none focus:ring-1 focus:ring-primary text-foreground select-text"
-                />
-              </div>
-
-              {/* Notes path row */}
-              <div className="flex flex-col gap-2 p-3.5 rounded-xl bg-muted border border-border">
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex flex-col min-w-0 pr-4">
-                    <span className="text-xs font-bold text-foreground font-mono flex items-center gap-1.5">
-                      <span className="text-primary">↳</span> Notes Vault Directory
+                      <span className="text-primary">↳</span> Notes Vault Directory <span className="text-[10px] text-primary uppercase font-bold">(Required)</span>
                     </span>
                   </div>
                   <Button 
@@ -126,7 +97,7 @@ export default function WorkspaceWelcome() {
                     disabled={isLoading}
                     className="text-xs bg-card hover:bg-muted text-foreground border border-border shrink-0 cursor-pointer h-8 px-3 font-semibold font-mono"
                   >
-                    <Folder className="w-3.5 h-3.5 mr-1.5 text-accent" />
+                    <Folder className="w-3.5 h-3.5 mr-1.5 text-primary" />
                     Choose Folder
                   </Button>
                 </div>
@@ -141,6 +112,35 @@ export default function WorkspaceWelcome() {
                   className="w-full text-xs font-mono bg-background border border-border/40 rounded-lg h-9 px-3 focus:outline-none focus:ring-1 focus:ring-primary text-foreground select-text"
                 />
               </div>
+
+              {/* Project path row - OPTIONAL */}
+              <div className="flex flex-col gap-2 p-3.5 rounded-xl bg-muted/60 border border-border/60">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex flex-col min-w-0 pr-4">
+                    <span className="text-xs font-bold text-muted-foreground font-mono flex items-center gap-1.5">
+                      <span className="text-muted-foreground">↳</span> Project Codebase Directory <span className="text-[10px] text-muted-foreground/75 font-normal">(Optional — connect later via Code Analyzer)</span>
+                    </span>
+                  </div>
+                  <Button 
+                    onClick={handleSelectProjectDir}
+                    disabled={isLoading}
+                    className="text-xs bg-card hover:bg-muted text-foreground border border-border shrink-0 cursor-pointer h-8 px-3 font-semibold font-mono"
+                  >
+                    <Folder className="w-3.5 h-3.5 mr-1.5 text-accent" />
+                    Choose Folder
+                  </Button>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Optional: paste absolute project path (e.g. C:\Dev\project)"
+                  value={localProjPath}
+                  onChange={(e) => {
+                    setLocalProjPath(e.target.value);
+                    setLocalProjHandle(null);
+                  }}
+                  className="w-full text-xs font-mono bg-background border border-border/40 rounded-lg h-9 px-3 focus:outline-none focus:ring-1 focus:ring-primary text-foreground select-text"
+                />
+              </div>
             </div>
           </div>
 
@@ -148,7 +148,7 @@ export default function WorkspaceWelcome() {
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button
               onClick={handleExecuteScan}
-              disabled={isLoading || !localProjPath || !localNotesPath}
+              disabled={isLoading || (!localNotesPath && !localNotesHandle)}
               className="flex-1 h-11 text-xs font-bold tracking-wider uppercase bg-accent hover:bg-accent/90 text-white disabled:bg-muted disabled:text-muted-foreground rounded-xl transition-all shadow-lg font-mono cursor-pointer flex items-center justify-center gap-2"
             >
               {isLoading ? (

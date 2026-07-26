@@ -492,9 +492,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       let projFiles: FilePayload[] = [];
       let sorted: string[] = [];
 
-      if (activeProjHandle && activeNotesHandle) {
-        setStatusMessage("Reading project files recursively from local disk...");
-        projFiles = await readFilesRecursively(activeProjHandle);
+      if (activeNotesHandle) {
+        if (activeProjHandle) {
+          setStatusMessage("Reading project files recursively from local disk...");
+          projFiles = await readFilesRecursively(activeProjHandle);
+        }
         
         setStatusMessage("Reading notes files recursively from local vault...");
         notes = await readFilesRecursively(activeNotesHandle);
@@ -634,12 +636,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setActiveVaultPath(targetNotesPath);
         setStatusMessage(`Successfully scanned ${projFiles.length} codebase files & ${notes.length} vault notes!`);
       } else {
-        if (!targetProjectPath || !targetNotesPath) {
-          throw new Error("Please select directories or input manual absolute paths.");
+        if (!targetNotesPath) {
+          throw new Error("Please select your Notes Vault directory or input a manual absolute path.");
         }
         
         const payload = {
-          project_path: targetProjectPath,
+          project_path: targetProjectPath || targetNotesPath,
           notes_path: targetNotesPath,
         };
         setStatusMessage(`Sending absolute paths to local backend: ${targetProjectPath} and ${targetNotesPath}`);
