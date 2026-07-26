@@ -473,7 +473,7 @@ export function CTABanner() {
           Ready to Open Your Markdown Notebook Vault?
         </h2>
         <p className="text-base text-muted-foreground max-w-2xl mx-auto font-sans mb-8">
-          Launch the OmniVault Workspace IDE to connect your local codebase directory and markdown notes vault.
+          Launch the MeowPad Workspace IDE to connect your local codebase directory and markdown notes vault.
         </p>
 
         <div>

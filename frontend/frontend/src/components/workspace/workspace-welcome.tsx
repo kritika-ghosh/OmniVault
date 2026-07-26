@@ -55,7 +55,7 @@ export default function WorkspaceWelcome() {
           </div>
 
           <h1 className="text-4xl font-extrabold tracking-tight text-foreground font-sans">
-            OmniVault Notebook
+            MeowPad Notebook
           </h1>
           <p className="text-md font-sans tracking-tight text-muted-foreground">
             Open your Obsidian Notes Vault to start taking and organizing markdown notes.

@@ -167,11 +167,9 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-6 h-15 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-accent/20 border border-accent/30 flex items-center justify-center text-accent font-mono font-bold text-sm group-hover:scale-105 transition-transform">
-            OV
-          </div>
+          <img src="/logo.png" alt="MeowPad Logo" className="w-12 h-12 object-contain group-hover:scale-105 transition-transform" />
           <span className="font-extrabold text-base tracking-tight text-foreground flex items-center gap-1.5 font-sans">
-            OmniVault <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-muted text-accent border border-accent/30">Vault 1.0</span>
+            MeowPad <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-muted text-accent border border-accent/30">Vault 1.0</span>
           </span>
         </Link>
 
@@ -217,7 +215,7 @@ export function Footer() {
     <footer className="relative z-10 border-t border-border py-8 px-6 bg-[#070b10] mt-auto">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-sm text-muted-foreground font-mono text-center sm:text-left">
         <div className="flex flex-col sm:flex-row items-center gap-2">
-          <span className="font-bold text-foreground font-sans text-base">OmniVault</span>
+          <span className="font-bold text-foreground font-sans text-base">MeowPad</span>
           <span className="hidden sm:inline">— local first markdown vault & ast scanner</span>
         </div>
 

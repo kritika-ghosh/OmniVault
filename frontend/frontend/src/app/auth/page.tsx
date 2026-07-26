@@ -79,11 +79,9 @@ export default function AuthPage() {
       {/* Top Header Navigation */}
       <div className="absolute top-6 left-6 right-6 flex items-center justify-between max-w-7xl mx-auto">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-lg bg-accent/20 border border-accent/30 flex items-center justify-center text-accent font-mono font-bold text-xs group-hover:scale-105 transition-transform">
-            OV
-          </div>
+          <img src="/logo.png" alt="MeowPad Logo" className="w-12 h-12 object-contain group-hover:scale-105 transition-transform" />
           <span className="font-bold  tracking-tight text-foreground flex items-center gap-1.5 font-sans text-lg">
-            OmniVault <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-muted text-accent border border-accent/30">Vault 1.0</span>
+            MeowPad <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-muted text-accent border border-accent/30">Vault 1.0</span>
           </span>
         </Link>
 
@@ -107,7 +105,7 @@ export default function AuthPage() {
           </div>
 
           <h1 className="text-2xl font-black tracking-tight text-foreground font-sans">
-            {mode === "signin" ? "Welcome Back to OmniVault" : "Create Your Vault Account"}
+            {mode === "signin" ? "Welcome Back to MeowPad" : "Create Your Vault Account"}
           </h1>
           <p className="text-xs text-muted-foreground">
             {mode === "signin"

@@ -59,7 +59,7 @@ export function HeroSection() {
 
       {/* Description */}
       <p className="text-base sm:text-base text-muted-foreground max-w-2xl leading-relaxed mb-10 font-sans gsap-hero-desc">
-        OmniVault automatically parses python/JS import dependencies, identifies documentation gaps, synthesizes Markdown guides, and schedules context-aware active recall quizzes.
+        MeowPad automatically parses python/JS import dependencies, identifies documentation gaps, synthesizes Markdown guides, and schedules context-aware active recall quizzes.
       </p>
 
       {/* Hero Action Buttons */}
@@ -99,7 +99,7 @@ export function MockIDEPreview() {
             <span className="w-3 h-3 rounded-full bg-destructive/80 inline-block" />
             <span className="w-3 h-3 rounded-full bg-accent/80 inline-block" />
             <span className="w-3 h-3 rounded-full bg-primary/80 inline-block" />
-            <span className="ml-2 font-mono text-sm text-foreground font-bold">omnivault_active_recall_notes.md</span>
+            <span className="ml-2 font-mono text-sm text-foreground font-bold">meowpad_active_recall_notes.md</span>
           </div>
           <span className="text-[11px] text-primary font-bold">GRID VAULT CANVAS</span>
         </div>

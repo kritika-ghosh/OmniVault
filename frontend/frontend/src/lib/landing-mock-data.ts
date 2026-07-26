@@ -74,7 +74,7 @@ PyTorch provides dynamic computation graphs and GPU acceleration for deep learni
     term: "FastAPI",
     category: "Async Web API",
     description: "Modern high-performance Web API framework for Python.",
-    codeSnippet: `from fastapi import FastAPI\n\napp = FastAPI(title="OmniVault API")\n\n@app.get("/")\ndef read_root():\n    return {"status": "ok"}`,
+    codeSnippet: `from fastapi import FastAPI\n\napp = FastAPI(title="MeowPad API")\n\n@app.get("/")\ndef read_root():\n    return {"status": "ok"}`,
     objectives: [
       "Discuss async endpoint routing for high-throughput API microservices.",
       "Apply Pydantic schemas for automatic request data validation.",
@@ -135,19 +135,19 @@ export interface FAQItem {
 
 export const FAQ_ITEMS: FAQItem[] = [
   {
-    q: "How does OmniVault read local files without uploading them to the cloud?",
-    a: "OmniVault relies on the browser's native File System Access API (`showDirectoryPicker()`). Directory handles remain local inside your web browser memory. File content is parsed on-demand and sent statelessly to the API engine only during scans.",
+    q: "How does MeowPad read local files without uploading them to the cloud?",
+    a: "MeowPad relies on the browser's native File System Access API (`showDirectoryPicker()`). Directory handles remain local inside your web browser memory. File content is parsed on-demand and sent statelessly to the API engine only during scans.",
   },
   {
-    q: "Can I use OmniVault with my local FastAPI backend?",
-    a: "Yes! OmniVault includes a base URL switcher in the top bar. You can set the host to `http://localhost:8000` when running locally, or `https://omnivault.onrender.com` when using the cloud container.",
+    q: "Can I use MeowPad with my local FastAPI backend?",
+    a: "Yes! MeowPad includes a base URL switcher in the top bar. You can set the host to `http://localhost:8000` when running locally, or `https://omnivault.onrender.com` when using the cloud container.",
   },
   {
-    q: "What markdown format does OmniVault generate for notes?",
+    q: "What markdown format does MeowPad generate for notes?",
     a: "Standard Markdown (`.md`) with YAML frontmatter metadata (`tags`, `confidence_level`, `last_reviewed`, `decay_score`). Compatible with Obsidian, VS Code, and Logseq.",
   },
   {
     q: "How does active recall scoring work on local markdown files?",
-    a: "OmniVault uses an Ebbinghaus memory decay algorithm. Taking active recall quizzes evaluates technical accuracy and auto-updates the note's frontmatter confidence rating directly on your local disk.",
+    a: "MeowPad uses an Ebbinghaus memory decay algorithm. Taking active recall quizzes evaluates technical accuracy and auto-updates the note's frontmatter confidence rating directly on your local disk.",
   },
 ];

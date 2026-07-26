@@ -8,7 +8,7 @@ const steps = [
     id: "scan",
     title: "01. Scan Your Codebase",
     description:
-      "OmniVault automatically reads your project files and detects all the libraries and packages your code relies on.",
+      "MeowPad automatically reads your project files and detects all the libraries and packages your code relies on.",
     codeSnippet:
       "# Scanning project dependencies...\nimport pandas as pd\nimport torch\nimport fastapi",
     activeTab: "main.py",

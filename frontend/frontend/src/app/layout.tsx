@@ -85,10 +85,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     <header className="w-12 h-full border-r border-border bg-sidebar flex flex-col items-center justify-between py-2 z-50 shrink-0 select-none">
                       <div className="flex flex-col items-center w-full">
                         {/* Logo / Short Title */}
-                        <Link href="/" title="Back to Landing Page">
-                          <div className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-xs font-bold tracking-wider text-primary select-none mt-1 transition-all cursor-pointer">
-                            OV
-                          </div>
+                        <Link href="/" title="Back to Landing Page" className="mt-1">
+                          <img src="/logo.png" alt="MeowPad Logo" className="w-10 h-10 object-contain cursor-pointer hover:scale-105 transition-transform" />
                         </Link>
                         
                         {/* Sidebar Trigger */}
