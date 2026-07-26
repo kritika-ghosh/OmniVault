@@ -19,6 +19,8 @@ interface SandboxResult {
   actual: string;
   passed: boolean;
   stderr: string;
+  is_missing_module?: boolean;
+  missing_module?: string;
 }
 
 interface QuizEvaluation {
@@ -162,15 +164,24 @@ export default function QuizChallenge({
                   <div key={res.test_case} className="p-3 rounded-xl bg-muted border border-border text-xs font-mono space-y-1 select-text">
                     <div className="flex items-center justify-between border-b border-border pb-1.5 mb-1.5">
                       <span>Test Case #{res.test_case}</span>
-                      <span className={res.passed ? "text-primary font-bold" : "text-red-400 font-bold"}>
-                        {res.passed ? "PASSED" : "FAILED"}
+                      <span className={res.passed ? "text-primary font-bold" : (res.is_missing_module || res.stderr?.includes("ModuleNotFoundError") ? "text-amber-400 font-bold" : "text-red-400 font-bold")}>
+                        {res.passed ? "PASSED" : (res.is_missing_module || res.stderr?.includes("ModuleNotFoundError") ? "ENV PACKAGE NOTE" : "FAILED")}
                       </span>
                     </div>
-                    {res.input && (
-                      <div><span className="text-muted-foreground/75">Input:</span> {res.input}</div>
+                    {res.is_missing_module || res.stderr?.includes("ModuleNotFoundError") || res.stderr?.includes("ImportError") ? (
+                      <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono leading-relaxed mt-1 flex items-start gap-1.5">
+                        <span className="shrink-0">ℹ️</span>
+                        <span>
+                          <strong>Environment Note:</strong> Library <code>{res.missing_module || "external module"}</code> is not pre-installed in execution runtime. Solution evaluated conceptually by AI Judge.
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        {res.input && <div><span className="text-muted-foreground/75">Input:</span> {res.input}</div>}
+                        <div><span className="text-muted-foreground/75">Expected:</span> {res.expected}</div>
+                        <div><span className="text-muted-foreground/75">Actual:</span> {res.actual || (res.stderr ? `Error: ${res.stderr.split('\n')[0]}` : "No output")}</div>
+                      </>
                     )}
-                    <div><span className="text-muted-foreground/75">Expected:</span> {res.expected}</div>
-                    <div><span className="text-muted-foreground/75">Actual:</span> {res.actual}</div>
                   </div>
                 ))}
               </div>

@@ -62,16 +62,28 @@ class ActiveRecallJudge:
                 text=True,
                 timeout=10.0
             )
+            stderr = result.stderr or ""
+            is_missing_module = False
+            missing_module_name = ""
+            if result.returncode != 0 and stderr:
+                match = re.search(r"(?:ModuleNotFoundError|ImportError):\s*(?:No module named ['\"]([^'\"]+)['\"]|cannot import name ['\"]([^'\"]+)['\"])", stderr)
+                if match:
+                    is_missing_module = True
+                    missing_module_name = match.group(1) or match.group(2) or "external library"
             return {
                 "success": result.returncode == 0,
-                "stdout": result.stdout,
-                "stderr": result.stderr
+                "stdout": result.stdout or "",
+                "stderr": stderr,
+                "is_missing_module": is_missing_module,
+                "missing_module": missing_module_name
             }
         except subprocess.TimeoutExpired:
             return {
                 "success": False,
                 "stdout": "",
-                "stderr": "TimeoutExpired: Execution exceeded 10.0 seconds limit."
+                "stderr": "TimeoutExpired: Execution exceeded 10.0 seconds limit.",
+                "is_missing_module": False,
+                "missing_module": ""
             }
         finally:
             if os.path.exists(temp_file_path):
@@ -89,22 +101,36 @@ class ActiveRecallJudge:
                 text=True,
                 timeout=10.0
             )
+            stderr = result.stderr or ""
+            is_missing_module = False
+            missing_module_name = ""
+            if result.returncode != 0 and stderr:
+                match = re.search(r"Cannot find module ['\"]([^'\"]+)['\"]", stderr)
+                if match:
+                    is_missing_module = True
+                    missing_module_name = match.group(1) or "external module"
             return {
                 "success": result.returncode == 0,
-                "stdout": result.stdout,
-                "stderr": result.stderr
+                "stdout": result.stdout or "",
+                "stderr": stderr,
+                "is_missing_module": is_missing_module,
+                "missing_module": missing_module_name
             }
         except FileNotFoundError:
             return {
                 "success": False,
                 "stdout": "",
-                "stderr": "NodeJS runtime not found on local environment path."
+                "stderr": "NodeJS runtime not found on local environment path.",
+                "is_missing_module": False,
+                "missing_module": ""
             }
         except subprocess.TimeoutExpired:
             return {
                 "success": False,
                 "stdout": "",
-                "stderr": "TimeoutExpired: Execution exceeded 10.0 seconds limit."
+                "stderr": "TimeoutExpired: Execution exceeded 10.0 seconds limit.",
+                "is_missing_module": False,
+                "missing_module": ""
             }
         finally:
             if os.path.exists(temp_file_path):
@@ -132,25 +158,28 @@ class ActiveRecallJudge:
                     res = self._run_javascript_code(user_answer, inp)
                     
                 actual = res["stdout"].strip()
-                passed = res["success"] and actual == expected.strip()
+                passed = res["success"] and (not expected or actual == expected.strip())
                 test_results.append({
                     "test_case": i + 1,
                     "input": inp,
                     "expected": expected,
                     "actual": actual,
                     "passed": passed,
-                    "stderr": res["stderr"]
+                    "stderr": res["stderr"],
+                    "is_missing_module": res.get("is_missing_module", False),
+                    "missing_module": res.get("missing_module", "")
                 })
 
         # Integrate sandbox test results into system judge prompt
         system_prompt = (
             "You are a Socratic code mentor evaluating a developer's free-text or code-snippet technical quiz answer.\n"
-            "Compare the user response against the question parameters, expected core concepts, and sandbox execution logs.\n"
-            "Rules:\n"
-            "1. If they are directionally correct but missing details, or if any sandbox test cases failed, give them a passed value of false.\n"
-            "2. Under NO circumstance reveal the direct solution code inside your feedback_hint string.\n"
-            "3. Ask guiding, thought-provoking questions to lead them to discover the answer on their own.\n"
-            "4. If test cases failed, refer to the failing behavior/inputs to guide them, but do not provide the correct code.\n\n"
+            "Compare the user response against the question parameters, expected core concepts, and sandbox execution logs.\n\n"
+            "CRITICAL JUDGING RULES:\n"
+            "1. If sandbox execution logs contain `is_missing_module: true` or `ModuleNotFoundError` / `ImportError` (e.g. missing 'sklearn', 'pandas', 'torch', 'requests', etc.), THIS IS A SERVER HOST ENVIRONMENT LIMITATION.\n"
+            "   DO NOT FAIL THE USER FOR A MISSING SERVER PACKAGE! Evaluate the user's code conceptually based on syntax, structure, API usage, data flow, and problem-solving logic. If their code correctly implements the requested functionality and API calls, MARK IT AS PASSED (`passed: true`) and compliment their implementation!\n"
+            "2. If they are directionally correct but missing key requested concepts, or if code has real syntax/logic errors, set `passed: false` and list missing concepts.\n"
+            "3. Under NO circumstance reveal the direct solution code inside your feedback_hint string.\n"
+            "4. Ask guiding, thought-provoking Socratic questions to lead them to reinforce their understanding.\n\n"
             "You MUST reply with a raw JSON object conforming exactly to this schema:\n"
             "{\n"
             "  \"passed\": boolean,\n"
