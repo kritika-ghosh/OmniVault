@@ -12,6 +12,7 @@ import "dockview-react/dist/styles/dockview.css";
 import { customTheme } from "@/lib/dockview";
 
 import ProjectAnalyzerModal from "@/components/workspace/project-analyzer-modal";
+import CommandPalette from "@/components/workspace/command-palette";
 
 const components = {
   scan: (props: IDockviewPanelProps<{ forceWelcome?: boolean; vaultPath?: string }>) => (
@@ -38,9 +39,9 @@ const components = {
       <QuizEditor />
     </div>
   ),
-  "note-editor": (props: IDockviewPanelProps<{ noteName: string }>) => (
+  "note-editor": (props: IDockviewPanelProps<{ noteName: string; autoSynthesize?: boolean }>) => (
     <div className="w-full h-full overflow-y-auto">
-      <NoteEditor noteName={props.params.noteName} />
+      <NoteEditor noteName={props.params.noteName} autoSynthesize={props.params.autoSynthesize} />
     </div>
   ),
   "mutated-companion": (props: IDockviewPanelProps) => (
@@ -107,13 +108,20 @@ export default function WorkspaceIDE() {
     };
 
     const handleOpenNote = (e: Event) => {
-      const noteName = (e as CustomEvent).detail;
+      const detail = (e as CustomEvent).detail;
+      if (!detail) return;
+
+      const noteName = typeof detail === "string" ? detail : detail.name;
+      const autoSynthesize = typeof detail === "object" ? !!detail.autoSynthesize : false;
       if (!noteName) return;
 
       const panelId = `note-${noteName.toLowerCase()}`;
       const existingPanel = api.getPanel(panelId);
       if (existingPanel) {
         existingPanel.focus();
+        if (autoSynthesize) {
+          window.dispatchEvent(new CustomEvent("trigger-auto-synthesize", { detail: noteName }));
+        }
       } else {
         api.addPanel({
           id: panelId,
@@ -121,6 +129,7 @@ export default function WorkspaceIDE() {
           title: noteName,
           params: {
             noteName: noteName,
+            autoSynthesize: autoSynthesize,
           },
         });
       }
@@ -215,6 +224,7 @@ export default function WorkspaceIDE() {
         isOpen={isProjectAnalyzerOpen}
         onClose={() => setIsProjectAnalyzerOpen(false)}
       />
+      <CommandPalette />
     </div>
   );
 }

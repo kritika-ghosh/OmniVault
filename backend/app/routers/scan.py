@@ -34,6 +34,25 @@ class ChunkScanRequest(BaseModel):
 # In-memory storage for active chunked scan sessions
 chunk_sessions: dict = {}
 
+class SearchRequest(BaseModel):
+    query: str
+    notes_files: Optional[List[FilePayload]] = None
+    limit: Optional[int] = 5
+
+@router.post("/search")
+async def semantic_vault_search(payload: SearchRequest):
+    """
+    Queries ChromaDB vector store or in-memory notes for semantic similarity matches.
+    """
+    if payload.notes_files:
+        n_files = [{"path": f.path, "content": f.content} for f in payload.notes_files]
+        collection, _ = vector_store.index_notes_vault_in_memory(n_files)
+        matches = vector_store.semantic_search_on_collection(collection, payload.query, limit=payload.limit or 5)
+        return {"query": payload.query, "results": matches}
+    
+    matches = vector_store.semantic_search(payload.query, limit=payload.limit or 5)
+    return {"query": payload.query, "results": matches}
+
 @router.post("/chunk")
 async def execute_chunked_workspace_scan(payload: ChunkScanRequest):
     sid = payload.session_id

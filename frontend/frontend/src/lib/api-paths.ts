@@ -9,6 +9,7 @@ export const HOST = getBackendUrl();
 
 export const API_PATHS = {
     SCAN: "/v1/scan",
+    SEARCH: "/v1/scan/search",
     SYNTHESIZE: "/v1/synthesize/stream",
     SAVE: "/v1/synthesize/save",
     QUIZ: "/v1/quiz/generate",

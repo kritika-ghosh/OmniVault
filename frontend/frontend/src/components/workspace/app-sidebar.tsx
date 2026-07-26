@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils"
 import Link from "next/link";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { ChevronDown, ChevronRight, FileText, Folder, Play, Trash2, Sparkles, Layers, User } from "lucide-react"
+import { ChevronDown, ChevronRight, FileText, Folder, Play, Trash2, Sparkles, Layers, User, Search } from "lucide-react"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 
 interface TreeNode {
@@ -142,7 +142,7 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
 
   return (
     <Sidebar className={cn("border-r border-border bg-[#070b10]", className)} {...props}>
-      <SidebarHeader className="px-3 py-3 border-b border-border shrink-0 bg-[#0c1117] space-y-2.5 font-mono">
+      <SidebarHeader className="px-3 py-3 border-b border-border shrink-0 bg-[#0c1117] space-y-2 font-mono">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
             <Folder className="w-4 h-4 text-primary" /> Local Obsidian Vault
@@ -163,8 +163,27 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
           </button>
         </div>
 
+        {/* Global RAG Command Palette Search Trigger */}
+        <button
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("open-command-palette"));
+            }
+          }}
+          className="w-full flex items-center justify-between px-2.5 py-1.5 bg-[#1b1f26] hover:bg-[#232832] border border-white/10 rounded-xl text-xs text-muted-foreground transition-all cursor-pointer shadow-xs group"
+          title="Search Vault & Codebase (Cmd+K / Ctrl+K)"
+        >
+          <span className="flex items-center gap-2 text-foreground/80 group-hover:text-foreground text-[11px]">
+            <Search className="w-3.5 h-3.5 text-accent" />
+            Search Vault & RAG...
+          </span>
+          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border">
+            ⌘K
+          </span>
+        </button>
+
         {/* Quick Tools Bar */}
-        <div className="grid grid-cols-2 gap-1.5 pt-1">
+        <div className="grid grid-cols-2 gap-1.5 pt-0.5">
           <button
             onClick={() => {
               if (typeof window !== "undefined") {

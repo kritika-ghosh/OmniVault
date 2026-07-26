@@ -290,7 +290,7 @@ export default function WorkspaceResults({ vaultPath }: WorkspaceResultsProps) {
                 <Button 
                   onClick={() => {
                     if (typeof window !== "undefined") {
-                      window.dispatchEvent(new CustomEvent("open-note", { detail: item.term }));
+                      window.dispatchEvent(new CustomEvent("open-note", { detail: { name: item.term, autoSynthesize: true } }));
                     }
                   }}
                   className="h-8 text-xs bg-accent hover:bg-accent/90 text-white font-bold font-mono shrink-0 px-4 cursor-pointer shadow-md"
