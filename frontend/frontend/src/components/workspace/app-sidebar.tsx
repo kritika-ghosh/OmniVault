@@ -99,6 +99,17 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
   const { vaultSessions, saveNote, deleteNote, activeVaultPath, setActiveVaultPath, deleteVaultSession } = useWorkspace();
   const [isDragOverRoot, setIsDragOverRoot] = React.useState<string | null>(null);
 
+  const [currentUser, setCurrentUser] = React.useState<{ name?: string; email?: string; avatar?: string } | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("omnivault_user");
+      if (stored) {
+        try { setCurrentUser(JSON.parse(stored)); } catch (e) {}
+      }
+    }
+  }, []);
+
   const totalNotesCount = React.useMemo(() => {
     return Object.values(vaultSessions).reduce((acc, session) => acc + session.notesFiles.length, 0);
   }, [vaultSessions]);
@@ -292,18 +303,45 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
       </SidebarContent>
 
       <SidebarFooter className="p-2 border-t border-border/30 bg-muted/10 shrink-0 font-mono">
-        <Link href="/auth" className="flex items-center justify-between p-2 rounded-xl bg-card border border-border hover:border-accent/40 transition-colors">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-6 h-6 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-accent text-[10px] font-bold shrink-0">
-              <User className="w-3.5 h-3.5" />
+        {currentUser ? (
+          <div className="flex items-center justify-between p-2 rounded-xl bg-card border border-border">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary text-[10px] font-bold shrink-0">
+                {currentUser.avatar || currentUser.name?.charAt(0).toUpperCase() || <User className="w-3.5 h-3.5" />}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-bold text-foreground truncate">{currentUser.name || "Vault Architect"}</span>
+                <span className="text-[9px] text-muted-foreground truncate">{currentUser.email || "session auth"}</span>
+              </div>
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-bold text-foreground truncate">Vault Account</span>
-              <span className="text-[9px] text-muted-foreground truncate">Session-only Auth</span>
-            </div>
+            <button
+              onClick={() => {
+                sessionStorage.removeItem("omnivault_user");
+                setCurrentUser(null);
+                if (typeof window !== "undefined") {
+                  window.location.href = "/auth";
+                }
+              }}
+              className="text-[10px] text-red-400 font-bold px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 cursor-pointer transition-all"
+              title="Sign Out"
+            >
+              Sign Out
+            </button>
           </div>
-          <span className="text-[10px] text-accent font-bold px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20">Sign In</span>
-        </Link>
+        ) : (
+          <Link href="/auth" className="flex items-center justify-between p-2 rounded-xl bg-card border border-border hover:border-accent/40 transition-colors">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-6 h-6 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-accent text-[10px] font-bold shrink-0">
+                <User className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-bold text-foreground truncate">Vault Account</span>
+                <span className="text-[9px] text-muted-foreground truncate">Session-only Auth</span>
+              </div>
+            </div>
+            <span className="text-[10px] text-accent font-bold px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20">Sign In</span>
+          </Link>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
