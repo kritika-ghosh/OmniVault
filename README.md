@@ -57,10 +57,10 @@ OmniVault adopts a decoupled 3-tier architecture: a modern Next.js/React fronten
 ```mermaid
 graph TD
     subgraph Frontend ["Frontend (Next.js / React 18 / Dockview)"]
-        UI[Workspace IDE / Note Editor]
-        CP[Cmd+K Command Palette]
-        RC[Live RAG Connections Panel]
-        QZ[Socratic Quiz Terminal]
+        UI["Workspace IDE / Note Editor"]
+        CP["Cmd+K Command Palette"]
+        RC["Live RAG Connections Panel"]
+        QZ["Socratic Quiz Terminal"]
     end
 
     subgraph Backend ["Backend (FastAPI Async Core)"]
@@ -80,10 +80,11 @@ graph TD
         Sandbox["Subprocess Code Execution Runtime"]
     end
 
-    UI -->|JSON / SSE| RouterScan
-    UI -->|SSE Stream| RouterSynth
-    CP & RC -->|HTTP POST| RouterSearch
-    QZ -->|JSON POST| RouterQuiz
+    UI -->|"JSON / SSE"| RouterScan
+    UI -->|"SSE Stream"| RouterSynth
+    CP -->|"HTTP POST"| RouterSearch
+    RC -->|"HTTP POST"| RouterSearch
+    QZ -->|"JSON POST"| RouterQuiz
 
     RouterScan --> AG1
     RouterSynth --> AG2
@@ -105,10 +106,10 @@ OmniVault is driven by three specialized AI agents working together:
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as Developer / User
-    participant AG1 as Agent 1: SmartGapDetector
-    participant AG2 as Agent 2: Synthesizer & Crawler
-    participant AG3 as Agent 3: ActiveRecallJudge
+    actor User as Developer
+    participant AG1 as Agent 1 (SmartGapDetector)
+    participant AG2 as Agent 2 (Synthesizer & Crawler)
+    participant AG3 as Agent 3 (ActiveRecallJudge)
     participant Chroma as ChromaDB Vector Store
     participant Box as Execution Sandbox
 
@@ -117,15 +118,15 @@ sequenceDiagram
     AG1->>Chroma: Query Existing Vault Embeddings
     AG1-->>User: Return Knowledge Gaps Report
 
-    User->>AG2: Click "Fill Gap" / Open Note
-    AG2->>AG2: Crawl Codebase for Symbol Context (def, class, router)
+    User->>AG2: Click Fill Gap or Open Note
+    AG2->>AG2: Crawl Codebase for Symbol Context
     AG2->>Chroma: Fetch Semantic RAG Context
     AG2-->>User: Stream SSE Synthesis Chunk by Chunk
 
     User->>AG3: Submit Quiz Code Solution
-    AG3->>Box: Execute User Code (python/node)
+    AG3->>Box: Execute User Code
     alt Execution Missing Package
-        Box-->>AG3: ModuleNotFoundError (e.g. sklearn)
+        Box-->>AG3: Missing Module Exception
         AG3->>AG3: Flag is_missing_module = True
     end
     AG3->>AG3: Evaluate Socratic Logic & Align Test Cases
@@ -202,10 +203,10 @@ The vector store service (`app.services.vector_store.VectorStoreService`) manage
 
 ```mermaid
 graph LR
-    Notes[Markdown Notes Vault] -->|Chunking & Metadata| Embedder[ChromaDB Default Embedding Function]
-    Embedder -->|Cosine Vector Math| Collection[(ChromaDB Vector Collection)]
-    Query[User Query / Cmd+K] -->|Query Embedding| Collection
-    Collection -->|Top-K Matches| Results[Semantic RAG Connections & Backlinks]
+    Notes["Markdown Notes Vault"] -->|"Chunking & Metadata"| Embedder["ChromaDB Embedding Function"]
+    Embedder -->|"Cosine Vector Math"| Collection[("ChromaDB Vector Collection")]
+    Query["User Query"] -->|"Query Embedding"| Collection
+    Collection -->|"Top-K Matches"| Results["Semantic RAG Connections & Backlinks"]
 ```
 
 #### Dual-Mode Indexing Mechanics
@@ -232,24 +233,24 @@ When a user submits code to the Socratic Quiz Judge, OmniVault executes the code
 
 ```mermaid
 flowchart TD
-    Start[User Submits Quiz Code] --> Exec[Run Code via subprocess.run]
-    Exec --> CheckReturn{Exit Code == 0?}
+    Start["User Submits Quiz Code"] --> Exec["Run Code via subprocess.run"]
+    Exec --> CheckReturn{"Exit Code == 0?"}
     
-    CheckReturn -->|Yes| OutputCheck{stdout Has Output?}
-    OutputCheck -->|Yes| Compare[Compare stdout vs expected_output]
-    OutputCheck -->|No & 'def' in code| Harness[Attach Smart Function Harness & Re-Run]
+    CheckReturn -->|"Yes"| OutputCheck{"stdout Has Output?"}
+    OutputCheck -->|"Yes"| Compare["Compare stdout vs expected_output"]
+    OutputCheck -->|"No"| Harness["Attach Smart Function Harness & Re-Run"]
     Harness --> Compare
 
-    CheckReturn -->|No (Error)| DetectErr{Error matches ModuleNotFoundError / ImportError?}
-    DetectErr -->|Yes| FlagMissing[Set is_missing_module = True & Extract Package Name]
-    DetectErr -->|No| FailTest[Mark Test Case Failed]
+    CheckReturn -->|"No (Error)"| DetectErr{"Error matches Missing Module?"}
+    DetectErr -->|"Yes"| FlagMissing["Set is_missing_module = True"]
+    DetectErr -->|"No"| FailTest["Mark Test Case Failed"]
 
-    FlagMissing --> LLMJudge[LLM-as-a-Judge Socratic Evaluation]
+    FlagMissing --> LLMJudge["LLM-as-a-Judge Socratic Evaluation"]
     Compare --> LLMJudge
     
-    LLMJudge --> JudgeVerdict{AI Judge Verdict == Passed?}
-    JudgeVerdict -->|Yes & No Output| Align[Align Test Case: Passed Conceptually Verified]
-    JudgeVerdict -->|Final Response| Return[Return JSON Payload to Client]
+    LLMJudge --> JudgeVerdict{"AI Judge Verdict == Passed?"}
+    JudgeVerdict -->|"Yes"| Align["Align Test Case: Conceptually Verified"]
+    JudgeVerdict -->|"Final Response"| Return["Return JSON Payload to Client"]
 ```
 
 #### Missing Module Detection Logic
