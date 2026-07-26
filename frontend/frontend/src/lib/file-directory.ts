@@ -24,6 +24,31 @@ export function chunkFiles(files: FilePayload[], chunkSize: number = 20): FilePa
   return chunks;
 }
 
+// Extracts project context & README summary from scanned workspace files
+export function extractProjectContext(files: FilePayload[]): string {
+  const readmeFile = files.find((f) => {
+    const filename = f.path.split("/").pop()?.toLowerCase() || "";
+    return filename === "readme.md" || filename === "readme.txt" || filename === "readme";
+  });
+
+  if (readmeFile && readmeFile.content.trim()) {
+    return readmeFile.content.slice(0, 2500).trim();
+  }
+
+  const packageJson = files.find((f) => f.path.endsWith("package.json"));
+  if (packageJson) {
+    try {
+      const parsed = JSON.parse(packageJson.content);
+      const name = parsed.name || "Project";
+      const desc = parsed.description || "";
+      const deps = Object.keys(parsed.dependencies || {}).slice(0, 10).join(", ");
+      return `${name}: ${desc}. Key Stack: ${deps}`;
+    } catch (e) {}
+  }
+
+  return "General Tech Stack Workspace";
+}
+
 // Recursively reads files from a DirectoryHandle
 export async function readFilesRecursively(
   dirHandle: FileSystemDirectoryHandle,

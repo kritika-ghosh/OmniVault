@@ -68,21 +68,35 @@ export default function WorkspaceResults({ vaultPath }: WorkspaceResultsProps) {
     return map;
   }, [gaps]);
 
-  // Combine everything to list all scanned terms and vault files
+  // Combine everything to list all scanned terms and vault files (case-insensitively deduplicated)
   const items = useMemo(() => {
-    const allTermsSet = new Set<string>();
-    
-    sortedTerms.forEach((t) => allTermsSet.add(t.trim()));
-    gaps.forEach((g) => allTermsSet.add(g.term.trim()));
-    existingNotes.forEach((n) => allTermsSet.add(n.term.trim()));
+    const normalizedTermsMap = new Map<string, string>();
 
-    const list = Array.from(allTermsSet).map((term) => {
-      const cleanTerm = term.toLowerCase().trim();
+    const addTerm = (rawTerm: string) => {
+      const trimmed = rawTerm.trim();
+      if (!trimmed) return;
+      const key = trimmed.toLowerCase();
+      if (!normalizedTermsMap.has(key)) {
+        normalizedTermsMap.set(key, trimmed);
+      } else {
+        const existing = normalizedTermsMap.get(key)!;
+        if (existing === existing.toLowerCase() && trimmed !== trimmed.toLowerCase()) {
+          normalizedTermsMap.set(key, trimmed);
+        }
+      }
+    };
+
+    gaps.forEach((g) => addTerm(g.term));
+    existingNotes.forEach((n) => addTerm(n.term));
+    sortedTerms.forEach((t) => addTerm(t));
+
+    const list = Array.from(normalizedTermsMap.entries()).map(([cleanTerm, displayTerm]) => {
       const note = existingNotesMap.get(cleanTerm);
       const gap = gapsMap.get(cleanTerm);
+      const finalTerm = gap?.term || note?.term || displayTerm;
 
       return {
-        term,
+        term: finalTerm,
         isGap: !!gap,
         isNote: !!note,
         classification: gap?.classification || "existing_note",

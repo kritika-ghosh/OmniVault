@@ -22,14 +22,27 @@ class SmartGapDetector:
         Uses LLM as a Principal AI Software Architect to perform deep conceptual gap scanning.
         Identifies high-level software engineering concepts, architectural paradigms, security patterns,
         and domain logic topics instead of raw package imports or dependency names.
+        Prioritizes README.md to assess project depth & complexity.
         """
+        # Separate README/documentation files to place at top of context
+        readme_files = []
+        other_files = []
+        for f in project_files:
+            path = f.get("path", "").lower()
+            if "readme" in path or path.endswith(".md"):
+                readme_files.append(f)
+            else:
+                other_files.append(f)
+
+        ordered_files = readme_files + other_files
+
         # Prepare codebase summary for LLM context (up to 45 files with smarter previews)
         file_summaries = []
-        for f in project_files[:45]:
+        for f in ordered_files[:45]:
             path = f.get("path", "")
             content = f.get("content", "")
             # Truncate content preview to capturing structural logic
-            preview = content[:650] + "\n..." if len(content) > 650 else content
+            preview = content[:1200] if "readme" in path.lower() else (content[:650] + "\n..." if len(content) > 650 else content)
             file_summaries.append(f"File: {path}\nContent Preview:\n{preview}\n")
             
         codebase_text = "\n---\n".join(file_summaries)
@@ -37,22 +50,25 @@ class SmartGapDetector:
         system_prompt = (
             "You are a Principal AI Software Architect & Curriculum Engineer.\n"
             "Your objective is to identify CANONICAL CONCEPTUAL KNOWLEDGE TOPICS in the codebase.\n\n"
+            "PROJECT DEPTH & COMPLEXITY ASSESSMENT:\n"
+            "- First, carefully evaluate the overall PROJECT ARCHITECTURAL DEPTH & DOMAIN COMPLEXITY from the README and codebase files (e.g. enterprise production service vs simple utility library).\n"
+            "- Calibrate each topic's 'required_expertise' ('beginner', 'intermediate', 'advanced') and technical depth based on this project's evaluated complexity.\n\n"
             "CRITICAL CANONICAL TERM RULES FOR OBSIDIAN WIKILINKS [[Term]]:\n"
-            "1. 'term' MUST be a CONCISE, CANONICAL WIKI-LINKABLE TITLE (1 to 3 words max).\n"
-            "   Examples of ideal terms: \"CORS\", \"JWT Authentication\", \"Vector Search\", \"FastAPI\", \"Pydantic\", \"Async Event Loop\", \"Connection Pooling\", \"Spaced Repetition\", \"State Hydration\", \"OAuth2\", \"Cosine Similarity\", \"AST Parsing\".\n"
+            "1. 'term' MUST be a CONCISE, CANONICAL WIKI-LINKABLE TITLE (1 to 3 words max, with proper capitalization, e.g. 'FastAPI', 'JWT Authentication', 'Vector Search', 'CORS').\n"
             "2. DO NOT create long multi-word sentence titles (e.g. DO NOT output 'Decoupled Multi-Agent Orchestration & Communication'). Keep titles short (1-3 words) so developers can easily link them using [[Term]] in Markdown notes.\n"
-            "3. DO NOT output low-level sub-dependency micro-packages (e.g. DO NOT output 'urllib3', 'certifi', 'six', 'zipp', 'idna', 'attrs', 'tqdm', etc.).\n"
-            "4. 'aliases': provide 2-3 common synonyms or alternative wiki-link names (e.g. for \"CORS\", aliases: [\"Cross-Origin Resource Sharing\", \"CORS Middleware\"]).\n\n"
+            "3. DO NOT output duplicate terms with different casing. Return each canonical term ONCE.\n"
+            "4. DO NOT output low-level sub-dependency micro-packages (e.g. DO NOT output 'urllib3', 'certifi', 'six', 'zipp', 'idna', 'attrs', 'tqdm', etc.).\n"
+            "5. 'aliases': provide 2-3 common synonyms or alternative wiki-link names (e.g. for \"CORS\", aliases: [\"Cross-Origin Resource Sharing\", \"CORS Middleware\"]).\n\n"
             "Return a JSON array of objects with keys:\n"
-            "- \"term\": concise 1-3 word canonical wiki-link title (e.g. \"CORS\", \"JWT Authentication\", \"Vector Search\")\n"
+            "- \"term\": concise 1-3 word canonical wiki-link title (e.g. \"CORS\", \"JWT Authentication\", \"Vector Search\", \"FastAPI\")\n"
             "- \"aliases\": array of 2-3 alternative wiki-link synonyms (e.g. [\"Cross-Origin Resource Sharing\"])\n"
             "- \"classification\": category (\"architecture\", \"security\", \"algorithm\", \"framework\", \"database\", \"networking\")\n"
             "- \"required_expertise\": level (\"beginner\", \"intermediate\", \"advanced\")\n"
-            "- \"reason\": 1-sentence technical justification\n\n"
+            "- \"reason\": 1-sentence technical justification considering the project's architecture\n\n"
             "Return ONLY a valid JSON array. No conversational text or markdown code fences outside JSON."
         )
 
-        user_prompt = f"Codebase Context:\n{codebase_text[:10000]}"
+        user_prompt = f"Codebase Context & Project Architecture:\n{codebase_text[:12000]}"
 
         try:
             response = completion(
@@ -70,7 +86,16 @@ class SmartGapDetector:
             
             concepts = json.loads(raw_text)
             if isinstance(concepts, list) and len(concepts) > 0:
-                return concepts
+                # Case-insensitive deduplication of concepts returned by LLM
+                deduped = []
+                seen_keys = set()
+                for c in concepts:
+                    if isinstance(c, dict) and "term" in c and c["term"]:
+                        key = c["term"].strip().lower()
+                        if key not in seen_keys:
+                            seen_keys.add(key)
+                            deduped.append(c)
+                return deduped
         except Exception as e:
             print(f"LLM concept analysis fallback: {e}")
             
@@ -119,10 +144,10 @@ class SmartGapDetector:
     ) -> List[Dict]:
         """
         LLM-driven gap and expertise analysis:
-        1. Uses LLM to extract required concepts and required expertise levels.
+        1. Uses LLM to extract required concepts and required expertise levels based on project depth.
         2. Compares concepts against user's notes vault.
         3. Evaluates current note expertise level vs required expertise level.
-        4. Identifies critical missing gaps AND expertise/depth gaps.
+        4. Identifies critical missing gaps AND expertise/depth gaps (deduplicated by slug).
         """
         # 1. Attempt LLM concept extraction
         llm_concepts = self.analyze_project_concepts_with_llm(project_files)
@@ -136,6 +161,7 @@ class SmartGapDetector:
                 note_contents_map[stem] = nf.get("content", "")
 
         gap_report = []
+        seen_slugs = set()
 
         if llm_concepts:
             for item in llm_concepts:
@@ -143,14 +169,20 @@ class SmartGapDetector:
                 if not term:
                     continue
 
-                req_exp = item.get("required_expertise", "intermediate").lower()
                 term_slug = term.lower().replace(" ", "-").strip()
                 term_clean = term.lower().strip()
+
+                if term_clean in seen_slugs or term_slug in seen_slugs:
+                    continue
+                seen_slugs.add(term_clean)
+                seen_slugs.add(term_slug)
+
+                req_exp = item.get("required_expertise", "intermediate").lower()
 
                 # Find matching note file metadata
                 matching_slug = None
                 for slug in existing_notes_meta.keys():
-                    if slug == term_slug or slug == term_clean or term_clean in slug:
+                    if slug == term_slug or slug == term_clean:
                         matching_slug = slug
                         break
 
@@ -172,7 +204,7 @@ class SmartGapDetector:
                             "classification": "knowledge_debt",
                             "expertise_level": current_exp,
                             "required_expertise": req_exp,
-                            "reason": f"Note '{term}.md' exists as an empty placeholder. Codebase requires '{req_exp}' expertise.",
+                            "reason": f"Note '{term}.md' exists as an empty placeholder. Project architecture requires '{req_exp}' expertise.",
                             "detected_from": sources
                         })
                     elif curr_rank < req_rank:
@@ -181,7 +213,7 @@ class SmartGapDetector:
                             "classification": "expertise_gap",
                             "expertise_level": current_exp,
                             "required_expertise": req_exp,
-                            "reason": f"Note '{term}.md' has '{current_exp}' depth, but codebase requires '{req_exp}' expertise.",
+                            "reason": f"Note '{term}.md' has '{current_exp}' depth, but project architecture requires '{req_exp}' expertise.",
                             "detected_from": sources
                         })
                 else:
@@ -198,7 +230,7 @@ class SmartGapDetector:
                             "classification": "critical_gap",
                             "expertise_level": "missing",
                             "required_expertise": req_exp,
-                            "reason": item.get("reason", f"Codebase requires '{req_exp}' expertise on {term}, but no note exists."),
+                            "reason": item.get("reason", f"Project architecture requires '{req_exp}' expertise on {term}, but no note exists."),
                             "detected_from": sources
                         })
 
@@ -375,10 +407,16 @@ class SmartGapDetector:
 
     def compute_smart_gaps(self, technical_terms: Set[str], existing_notes_meta: Dict[str, Dict], collection = None) -> List[Dict]:
         gap_report = []
+        seen_slugs = set()
         for term in technical_terms:
+            term_clean = term.lower().strip()
+            if term_clean in seen_slugs:
+                continue
+            seen_slugs.add(term_clean)
+
             sources = list(self.term_sources.get(term, []))
-            if term in existing_notes_meta:
-                meta = existing_notes_meta[term]
+            if term in existing_notes_meta or term_clean in existing_notes_meta:
+                meta = existing_notes_meta.get(term) or existing_notes_meta.get(term_clean)
                 if meta.get("is_empty", True) or meta.get("status") == "gap":
                     gap_report.append({
                         "term": term,

@@ -10,6 +10,7 @@ import {
   parseImplicitInbetweenConcepts,
   isHighValueConcept,
   chunkFiles,
+  extractProjectContext,
   FilePayload,
   ScanResponse,
 } from "@/lib/file-directory";
@@ -32,6 +33,7 @@ const safeFetch = async (url: string, options?: RequestInit): Promise<Response> 
 export interface VaultSession {
   notesPath: string;
   projectPath: string;
+  projectContext?: string;
   scanResult: ScanResponse | null;
   notesFiles: FilePayload[];
   sortedTerms: string[];
@@ -44,6 +46,7 @@ interface WorkspaceContextProps {
   setProjectPath: (path: string) => void;
   notesPath: string;
   setNotesPath: (path: string) => void;
+  projectContext: string;
   projectHandle: FileSystemDirectoryHandle | null;
   setProjectHandle: (handle: FileSystemDirectoryHandle | null) => void;
   notesHandle: FileSystemDirectoryHandle | null;
@@ -190,6 +193,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   const projectPath = activeSession ? activeSession.projectPath : localProjectPath;
   const notesPath = activeSession ? activeSession.notesPath : localNotesPath;
+  const projectContext = activeSession?.projectContext || "General Tech Stack Workspace";
   const scanResult = activeSession ? activeSession.scanResult : null;
   const notesFiles = activeSession ? activeSession.notesFiles : [];
   const sortedTerms = activeSession ? activeSession.sortedTerms : [];
@@ -595,11 +599,20 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           };
         }
 
-        // Filter finalData report to keep only high-value core concepts
+        // Filter finalData report to keep only high-value core concepts & deduplicate case-insensitively
         if (finalData && finalData.report) {
-          finalData.report = finalData.report.filter((r: any) => isHighValueConcept(r.term));
+          const seenGaps = new Set<string>();
+          finalData.report = finalData.report.filter((r: any) => {
+            if (!r || !r.term || !isHighValueConcept(r.term)) return false;
+            const cleanKey = r.term.toLowerCase().trim();
+            if (seenGaps.has(cleanKey)) return false;
+            seenGaps.add(cleanKey);
+            return true;
+          });
           finalData.gaps_found = finalData.report.length;
         }
+
+        const computedProjectContext = extractProjectContext(projFiles);
 
         const highValueSorted = (sorted.length > 0 ? sorted : (finalData?.report || []).map((r: any) => r.term))
           .filter(isHighValueConcept)
@@ -608,6 +621,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         const newSession: VaultSession = {
           notesPath: targetNotesPath,
           projectPath: targetProjectPath,
+          projectContext: computedProjectContext,
           scanResult: finalData,
           notesFiles: notes,
           sortedTerms: highValueSorted,
@@ -640,9 +654,21 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           throw new Error(`API Error (${response.status}): ${errorText}`);
         }
         const data = await response.json();
+        if (data && data.report) {
+          const seenGaps = new Set<string>();
+          data.report = data.report.filter((r: any) => {
+            if (!r || !r.term || !isHighValueConcept(r.term)) return false;
+            const cleanKey = r.term.toLowerCase().trim();
+            if (seenGaps.has(cleanKey)) return false;
+            seenGaps.add(cleanKey);
+            return true;
+          });
+          data.gaps_found = data.report.length;
+        }
         const newSession: VaultSession = {
           notesPath: targetNotesPath,
           projectPath: targetProjectPath,
+          projectContext: "Local Backend Workspace",
           scanResult: data,
           notesFiles: data.notes_files && data.notes_files.length > 0 ? data.notes_files : notes,
           sortedTerms: (data.report || []).map((r: any) => r.term).sort(),
@@ -668,6 +694,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setProjectPath,
         notesPath,
         setNotesPath,
+        projectContext,
         projectHandle,
         setProjectHandle,
         notesHandle,

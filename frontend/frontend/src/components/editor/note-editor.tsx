@@ -71,7 +71,7 @@ interface NoteEditorProps {
 }
 
 export default function NoteEditor({ noteName }: NoteEditorProps) {
-  const { notesFiles, saveNote, statusMessage, apiHost, scanResult, setQuizSelectedNotePath } = useWorkspace();
+  const { notesFiles, saveNote, statusMessage, apiHost, scanResult, projectContext, setQuizSelectedNotePath } = useWorkspace();
   const [content, setContent] = useState("");
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const [isSaving, setIsSaving] = useState(false);
@@ -137,7 +137,7 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
         },
         body: JSON.stringify({
           term: noteName,
-          project_context: "General Tech Stack Workspace",
+          project_context: projectContext || "General Tech Stack Workspace",
           existing_vault_terms: existingVaultTerms,
         }),
       });

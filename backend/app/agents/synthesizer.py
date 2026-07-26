@@ -104,6 +104,9 @@ class ContentSynthesizer:
         system_prompt = (
             "You are an expert technical writer creating a highly structured, self-contained "
             f"Markdown guide on '{term}' for a developer.\n\n"
+            "PROJECT CONTEXT & AUDIENCE DEPTH INSTRUCTION:\n"
+            "- Analyze the provided Project Context (derived from project README & codebase summary).\n"
+            "- Adapt the note's technical depth, architectural role explanation, advanced edge cases, and code examples to match the exact complexity and domain focus of this project.\n\n"
             "MANDATORY STRUCTURAL TEMPLATE:\n"
             "1. YAML Frontmatter block containing title, tags, status: draft, confidence_level: 0.5, created, and updated dates.\n"
             f"2. # {term}\n"
@@ -122,11 +125,11 @@ class ContentSynthesizer:
         
         user_prompt = (
             f"Target Concept: {term}\n"
-            f"Associated Tech Environment: {project_context}\n"
+            f"Associated Project Context & README Depth:\n{project_context}\n\n"
             f"Existing Vault Nodes to Interlink with: {vault_terms_formatted if vault_terms_formatted else 'None provided'}\n"
             f"Scraped Technical Summary: {web_reference}\n"
             f"Wikipedia Target Slug: {wiki_url}\n\n"
-            "Synthesize and stream the complete document now with [[WikiLinks]] interlinking to maintain Knowledge Graph interconnectivity."
+            "Synthesize and stream the complete document now with [[WikiLinks]] interlinking, calibrating technical depth to the project's complexity."
         )
 
         full_content = ""
