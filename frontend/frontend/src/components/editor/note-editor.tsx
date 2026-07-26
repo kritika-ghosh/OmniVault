@@ -9,6 +9,8 @@ import { Save, Edit2, Eye, Check, Sparkles, Link2, HelpCircle } from "lucide-rea
 import { mockNotesFiles } from "@/lib/data";
 import { normalizeTerm } from "@/lib/utils";
 
+import { readFilesRecursively } from "@/lib/file-directory";
+
 interface FrontMatter {
   title?: string;
   tags?: string;
@@ -71,7 +73,7 @@ interface NoteEditorProps {
 }
 
 export default function NoteEditor({ noteName }: NoteEditorProps) {
-  const { notesFiles, saveNote, statusMessage, apiHost, scanResult, projectContext, setQuizSelectedNotePath } = useWorkspace();
+  const { notesFiles, saveNote, statusMessage, apiHost, scanResult, projectContext, projectHandle, setQuizSelectedNotePath } = useWorkspace();
   const [content, setContent] = useState("");
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const [isSaving, setIsSaving] = useState(false);
@@ -129,6 +131,15 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
         ])
       ).filter(Boolean);
 
+      let projFilesPayload = undefined;
+      if (projectHandle) {
+        try {
+          projFilesPayload = await readFilesRecursively(projectHandle);
+        } catch (e) {
+          console.warn("Failed to read project files for codebase crawler:", e);
+        }
+      }
+
       const synthesizeUrl = `${apiHost}${API_PATHS.SYNTHESIZE}`;
       const response = await safeFetch(synthesizeUrl, {
         method: "POST",
@@ -139,6 +150,7 @@ export default function NoteEditor({ noteName }: NoteEditorProps) {
           term: noteName,
           project_context: projectContext || "General Tech Stack Workspace",
           existing_vault_terms: existingVaultTerms,
+          project_files: projFilesPayload,
         }),
       });
 

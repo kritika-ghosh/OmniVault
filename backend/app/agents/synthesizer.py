@@ -5,10 +5,12 @@ import ast
 from litellm import completion
 from typing import AsyncGenerator, List, Dict
 from app.config import settings
+from app.agents.codebase_crawler import CodebaseCrawler
 
 class ContentSynthesizer:
     def __init__(self):
         self.model = settings.DEFAULT_LLM_MODEL
+        self.crawler = CodebaseCrawler()
         
     def formulate_query(self, term: str, project_context: str) -> str:
         """
@@ -83,9 +85,16 @@ class ContentSynthesizer:
                     })
         return warnings
 
-    async def generate_note_stream(self, term: str, project_context: str, existing_vault_terms: List[str] = None) -> AsyncGenerator[str, None]:
+    async def generate_note_stream(
+        self, 
+        term: str, 
+        project_context: str, 
+        existing_vault_terms: List[str] = None,
+        project_files: List[Dict[str, str]] = None
+    ) -> AsyncGenerator[str, None]:
         """
-        Orchestrates background reference scraping, applies the target template with Wikipedia & Wiki links,
+        Orchestrates background reference scraping & codebase crawling for actual function references,
+        applies the target template with Wikipedia & Wiki links,
         embeds [[WikiLinks]] for existing vault terms to maintain graph interconnectivity,
         streams markdown content chunk-by-chunk, and appends code validation reports.
         """
@@ -94,6 +103,9 @@ class ContentSynthesizer:
         
         # Fetch grounding info
         web_reference = await self.fetch_web_context(search_query)
+
+        # Crawl codebase for actual functions, methods, and classes related to term
+        code_references = self.crawler.crawl_related_code_snippets(term, project_files or [])
 
         # Build clean Wikipedia reference URL slug
         wiki_slug = re.sub(r"[^\w\s-]", "", term).strip().replace(" ", "_")
@@ -107,6 +119,10 @@ class ContentSynthesizer:
             "PROJECT CONTEXT & AUDIENCE DEPTH INSTRUCTION:\n"
             "- Analyze the provided Project Context (derived from project README & codebase summary).\n"
             "- Adapt the note's technical depth, architectural role explanation, advanced edge cases, and code examples to match the exact complexity and domain focus of this project.\n\n"
+            "ACTUAL PROJECT CODE INTEGRATION RULE:\n"
+            "- You are provided with 'Actual Project Implementation Snippets & Function References' extracted from the user's repository.\n"
+            "- Under '## Core Syntax & Implementation Patterns' and '## Overview & Architectural Role', YOU MUST REFERENCE THE ACTUAL FUNCTIONS, METHODS, CLASSES, AND FILE PATHS from the user's project where this concept is implemented.\n"
+            "- Show how the concept is used in this repository alongside canonical syntax.\n\n"
             "MANDATORY STRUCTURAL TEMPLATE:\n"
             "1. YAML Frontmatter block containing title, tags, status: draft, confidence_level: 0.5, created, and updated dates.\n"
             f"2. # {term}\n"
@@ -126,10 +142,11 @@ class ContentSynthesizer:
         user_prompt = (
             f"Target Concept: {term}\n"
             f"Associated Project Context & README Depth:\n{project_context}\n\n"
+            f"Actual Project Implementation Snippets & Function References:\n{code_references}\n\n"
             f"Existing Vault Nodes to Interlink with: {vault_terms_formatted if vault_terms_formatted else 'None provided'}\n"
             f"Scraped Technical Summary: {web_reference}\n"
             f"Wikipedia Target Slug: {wiki_url}\n\n"
-            "Synthesize and stream the complete document now with [[WikiLinks]] interlinking, calibrating technical depth to the project's complexity."
+            "Synthesize and stream the complete document now with [[WikiLinks]] interlinking, incorporating actual project functions and code snippets."
         )
 
         full_content = ""

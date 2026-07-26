@@ -13,12 +13,17 @@ router = APIRouter(prefix="/v1/synthesize", tags=["synthesis"])
 synthesizer = ContentSynthesizer()
 vector_store = VectorStoreService()
 
-from typing import Optional, List
+from typing import Optional, List, Dict
+
+class FilePayload(BaseModel):
+    path: str
+    content: str
 
 class SynthesizeRequest(BaseModel):
     term: str
     project_context: str = "General Tech Stack Workspace"
     existing_vault_terms: Optional[List[str]] = None
+    project_files: Optional[List[FilePayload]] = None
 
 class SaveNoteRequest(BaseModel):
     notes_path: Optional[str] = None
@@ -31,8 +36,15 @@ async def stream_note_generation(payload: SynthesizeRequest):
     Exposes an HTTP Server-Sent Events (SSE) route streaming 
     text/event-stream text fragments sequentially to the client.
     """
+    p_files = [{"path": f.path, "content": f.content} for f in payload.project_files] if payload.project_files else None
+
     async def event_generator():
-        async for chunk in synthesizer.generate_note_stream(payload.term, payload.project_context, payload.existing_vault_terms or []):
+        async for chunk in synthesizer.generate_note_stream(
+            payload.term, 
+            payload.project_context, 
+            payload.existing_vault_terms or [],
+            p_files
+        ):
             yield f"data: {json.dumps({'chunk': chunk})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
